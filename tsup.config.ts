@@ -4,6 +4,7 @@ export default defineConfig({
   entry: {
     index: 'src/index.ts',
     'collections/index': 'src/collections/index.ts',
+    'upload/index': 'src/upload/index.ts',
   },
   format: ['cjs', 'esm'],
   dts: true,

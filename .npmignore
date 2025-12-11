@@ -1,6 +1,27 @@
+# Source (only dist is published)
 src/
+
+# Test files
+test/
+*.test.ts
+*.spec.ts
+vitest.config.ts
+
+# Docs
+docs/
+
+# Build config
 tsconfig.json
 tsup.config.ts
+
+# Git/IDE
 .gitignore
+.git/
+.vscode/
+.idea/
+
+# Misc
 ARCHITECTURE.md
+CLAUDE.md
 *.log
+.DS_Store

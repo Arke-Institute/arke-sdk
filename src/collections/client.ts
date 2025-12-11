@@ -113,10 +113,11 @@ export class CollectionsClient {
     }
 
     let body: unknown;
+    const text = await response.text();
     try {
-      body = await response.json();
+      body = JSON.parse(text);
     } catch {
-      body = await response.text();
+      body = text;
     }
 
     const message =

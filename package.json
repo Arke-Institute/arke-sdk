@@ -1,20 +1,26 @@
 {
   "name": "@arke-institute/sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "type": "module",
   "description": "TypeScript SDK for building applications on the Arke platform",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./collections": {
       "types": "./dist/collections/index.d.ts",
-      "import": "./dist/collections/index.mjs",
-      "require": "./dist/collections/index.js"
+      "import": "./dist/collections/index.js",
+      "require": "./dist/collections/index.cjs"
+    },
+    "./upload": {
+      "types": "./dist/upload/index.d.ts",
+      "import": "./dist/upload/index.js",
+      "require": "./dist/upload/index.cjs"
     }
   },
   "files": [
@@ -28,8 +34,11 @@
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run build"
   },
-  "dependencies": {},
+  "dependencies": {
+    "multiformats": "^13.4.1"
+  },
   "devDependencies": {
+    "@types/node": "^20.10.0",
     "tsup": "^8.0.0",
     "typescript": "^5.3.0",
     "vitest": "^1.0.0"
@@ -38,6 +47,7 @@
     "arke",
     "sdk",
     "collections",
+    "upload",
     "content",
     "typescript"
   ],
