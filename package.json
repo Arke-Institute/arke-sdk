@@ -1,6 +1,6 @@
 {
   "name": "@arke-institute/sdk",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "TypeScript SDK for building applications on the Arke platform",
   "main": "dist/index.cjs",
@@ -21,6 +21,11 @@
       "types": "./dist/upload/index.d.ts",
       "import": "./dist/upload/index.js",
       "require": "./dist/upload/index.cjs"
+    },
+    "./query": {
+      "types": "./dist/query/index.d.ts",
+      "import": "./dist/query/index.js",
+      "require": "./dist/query/index.cjs"
     }
   },
   "files": [
@@ -48,6 +53,8 @@
     "sdk",
     "collections",
     "upload",
+    "query",
+    "knowledge-graph",
     "content",
     "typescript"
   ],

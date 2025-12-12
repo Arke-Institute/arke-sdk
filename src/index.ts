@@ -3,26 +3,31 @@
  *
  * @example
  * ```typescript
- * import { CollectionsClient, UploadClient } from '@arke-institute/sdk';
+ * import { CollectionsClient, UploadClient, QueryClient } from '@arke-institute/sdk';
  *
  * // Collections management
  * const collections = new CollectionsClient({
- *   gatewayUrl: 'https://api.arke.institute',
+ *   gatewayUrl: 'https://gateway.arke.institute',
  *   authToken: 'your-jwt-token',
  * });
  *
  * // Upload with collections integration
  * const upload = new UploadClient({
- *   gatewayUrl: 'https://api.arke.institute',
+ *   gatewayUrl: 'https://gateway.arke.institute',
  *   authToken: 'your-jwt-token',
  *   uploader: 'my-app',
  * });
  *
- * // Create a new collection from files
- * const result = await upload.createCollection({
- *   files: './photos',
- *   collectionMetadata: { title: 'My Archive', slug: 'my-archive' },
+ * // Query the knowledge graph (no auth required)
+ * const query = new QueryClient({
+ *   gatewayUrl: 'https://gateway.arke.institute',
  * });
+ *
+ * // Execute a path query
+ * const results = await query.path('"alice austen" -[*]{,4}-> type:person');
+ *
+ * // Natural language query
+ * const nlResults = await query.natural('Find photographers connected to Alice Austen');
  * ```
  */
 
@@ -81,3 +86,40 @@ export {
   NetworkError,
   UploadError,
 } from './upload/utils/errors';
+
+// Query
+export { QueryClient, type QueryClientConfig } from './query/client';
+export { QueryError } from './query/errors';
+export type {
+  // Request types
+  LineageFilter,
+  PathQueryOptions,
+  NaturalQueryOptions,
+  // Response types
+  EnrichedContent,
+  Entity,
+  PathStep,
+  QueryResultItem,
+  LineageMetadata,
+  QueryMetadata,
+  QueryResult,
+  TranslationInfo,
+  NaturalQueryResult,
+  TranslateResult,
+  // Parse types
+  ASTNodeType,
+  EntryAST,
+  FilterAST,
+  HopAST,
+  PathAST,
+  ParseResult,
+  ParseError,
+  // Syntax documentation types
+  EntryPointDoc,
+  EdgeTypeDoc,
+  VariableDepthDoc,
+  FilterTypeDoc,
+  ParameterDoc,
+  ExampleDoc,
+  SyntaxDocumentation,
+} from './query/types';
