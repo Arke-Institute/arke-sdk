@@ -3,7 +3,14 @@
  *
  * @example
  * ```typescript
- * import { CollectionsClient, UploadClient, QueryClient, EditClient, EditSession } from '@arke-institute/sdk';
+ * import {
+ *   CollectionsClient,
+ *   UploadClient,
+ *   QueryClient,
+ *   EditClient,
+ *   ContentClient,
+ *   GraphClient
+ * } from '@arke-institute/sdk';
  *
  * // Collections management
  * const collections = new CollectionsClient({
@@ -23,22 +30,25 @@
  *   gatewayUrl: 'https://gateway.arke.institute',
  * });
  *
+ * // Content access (no auth required)
+ * const content = new ContentClient({
+ *   gatewayUrl: 'https://gateway.arke.institute',
+ * });
+ *
+ * // Graph relationships (no auth required)
+ * const graph = new GraphClient({
+ *   gatewayUrl: 'https://gateway.arke.institute',
+ * });
+ *
+ * // Get an entity and its content
+ * const entity = await content.get('01K75HQQXNTDG7BBP7PS9AWYAN');
+ * const imageBlob = await content.download(entity.components.source);
+ *
+ * // Get entities with relationships from the knowledge graph
+ * const entities = await graph.getEntitiesWithRelationships(entity.pi);
+ *
  * // Execute a path query
  * const results = await query.path('"alice austen" -[*]{,4}-> type:person');
- *
- * // Natural language query
- * const nlResults = await query.natural('Find photographers connected to Alice Austen');
- *
- * // Edit entities with AI-powered regeneration
- * const editClient = new EditClient({
- *   gatewayUrl: 'https://gateway.arke.institute',
- *   authToken: 'your-jwt-token',
- * });
- * const session = new EditSession(editClient, 'PI_HERE', { mode: 'ai-prompt' });
- * await session.load();
- * session.setPrompt('general', 'Fix OCR errors');
- * session.setScope({ components: ['description'], cascade: true });
- * const result = await session.submit('Fix OCR errors');
  * ```
  */
 
@@ -150,3 +160,49 @@ export type {
   ReprocessResult,
   ReprocessStatus,
 } from './edit/types';
+
+// Content
+export { ContentClient, type ContentClientConfig } from './content/client';
+export {
+  ContentError,
+  EntityNotFoundError,
+  ContentNotFoundError,
+  ComponentNotFoundError,
+  VersionNotFoundError,
+  NetworkError as ContentNetworkError,
+} from './content/errors';
+export type {
+  Entity as ContentEntity,
+  EntitySummary,
+  EntityVersion,
+  ListOptions,
+  ListResponse,
+  VersionsOptions,
+  VersionsResponse,
+  ResolveResponse,
+} from './content/types';
+
+// Graph
+export { GraphClient, type GraphClientConfig } from './graph/client';
+export {
+  GraphError,
+  GraphEntityNotFoundError,
+  NoPathFoundError,
+  NetworkError as GraphNetworkError,
+} from './graph/errors';
+export type {
+  GraphEntity,
+  Relationship,
+  EntityWithRelationships,
+  PathEdge,
+  Path,
+  PathOptions,
+  ReachableOptions,
+  ListFromPiOptions,
+  EntityQueryResponse,
+  EntitiesWithRelationshipsResponse,
+  PathsResponse,
+  LineagePiEntry,
+  LineageResultSet,
+  LineageResponse,
+} from './graph/types';

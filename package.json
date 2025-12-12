@@ -31,6 +31,16 @@
       "types": "./dist/edit/index.d.ts",
       "import": "./dist/edit/index.js",
       "require": "./dist/edit/index.cjs"
+    },
+    "./content": {
+      "types": "./dist/content/index.d.ts",
+      "import": "./dist/content/index.js",
+      "require": "./dist/content/index.cjs"
+    },
+    "./graph": {
+      "types": "./dist/graph/index.d.ts",
+      "import": "./dist/graph/index.js",
+      "require": "./dist/graph/index.cjs"
     }
   },
   "files": [
