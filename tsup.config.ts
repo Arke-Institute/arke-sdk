@@ -6,6 +6,7 @@ export default defineConfig({
     'collections/index': 'src/collections/index.ts',
     'upload/index': 'src/upload/index.ts',
     'query/index': 'src/query/index.ts',
+    'edit/index': 'src/edit/index.ts',
   },
   format: ['cjs', 'esm'],
   dts: true,

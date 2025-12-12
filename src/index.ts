@@ -3,7 +3,7 @@
  *
  * @example
  * ```typescript
- * import { CollectionsClient, UploadClient, QueryClient } from '@arke-institute/sdk';
+ * import { CollectionsClient, UploadClient, QueryClient, EditClient, EditSession } from '@arke-institute/sdk';
  *
  * // Collections management
  * const collections = new CollectionsClient({
@@ -28,6 +28,17 @@
  *
  * // Natural language query
  * const nlResults = await query.natural('Find photographers connected to Alice Austen');
+ *
+ * // Edit entities with AI-powered regeneration
+ * const editClient = new EditClient({
+ *   gatewayUrl: 'https://gateway.arke.institute',
+ *   authToken: 'your-jwt-token',
+ * });
+ * const session = new EditSession(editClient, 'PI_HERE', { mode: 'ai-prompt' });
+ * await session.load();
+ * session.setPrompt('general', 'Fix OCR errors');
+ * session.setScope({ components: ['description'], cascade: true });
+ * const result = await session.submit('Fix OCR errors');
  * ```
  */
 
@@ -123,3 +134,19 @@ export type {
   ExampleDoc,
   SyntaxDocumentation,
 } from './query/types';
+
+// Edit
+export { EditClient, type EditClientConfig } from './edit/client';
+export { EditSession } from './edit/session';
+export { EditError, PermissionError } from './edit/errors';
+export type {
+  EditMode,
+  EditSessionConfig,
+  EditScope,
+  RegeneratableComponent,
+  EditResult,
+  EditStatus,
+  EditPhase,
+  ReprocessResult,
+  ReprocessStatus,
+} from './edit/types';
