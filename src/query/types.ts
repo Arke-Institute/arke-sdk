@@ -343,3 +343,45 @@ export interface SyntaxDocumentation {
   constraints: string[];
   errors: Record<string, string>;
 }
+
+// ---------------------------------------------------------------------------
+// Collection search types
+// ---------------------------------------------------------------------------
+
+/**
+ * Options for collection search
+ */
+export interface CollectionSearchOptions {
+  /** Maximum number of results (default: 10, max: 50) */
+  limit?: number;
+  /** Filter by visibility ('public' or 'private') */
+  visibility?: 'public' | 'private';
+}
+
+/**
+ * A collection result from search
+ */
+export interface CollectionSearchResult {
+  /** Collection UUID */
+  id: string;
+  /** Semantic similarity score */
+  score: number;
+  /** Collection title */
+  title: string;
+  /** Collection slug */
+  slug: string;
+  /** Root PI of the collection */
+  rootPi: string;
+  /** Collection visibility */
+  visibility: 'public' | 'private';
+}
+
+/**
+ * Response from collection search
+ */
+export interface CollectionSearchResponse {
+  /** Matching collections */
+  collections: CollectionSearchResult[];
+  /** Number of results returned */
+  count: number;
+}

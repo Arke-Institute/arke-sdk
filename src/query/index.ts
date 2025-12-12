@@ -32,4 +32,8 @@ export type {
   ParameterDoc,
   ExampleDoc,
   SyntaxDocumentation,
+  // Collection search types
+  CollectionSearchOptions,
+  CollectionSearchResult,
+  CollectionSearchResponse,
 } from './types';

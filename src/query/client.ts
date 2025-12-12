@@ -8,6 +8,8 @@ import type {
   ParseResult,
   ParseError,
   SyntaxDocumentation,
+  CollectionSearchOptions,
+  CollectionSearchResponse,
 } from './types';
 
 /**
@@ -292,5 +294,41 @@ export class QueryClient {
    */
   async health(): Promise<{ status: string; service: string; version: string }> {
     return this.request('/query/health', { method: 'GET' });
+  }
+
+  /**
+   * Search for collections by semantic similarity.
+   *
+   * Searches the dedicated collections index for fast semantic matching.
+   *
+   * @param query - Search query text
+   * @param options - Search options (limit, visibility filter)
+   * @returns Matching collections with similarity scores
+   *
+   * @example
+   * ```typescript
+   * // Search for photography-related collections
+   * const results = await query.searchCollections('photography');
+   * console.log(results.collections[0].title);
+   *
+   * // Search only public collections
+   * const publicResults = await query.searchCollections('history', {
+   *   visibility: 'public',
+   *   limit: 20,
+   * });
+   * ```
+   */
+  async searchCollections(
+    query: string,
+    options: CollectionSearchOptions = {}
+  ): Promise<CollectionSearchResponse> {
+    return this.request<CollectionSearchResponse>('/query/search/collections', {
+      method: 'GET',
+      query: {
+        q: query,
+        limit: options.limit?.toString(),
+        visibility: options.visibility,
+      },
+    });
   }
 }
