@@ -14,7 +14,6 @@ import type { ProcessingConfig } from './types/processing';
 import { ArkeUploader } from './uploader';
 import { CollectionsClient, type CollectionsClientConfig } from '../collections/client';
 import type { CreateCollectionPayload, Collection, PiPermissions } from '../collections/types';
-import { ValidationError } from './utils/errors';
 
 export interface UploadClientConfig {
   /**
@@ -238,26 +237,12 @@ export class UploadClient {
    *
    * Requires owner or editor role on the collection containing the parent PI.
    * Use this to add a folder or files to an existing collection hierarchy.
+   *
+   * Note: Permission checks are enforced server-side by the ingest worker.
+   * The server will return 403 if the user lacks edit access to the parent PI.
    */
   async addToCollection(options: AddToCollectionOptions): Promise<BatchResult> {
     const { files, parentPi, customPrompts, processing, onProgress, dryRun } = options;
-
-    // Check permissions first (unless dry run)
-    if (!dryRun) {
-      const permissions = await this.collectionsClient.getPiPermissions(parentPi);
-
-      if (!permissions.canEdit) {
-        if (!permissions.collection) {
-          throw new ValidationError(
-            `Cannot add files: PI "${parentPi}" is not part of any collection`
-          );
-        }
-        throw new ValidationError(
-          `Cannot add files to collection "${permissions.collection.title}": ` +
-            `you need editor or owner role (current role: ${permissions.collection.role || 'none'})`
-        );
-      }
-    }
 
     // Create uploader with the parent PI
     const uploader = new ArkeUploader({
