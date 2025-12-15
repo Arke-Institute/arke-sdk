@@ -253,10 +253,10 @@ export class EditSession {
     if (!this.entity) return result as Record<RegeneratableComponent, string>;
 
     const entityContext = {
-      pi: this.entity.pi,
+      pi: this.entity.id,
       ver: this.entity.ver,
       parentPi: this.entity.parent_pi,
-      childrenCount: this.entity.children_pi.length,
+      childrenCount: this.entity.children_pi?.length ?? 0,
       currentContent: this.loadedComponents,
     };
 
@@ -284,7 +284,7 @@ export class EditSession {
       // Add cascade context if applicable
       if (this.scope.cascade) {
         prompt = PromptBuilder.buildCascadePrompt(prompt, {
-          path: [this.entity.pi, this.entity.parent_pi || 'root'].filter(Boolean) as string[],
+          path: [this.entity.id, this.entity.parent_pi || 'root'].filter(Boolean) as string[],
           depth: 0,
           stopAtPi: this.scope.stopAtPi,
         });
@@ -360,7 +360,7 @@ export class EditSession {
         });
 
         this.result.saved = {
-          pi: version.pi,
+          pi: version.id,
           newVersion: version.ver,
           newTip: version.tip,
         };

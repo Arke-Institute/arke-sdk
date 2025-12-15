@@ -2,32 +2,45 @@
  * Content package types for the Arke SDK
  *
  * Types for interacting with entities and content from the IPFS Wrapper service.
+ * Based on the arke/eidos@v1 schema.
  */
 
 // ---------------------------------------------------------------------------
-// Entity types (from IPFS Wrapper)
+// Entity types (from IPFS Wrapper - arke/eidos@v1 schema)
 // ---------------------------------------------------------------------------
 
 /**
  * Full entity manifest from IPFS Wrapper
  */
 export interface Entity {
-  /** Persistent Identifier (ULID or test PI with II prefix) */
-  pi: string;
+  /** Entity identifier (ULID or test ID with II prefix) */
+  id: string;
+  /** Entity type (e.g., "PI", "person", "place", "concept", "document") */
+  type: string;
+  /** Creation timestamp (immutable, set at v1) */
+  created_at: string;
+  /** Display name */
+  label?: string;
+  /** Human-readable description */
+  description?: string;
   /** Version number */
   ver: number;
   /** Timestamp when this version was created */
   ts: string;
   /** CID of this manifest */
   manifest_cid: string;
-  /** CID of the previous version (undefined for version 1) */
-  prev_cid?: string;
+  /** CID of the previous version (null for version 1) */
+  prev_cid: string | null;
   /** Map of component names to their CIDs */
   components: Record<string, string>;
-  /** PIs of child entities */
+  /** IDs of child entities */
   children_pi?: string[];
-  /** PI of parent entity */
+  /** ID of parent entity */
   parent_pi?: string;
+  /** Provenance: which PI extracted this entity */
+  source_pi?: string;
+  /** IDs of entities that have been merged into this one */
+  merged_entities?: string[];
   /** Change note for this version */
   note?: string;
 }
@@ -36,10 +49,14 @@ export interface Entity {
  * Summary entity info returned when listing entities
  */
 export interface EntitySummary {
-  /** Persistent Identifier */
-  pi: string;
+  /** Entity identifier */
+  id: string;
   /** Tip CID (latest manifest) */
   tip: string;
+  /** Entity type (if include_metadata=true) */
+  type?: string;
+  /** Display name (if include_metadata=true) */
+  label?: string;
   /** Version number (if include_metadata=true) */
   ver?: number;
   /** Timestamp (if include_metadata=true) */
@@ -122,8 +139,59 @@ export interface VersionsResponse {
  * Response from resolving a PI
  */
 export interface ResolveResponse {
-  /** Persistent Identifier */
-  pi: string;
+  /** Entity identifier */
+  id: string;
   /** Tip CID (latest manifest) */
   tip: string;
+}
+
+// ---------------------------------------------------------------------------
+// Relationship types (arke/relationships@v1 schema)
+// ---------------------------------------------------------------------------
+
+/**
+ * A single relationship edge in the semantic graph.
+ *
+ * Represents a typed, directional relationship from the source entity
+ * to a target entity or PI.
+ */
+export interface Relationship {
+  /** Relationship predicate (e.g., "authored_by", "mentions", "located_in") */
+  predicate: string;
+  /** Type of target */
+  target_type: 'pi' | 'entity';
+  /** Target entity identifier */
+  target_id: string;
+  /** Display label for the target (e.g., "Alice Austen") */
+  target_label: string;
+  /** Target entity type (e.g., "person", "place") - only if target is entity */
+  target_entity_type?: string;
+  /** Optional metadata on the relationship edge */
+  properties?: Record<string, unknown>;
+}
+
+/**
+ * Relationships component stored in IPFS (arke/relationships@v1 schema).
+ *
+ * Contains the semantic graph relationships for an entity.
+ */
+export interface RelationshipsComponent {
+  /** Schema identifier */
+  schema: 'arke/relationships@v1';
+  /** Array of relationships */
+  relationships: Relationship[];
+  /** ISO 8601 timestamp when this component was created/updated */
+  timestamp: string;
+  /** Optional note about changes */
+  note?: string;
+}
+
+/**
+ * Properties component stored in IPFS.
+ *
+ * Contains arbitrary metadata properties for an entity.
+ */
+export interface PropertiesComponent {
+  /** Arbitrary key-value properties */
+  [key: string]: unknown;
 }
