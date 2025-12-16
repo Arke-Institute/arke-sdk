@@ -1,6 +1,6 @@
 {
   "name": "@arke-institute/sdk",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "description": "TypeScript SDK for building applications on the Arke platform",
   "main": "dist/index.cjs",
