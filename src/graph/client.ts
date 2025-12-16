@@ -1,12 +1,12 @@
 import {
   GraphError,
-  GraphEntityNotFoundError,
   NetworkError,
 } from './errors.js';
 import type {
   GraphEntity,
   EntityWithRelationships,
   Relationship,
+  RelationshipDirection,
   Path,
   PathOptions,
   ReachableOptions,
@@ -35,7 +35,17 @@ export interface GraphClientConfig {
 type JsonBody = Record<string, unknown>;
 
 /**
- * Client for querying entity relationships from the Arke knowledge graph.
+ * Client for querying entity relationships and graph traversal from the Arke knowledge graph.
+ *
+ * The GraphDB is an indexed mirror of entity data stored in IPFS. Use this client for:
+ * - **Bidirectional relationship queries** (IPFS only stores outbound relationships)
+ * - **Path finding** between entities
+ * - **Lineage queries** (PI ancestors/descendants)
+ * - **Code-based lookups** (indexed for fast search)
+ * - **Listing extracted entities** from a PI
+ *
+ * For entity CRUD operations, use ContentClient (source of truth in IPFS).
+ * For write operations, use EditClient.
  *
  * All endpoints are public and do not require authentication.
  *
@@ -45,17 +55,17 @@ type JsonBody = Record<string, unknown>;
  *   gatewayUrl: 'https://gateway.arke.institute',
  * });
  *
- * // Get entity by ID
- * const entity = await graph.getEntity('uuid-123');
+ * // Get BOTH inbound and outbound relationships (GraphDB indexed)
+ * const allRels = await graph.getRelationships('01K75HQQXNTDG7BBP7PS9AWYAN');
  *
- * // Find entities by code
- * const results = await graph.queryByCode('person_john');
- *
- * // Get entities with relationships from a PI
- * const entities = await graph.getEntitiesWithRelationships('01K75HQQXNTDG7BBP7PS9AWYAN');
+ * // Get only inbound relationships ("who references this entity?")
+ * const incoming = await graph.getRelationships('01K75HQQXNTDG7BBP7PS9AWYAN', 'incoming');
  *
  * // Find paths between entities
- * const paths = await graph.findPaths(['uuid-1'], ['uuid-2'], { max_depth: 4 });
+ * const paths = await graph.findPaths(['entity-1'], ['entity-2'], { max_depth: 4 });
+ *
+ * // Get PI lineage
+ * const lineage = await graph.getLineage('01K75HQQXNTDG7BBP7PS9AWYAN', 'ancestors');
  * ```
  */
 export class GraphClient {
@@ -145,53 +155,8 @@ export class GraphClient {
   }
 
   // ---------------------------------------------------------------------------
-  // Entity Operations
+  // Code-based Lookups (indexed in GraphDB)
   // ---------------------------------------------------------------------------
-
-  /**
-   * Get an entity by its canonical ID.
-   *
-   * @param canonicalId - Entity UUID
-   * @returns Entity data
-   * @throws GraphEntityNotFoundError if the entity doesn't exist
-   *
-   * @example
-   * ```typescript
-   * const entity = await graph.getEntity('uuid-123');
-   * console.log('Entity:', entity.label, entity.type);
-   * ```
-   */
-  async getEntity(canonicalId: string): Promise<GraphEntity> {
-    const response = await this.request<{ found: boolean; entity?: GraphEntity }>(
-      `/graphdb/entity/${encodeURIComponent(canonicalId)}`
-    );
-
-    if (!response.found || !response.entity) {
-      throw new GraphEntityNotFoundError(canonicalId);
-    }
-
-    return response.entity;
-  }
-
-  /**
-   * Check if an entity exists by its canonical ID.
-   *
-   * @param canonicalId - Entity UUID
-   * @returns True if entity exists
-   *
-   * @example
-   * ```typescript
-   * if (await graph.entityExists('uuid-123')) {
-   *   console.log('Entity exists');
-   * }
-   * ```
-   */
-  async entityExists(canonicalId: string): Promise<boolean> {
-    const response = await this.request<{ exists: boolean }>(
-      `/graphdb/entity/exists/${encodeURIComponent(canonicalId)}`
-    );
-    return response.exists;
-  }
 
   /**
    * Query entities by code with optional type filter.
@@ -253,11 +218,14 @@ export class GraphClient {
   // ---------------------------------------------------------------------------
 
   /**
-   * List entities from a specific PI or multiple PIs.
+   * List entities extracted from a specific PI or multiple PIs.
+   *
+   * This returns knowledge graph entities (persons, places, events, etc.)
+   * that were extracted from the given PI(s), not the PI entity itself.
    *
    * @param pi - Single PI or array of PIs
    * @param options - Filter options
-   * @returns Entities from the PI(s)
+   * @returns Extracted entities from the PI(s)
    *
    * @example
    * ```typescript
@@ -324,13 +292,17 @@ export class GraphClient {
   /**
    * Get the lineage (ancestors and/or descendants) of a PI.
    *
+   * This traverses the PI hierarchy (parent_pi/children_pi relationships)
+   * which is indexed in GraphDB for fast lookups.
+   *
    * @param pi - Source PI
    * @param direction - 'ancestors', 'descendants', or 'both'
-   * @returns Lineage data
+   * @param maxHops - Maximum depth to traverse (default: 10)
+   * @returns Lineage data with PIs at each hop level
    *
    * @example
    * ```typescript
-   * // Get ancestors
+   * // Get ancestors (parent chain)
    * const lineage = await graph.getLineage('01K75HQQXNTDG7BBP7PS9AWYAN', 'ancestors');
    *
    * // Get both directions
@@ -353,20 +325,47 @@ export class GraphClient {
   // ---------------------------------------------------------------------------
 
   /**
-   * Get all relationships for an entity.
+   * Get relationships for an entity from the GraphDB index.
    *
-   * @param canonicalId - Entity UUID
-   * @returns Array of relationships
+   * **Important distinction from ContentClient.getRelationships():**
+   * - **ContentClient.getRelationships()**: Returns OUTBOUND relationships only
+   *   (from the entity's relationships.json in IPFS - source of truth)
+   * - **GraphClient.getRelationships()**: Returns BOTH inbound AND outbound
+   *   relationships (from the indexed GraphDB mirror)
+   *
+   * Use this method when you need to find "what references this entity" (inbound)
+   * or want a complete bidirectional view.
+   *
+   * @param id - Entity identifier (works for both PIs and KG entities)
+   * @param direction - Filter by direction: 'outgoing', 'incoming', or 'both' (default)
+   * @returns Array of relationships with direction indicator
    *
    * @example
    * ```typescript
-   * const relationships = await graph.getRelationships('uuid-123');
-   * relationships.forEach(r => {
-   *   console.log(`${r.direction}: ${r.predicate} -> ${r.target_label}`);
+   * // Get all relationships (both directions)
+   * const all = await graph.getRelationships('01K75HQQXNTDG7BBP7PS9AWYAN');
+   *
+   * // Get only inbound relationships ("who references this entity?")
+   * const incoming = await graph.getRelationships('01K75HQQXNTDG7BBP7PS9AWYAN', 'incoming');
+   *
+   * // Get only outbound relationships (similar to IPFS, but from index)
+   * const outgoing = await graph.getRelationships('01K75HQQXNTDG7BBP7PS9AWYAN', 'outgoing');
+   *
+   * // Process by direction
+   * const rels = await graph.getRelationships('entity-id');
+   * rels.forEach(r => {
+   *   if (r.direction === 'incoming') {
+   *     console.log(`${r.target_label} references this entity via ${r.predicate}`);
+   *   } else {
+   *     console.log(`This entity ${r.predicate} -> ${r.target_label}`);
+   *   }
    * });
    * ```
    */
-  async getRelationships(canonicalId: string): Promise<Relationship[]> {
+  async getRelationships(
+    id: string,
+    direction: RelationshipDirection = 'both'
+  ): Promise<Relationship[]> {
     const response = await this.request<{
       found: boolean;
       canonical_id?: string;
@@ -381,13 +380,20 @@ export class GraphClient {
         source_pi?: string;
         created_at?: string;
       }>;
-    }>(`/graphdb/relationships/${encodeURIComponent(canonicalId)}`);
+    }>(`/graphdb/relationships/${encodeURIComponent(id)}`);
 
     if (!response.found || !response.relationships) {
       return [];
     }
 
-    return response.relationships.map(rel => ({
+    let relationships = response.relationships;
+
+    // Filter by direction if specified
+    if (direction !== 'both') {
+      relationships = relationships.filter(rel => rel.direction === direction);
+    }
+
+    return relationships.map(rel => ({
       direction: rel.direction,
       predicate: rel.predicate,
       target_id: rel.target_id,
@@ -415,8 +421,8 @@ export class GraphClient {
    * @example
    * ```typescript
    * const paths = await graph.findPaths(
-   *   ['uuid-alice'],
-   *   ['uuid-bob'],
+   *   ['entity-alice'],
+   *   ['entity-bob'],
    *   { max_depth: 4, direction: 'both' }
    * );
    *
@@ -458,7 +464,7 @@ export class GraphClient {
    * ```typescript
    * // Find all people reachable from an event
    * const people = await graph.findReachable(
-   *   ['uuid-event'],
+   *   ['event-id'],
    *   'person',
    *   { max_depth: 3 }
    * );

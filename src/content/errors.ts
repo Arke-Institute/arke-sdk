@@ -17,11 +17,11 @@ export class ContentError extends Error {
 }
 
 /**
- * Thrown when an entity is not found by PI
+ * Thrown when an entity is not found by ID
  */
 export class EntityNotFoundError extends ContentError {
-  constructor(pi: string) {
-    super(`Entity not found: ${pi}`, 'ENTITY_NOT_FOUND', { pi });
+  constructor(id: string) {
+    super(`Entity not found: ${id}`, 'ENTITY_NOT_FOUND', { id });
     this.name = 'EntityNotFoundError';
   }
 }
@@ -40,11 +40,11 @@ export class ContentNotFoundError extends ContentError {
  * Thrown when a component is not found on an entity
  */
 export class ComponentNotFoundError extends ContentError {
-  constructor(pi: string, componentName: string) {
+  constructor(id: string, componentName: string) {
     super(
-      `Component '${componentName}' not found on entity ${pi}`,
+      `Component '${componentName}' not found on entity ${id}`,
       'COMPONENT_NOT_FOUND',
-      { pi, componentName }
+      { id, componentName }
     );
     this.name = 'ComponentNotFoundError';
   }
@@ -54,11 +54,11 @@ export class ComponentNotFoundError extends ContentError {
  * Thrown when a version is not found
  */
 export class VersionNotFoundError extends ContentError {
-  constructor(pi: string, selector: string) {
+  constructor(id: string, selector: string) {
     super(
-      `Version not found: ${selector} for entity ${pi}`,
+      `Version not found: ${selector} for entity ${id}`,
       'VERSION_NOT_FOUND',
-      { pi, selector }
+      { id, selector }
     );
     this.name = 'VersionNotFoundError';
   }

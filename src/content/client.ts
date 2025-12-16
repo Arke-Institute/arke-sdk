@@ -13,6 +13,8 @@ import type {
   VersionsOptions,
   VersionsResponse,
   ResolveResponse,
+  RelationshipsComponent,
+  PropertiesComponent,
 } from './types.js';
 
 /**
@@ -472,6 +474,49 @@ export class ContentClient {
     return response.body;
   }
 
+  /**
+   * Download a DAG node (JSON) by CID.
+   *
+   * Use this to fetch JSON components like properties and relationships.
+   *
+   * @param cid - Content Identifier of the DAG node
+   * @returns Parsed JSON object
+   * @throws ContentNotFoundError if the content doesn't exist
+   *
+   * @example
+   * ```typescript
+   * const relationships = await content.getDag<RelationshipsComponent>(
+   *   entity.components.relationships
+   * );
+   * console.log('Relationships:', relationships.relationships);
+   * ```
+   */
+  async getDag<T = unknown>(cid: string): Promise<T> {
+    const url = this.buildUrl(`/api/dag/${encodeURIComponent(cid)}`);
+
+    let response: Response;
+    try {
+      response = await this.fetchImpl(url);
+    } catch (err) {
+      throw new NetworkError(
+        err instanceof Error ? err.message : 'Network request failed'
+      );
+    }
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new ContentNotFoundError(cid);
+      }
+      throw new ContentError(
+        `Failed to fetch DAG node: ${response.status}`,
+        'DAG_ERROR',
+        { status: response.status }
+      );
+    }
+
+    return (await response.json()) as T;
+  }
+
   // ---------------------------------------------------------------------------
   // Component Helpers
   // ---------------------------------------------------------------------------
@@ -493,7 +538,7 @@ export class ContentClient {
   async getComponent(entity: Entity, componentName: string): Promise<Blob | Buffer> {
     const cid = entity.components[componentName];
     if (!cid) {
-      throw new ComponentNotFoundError(entity.pi, componentName);
+      throw new ComponentNotFoundError(entity.id, componentName);
     }
     return this.download(cid);
   }
@@ -516,8 +561,56 @@ export class ContentClient {
   getComponentUrl(entity: Entity, componentName: string): string {
     const cid = entity.components[componentName];
     if (!cid) {
-      throw new ComponentNotFoundError(entity.pi, componentName);
+      throw new ComponentNotFoundError(entity.id, componentName);
     }
     return this.getUrl(cid);
+  }
+
+  /**
+   * Get the properties component for an entity.
+   *
+   * @param entity - Entity containing the properties component
+   * @returns Properties object, or null if no properties component exists
+   *
+   * @example
+   * ```typescript
+   * const entity = await content.get('01K75HQQXNTDG7BBP7PS9AWYAN');
+   * const props = await content.getProperties(entity);
+   * if (props) {
+   *   console.log('Title:', props.title);
+   * }
+   * ```
+   */
+  async getProperties(entity: Entity): Promise<PropertiesComponent | null> {
+    const cid = entity.components.properties;
+    if (!cid) {
+      return null;
+    }
+    return this.getDag<PropertiesComponent>(cid);
+  }
+
+  /**
+   * Get the relationships component for an entity.
+   *
+   * @param entity - Entity containing the relationships component
+   * @returns Relationships component, or null if no relationships exist
+   *
+   * @example
+   * ```typescript
+   * const entity = await content.get('01K75HQQXNTDG7BBP7PS9AWYAN');
+   * const rels = await content.getRelationships(entity);
+   * if (rels) {
+   *   rels.relationships.forEach(r => {
+   *     console.log(`${r.predicate} -> ${r.target_label}`);
+   *   });
+   * }
+   * ```
+   */
+  async getRelationships(entity: Entity): Promise<RelationshipsComponent | null> {
+    const cid = entity.components.relationships;
+    if (!cid) {
+      return null;
+    }
+    return this.getDag<RelationshipsComponent>(cid);
   }
 }

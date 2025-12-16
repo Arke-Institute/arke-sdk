@@ -1,18 +1,39 @@
 /**
  * Graph package types for the Arke SDK
  *
- * Types for interacting with entity relationships from the GraphDB Gateway service.
+ * Types for interacting with the GraphDB Gateway service.
+ *
+ * The GraphDB is an indexed mirror of entity data stored in IPFS. Entity IDs
+ * are consistent across both systems - the same ID works in ContentClient
+ * (IPFS source of truth) and GraphClient (indexed mirror).
+ *
+ * Key distinction:
+ * - IPFS stores only OUTBOUND relationships (in relationships.json)
+ * - GraphDB indexes BOTH inbound AND outbound relationships for fast bidirectional queries
  */
+
+// ---------------------------------------------------------------------------
+// Direction filter type
+// ---------------------------------------------------------------------------
+
+/**
+ * Direction filter for relationship queries
+ *
+ * - 'outgoing': Relationships where this entity is the source
+ * - 'incoming': Relationships where this entity is the target (only available via GraphDB)
+ * - 'both': All relationships in both directions
+ */
+export type RelationshipDirection = 'outgoing' | 'incoming' | 'both';
 
 // ---------------------------------------------------------------------------
 // Entity types (from GraphDB Gateway)
 // ---------------------------------------------------------------------------
 
 /**
- * Entity from the knowledge graph
+ * Entity from the knowledge graph (as indexed in GraphDB)
  */
 export interface GraphEntity {
-  /** Unique identifier (UUID) */
+  /** Unique identifier (consistent with IPFS entity IDs) */
   canonical_id: string;
   /** Entity code (e.g., 'person_john', 'event_123') */
   code: string;

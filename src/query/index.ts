@@ -32,6 +32,12 @@ export type {
   ParameterDoc,
   ExampleDoc,
   SyntaxDocumentation,
+  // Semantic search types
+  SemanticSearchFilter,
+  SemanticSearchOptions,
+  SemanticSearchMetadata,
+  SemanticSearchMatch,
+  SemanticSearchResponse,
   // Collection search types
   CollectionSearchOptions,
   CollectionSearchResult,

@@ -345,6 +345,72 @@ export interface SyntaxDocumentation {
 }
 
 // ---------------------------------------------------------------------------
+// Semantic search types (direct Pinecone access)
+// ---------------------------------------------------------------------------
+
+/**
+ * Filter options for semantic search
+ */
+export interface SemanticSearchFilter {
+  /** Filter by entity type(s) */
+  type?: string | string[];
+  /** Filter by source PI(s) - scopes search to entities from specific PIs */
+  source_pi?: string | string[];
+  /** Filter by merged entity source PIs - for searching across collections */
+  merged_entities_source_pis?: string | string[];
+}
+
+/**
+ * Options for direct semantic search
+ */
+export interface SemanticSearchOptions {
+  /** Pinecone namespace to search (default: 'entities') */
+  namespace?: 'entities' | 'collections' | string;
+  /** Filter criteria */
+  filter?: SemanticSearchFilter;
+  /** Maximum number of results (default: 10, max: 100) */
+  top_k?: number;
+}
+
+/**
+ * Metadata returned with semantic search matches
+ */
+export interface SemanticSearchMetadata {
+  /** Entity canonical ID */
+  canonical_id: string;
+  /** Entity label */
+  label: string;
+  /** Entity type */
+  type: string;
+  /** Entity code */
+  code?: string;
+  /** Source PI */
+  source_pi?: string;
+  /** Additional metadata fields */
+  [key: string]: unknown;
+}
+
+/**
+ * A single match from semantic search
+ */
+export interface SemanticSearchMatch {
+  /** Vector ID (usually canonical_id) */
+  id: string;
+  /** Similarity score (0-1, higher is more similar) */
+  score: number;
+  /** Entity metadata */
+  metadata?: SemanticSearchMetadata;
+}
+
+/**
+ * Response from semantic search
+ */
+export interface SemanticSearchResponse {
+  /** Matching entities ordered by similarity */
+  matches: SemanticSearchMatch[];
+}
+
+// ---------------------------------------------------------------------------
 // Collection search types
 // ---------------------------------------------------------------------------
 

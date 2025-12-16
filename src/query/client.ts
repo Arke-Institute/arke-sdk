@@ -8,6 +8,8 @@ import type {
   ParseResult,
   ParseError,
   SyntaxDocumentation,
+  SemanticSearchOptions,
+  SemanticSearchResponse,
   CollectionSearchOptions,
   CollectionSearchResponse,
 } from './types';
@@ -294,6 +296,96 @@ export class QueryClient {
    */
   async health(): Promise<{ status: string; service: string; version: string }> {
     return this.request('/query/health', { method: 'GET' });
+  }
+
+  /**
+   * Direct semantic search against the vector index.
+   *
+   * This bypasses the path query syntax and directly queries Pinecone for
+   * semantically similar entities. Useful for:
+   * - Simple semantic searches without graph traversal
+   * - Scoped searches filtered by source_pi (collection scope)
+   * - Type-filtered semantic searches
+   *
+   * For graph traversal and path-based queries, use `path()` instead.
+   *
+   * @param text - Search query text
+   * @param options - Search options (namespace, filters, top_k)
+   * @returns Matching entities with similarity scores
+   *
+   * @example
+   * ```typescript
+   * // Simple semantic search
+   * const results = await query.semanticSearch('photographers from New York');
+   *
+   * // Scoped to a specific PI (collection)
+   * const scoped = await query.semanticSearch('portraits', {
+   *   filter: { source_pi: '01K75HQQXNTDG7BBP7PS9AWYAN' },
+   *   top_k: 20,
+   * });
+   *
+   * // Filter by type
+   * const people = await query.semanticSearch('artists', {
+   *   filter: { type: 'person' },
+   * });
+   *
+   * // Search across merged entities from multiple source PIs
+   * const merged = await query.semanticSearch('historical documents', {
+   *   filter: { merged_entities_source_pis: ['pi-1', 'pi-2'] },
+   * });
+   * ```
+   */
+  async semanticSearch(
+    text: string,
+    options: SemanticSearchOptions = {}
+  ): Promise<SemanticSearchResponse> {
+    // Build Pinecone-compatible filter from our typed filter
+    let pineconeFilter: Record<string, unknown> | undefined;
+
+    if (options.filter) {
+      pineconeFilter = {};
+
+      if (options.filter.type) {
+        const types = Array.isArray(options.filter.type)
+          ? options.filter.type
+          : [options.filter.type];
+        pineconeFilter.type = types.length === 1
+          ? { $eq: types[0] }
+          : { $in: types };
+      }
+
+      if (options.filter.source_pi) {
+        const pis = Array.isArray(options.filter.source_pi)
+          ? options.filter.source_pi
+          : [options.filter.source_pi];
+        pineconeFilter.source_pi = pis.length === 1
+          ? { $eq: pis[0] }
+          : { $in: pis };
+      }
+
+      if (options.filter.merged_entities_source_pis) {
+        const pis = Array.isArray(options.filter.merged_entities_source_pis)
+          ? options.filter.merged_entities_source_pis
+          : [options.filter.merged_entities_source_pis];
+        // Use $in for array field matching (any of the provided PIs)
+        pineconeFilter.merged_entities_source_pis = { $in: pis };
+      }
+
+      // If no filters were actually set, clear the object
+      if (Object.keys(pineconeFilter).length === 0) {
+        pineconeFilter = undefined;
+      }
+    }
+
+    return this.request<SemanticSearchResponse>('/query/search/semantic', {
+      method: 'POST',
+      body: JSON.stringify({
+        text,
+        namespace: options.namespace,
+        filter: pineconeFilter,
+        top_k: options.top_k,
+      }),
+    });
   }
 
   /**
