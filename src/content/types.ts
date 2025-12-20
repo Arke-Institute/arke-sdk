@@ -43,6 +43,52 @@ export interface Entity {
   merged_entities?: string[];
   /** Change note for this version */
   note?: string;
+  /** Whether this entity has been merged into another (deprecated/superseded) */
+  merged?: boolean;
+  /** ID of entity this was merged into (if merged=true) */
+  merged_into?: string;
+  /** Timestamp when the merge occurred */
+  merged_at?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Merge chain types
+// ---------------------------------------------------------------------------
+
+/**
+ * Entry in a merge chain, representing one hop in the redirect path
+ */
+export interface MergeChainEntry {
+  /** ID of the merged (deprecated) entity */
+  id: string;
+  /** ID of the entity it was merged into */
+  merged_into: string;
+  /** When the merge occurred */
+  merged_at?: string;
+  /** Optional note about the merge */
+  note?: string;
+}
+
+/**
+ * Options for the get() method
+ */
+export interface GetOptions {
+  /** Follow merge chain to find the canonical entity (default: false) */
+  followMerges?: boolean;
+  /** Maximum merge hops to follow (default: 10) */
+  maxMergeHops?: number;
+}
+
+/**
+ * Response when fetching an entity with followMerges: true
+ */
+export interface EntityWithMergeChain {
+  /** The final (canonical) entity after following any merges */
+  entity: Entity;
+  /** The merge chain traversed (empty array if no merges were followed) */
+  mergeChain: MergeChainEntry[];
+  /** The original ID that was requested */
+  originalId: string;
 }
 
 /**

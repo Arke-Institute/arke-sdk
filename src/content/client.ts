@@ -15,6 +15,9 @@ import type {
   ResolveResponse,
   RelationshipsComponent,
   PropertiesComponent,
+  GetOptions,
+  EntityWithMergeChain,
+  MergeChainEntry,
 } from './types.js';
 
 /**
@@ -148,6 +151,9 @@ export class ContentClient {
   // Entity Operations
   // ---------------------------------------------------------------------------
 
+  /** Default maximum merge chain hops */
+  private static readonly DEFAULT_MAX_MERGE_HOPS = 10;
+
   /**
    * Get an entity by its Persistent Identifier (PI).
    *
@@ -162,7 +168,43 @@ export class ContentClient {
    * console.log('Components:', Object.keys(entity.components));
    * ```
    */
-  async get(pi: string): Promise<Entity> {
+  async get(pi: string): Promise<Entity>;
+
+  /**
+   * Get an entity by its Persistent Identifier (PI), optionally following merge chains.
+   *
+   * When `followMerges: true`, if the entity has been merged into another,
+   * the method will follow the chain and return the canonical entity along
+   * with the merge chain that was traversed.
+   *
+   * @param pi - Persistent Identifier (ULID or test PI with II prefix)
+   * @param options - Options including followMerges and maxMergeHops
+   * @returns Entity with merge chain info when followMerges is true
+   * @throws EntityNotFoundError if the entity doesn't exist
+   * @throws ContentError if merge chain exceeds maxMergeHops
+   *
+   * @example
+   * ```typescript
+   * // Follow merge chain to get canonical entity
+   * const result = await content.get('01K75HQQXNTDG7BBP7PS9AWYAN', { followMerges: true });
+   * console.log('Canonical entity:', result.entity.id);
+   * if (result.mergeChain.length > 0) {
+   *   console.log('Original was merged, chain:', result.mergeChain);
+   * }
+   * ```
+   */
+  async get(pi: string, options: GetOptions & { followMerges: true }): Promise<EntityWithMergeChain>;
+
+  /**
+   * Get an entity by its Persistent Identifier (PI), with optional merge chain following.
+   */
+  async get(pi: string, options?: GetOptions): Promise<Entity | EntityWithMergeChain>;
+
+  async get(pi: string, options?: GetOptions): Promise<Entity | EntityWithMergeChain> {
+    if (options?.followMerges) {
+      return this.getWithMergeChain(pi, options.maxMergeHops);
+    }
+
     try {
       return await this.request<Entity>(`/api/entities/${encodeURIComponent(pi)}`);
     } catch (err) {
@@ -171,6 +213,55 @@ export class ContentClient {
       }
       throw err;
     }
+  }
+
+  /**
+   * Internal method to fetch an entity following merge chains.
+   */
+  private async getWithMergeChain(
+    pi: string,
+    maxHops: number = ContentClient.DEFAULT_MAX_MERGE_HOPS
+  ): Promise<EntityWithMergeChain> {
+    const mergeChain: MergeChainEntry[] = [];
+    let currentId = pi;
+
+    for (let hop = 0; hop < maxHops; hop++) {
+      let entity: Entity;
+      try {
+        entity = await this.request<Entity>(`/api/entities/${encodeURIComponent(currentId)}`);
+      } catch (err) {
+        if (err instanceof ContentError && err.code === 'NOT_FOUND') {
+          throw new EntityNotFoundError(currentId);
+        }
+        throw err;
+      }
+
+      // Check if this entity is merged into another
+      if (entity.merged && entity.merged_into) {
+        mergeChain.push({
+          id: currentId,
+          merged_into: entity.merged_into,
+          merged_at: entity.merged_at,
+          note: entity.note,
+        });
+        currentId = entity.merged_into;
+        continue;
+      }
+
+      // Not merged - this is the final entity
+      return {
+        entity,
+        mergeChain,
+        originalId: pi,
+      };
+    }
+
+    // Exceeded max hops
+    throw new ContentError(
+      `Merge chain exceeded ${maxHops} hops`,
+      'MERGE_CHAIN_TOO_LONG',
+      { originalId: pi, hops: maxHops, chain: mergeChain }
+    );
   }
 
   /**

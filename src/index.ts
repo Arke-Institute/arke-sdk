@@ -180,6 +180,9 @@ export type {
   VersionsOptions,
   VersionsResponse,
   ResolveResponse,
+  GetOptions,
+  EntityWithMergeChain,
+  MergeChainEntry,
 } from './content/types';
 
 // Graph
