@@ -33,7 +33,7 @@ export class ArkeUploader {
     validateCustomPromptsLocation(config.processing);
 
     this.config = {
-      rootPath: '/uploads',  // Must have at least one segment (not just '/')
+      rootPath: '/',  // Root level - files go directly under collection
       parallelUploads: 5,
       parallelParts: 3,
       ...config,
