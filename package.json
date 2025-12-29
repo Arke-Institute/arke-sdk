@@ -1,0 +1,79 @@
+{
+  "name": "@arke-institute/sdk",
+  "version": "2.0.0",
+  "description": "TypeScript SDK for the Arke API - auto-generated from OpenAPI spec",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./generated": {
+      "types": "./dist/generated/index.d.ts",
+      "import": "./dist/generated/index.js",
+      "require": "./dist/generated/index.cjs"
+    },
+    "./operations": {
+      "types": "./dist/operations/index.d.ts",
+      "import": "./dist/operations/index.js",
+      "require": "./dist/operations/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "generate:fetch": "tsx scripts/fetch-spec.ts",
+    "generate:fetch:local": "tsx scripts/fetch-spec.ts --local",
+    "generate:types": "tsx scripts/generate.ts",
+    "generate": "npm run generate:fetch && npm run generate:types",
+    "generate:local": "npm run generate:fetch:local && npm run generate:types",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build",
+    "publish:dry": "npm publish --dry-run",
+    "publish:sdk": "npm publish --access public",
+    "publish-all": "npm run generate && npm run test && npm run build && npm run publish:sdk",
+    "publish-all:dry": "npm run generate && npm run test && npm run build && npm run publish:dry"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.13.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.4.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0",
+    "tsx": "^4.19.0",
+    "@types/node": "^22.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arke-institute/arke"
+  },
+  "keywords": [
+    "arke",
+    "api",
+    "sdk",
+    "typescript",
+    "ipfs",
+    "entities"
+  ],
+  "author": "Arke Institute",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
