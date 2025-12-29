@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2025-12-29T18:31:20.443Z
+ * Generated: 2025-12-29T18:57:22.965Z
  */
 
 export type paths = {
@@ -1676,7 +1676,7 @@ export type paths = {
         };
         /**
          * Update entity
-         * @description Updates any entity. Properties and relationships are replaced (not merged). Note: entity:update on a collection requires collection:update permission.
+         * @description Updates any entity with merge semantics. Properties are deep merged, relationships use upsert semantics. Use properties_remove and relationships_remove for deletions. Note: entity:update on a collection requires collection:update permission.
          */
         put: {
             parameters: {
@@ -4589,24 +4589,67 @@ export type components = {
              */
             note?: string;
             /**
+             * @description Updated display name
+             * @example Captain Ahab
+             */
+            label?: string;
+            /**
              * @description Properties to merge with existing (partial update)
              * @example {
-             *       "label": "Captain Ahab",
              *       "bio": "Commander of the Pequod, hunter of the white whale"
              *     }
              */
             properties?: {
                 [key: string]: unknown;
             };
-            /** @description Relationships to set (replaces existing) */
-            relationships?: {
+            /** @description Relationships to add or update */
+            relationships_add?: {
+                /**
+                 * @description Relationship predicate (e.g., "admin", "contains", "collection")
+                 * @example admin
+                 */
                 predicate: string;
+                /**
+                 * @description Target entity ID
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
                 peer: string;
+                /**
+                 * @description Target entity type hint
+                 * @example user
+                 */
                 peer_type?: string;
+                /**
+                 * @description Target entity label hint
+                 * @example Captain Ahab
+                 */
                 peer_label?: string;
+                /**
+                 * @description Properties to add/update on this relationship (deep merged if relationship exists)
+                 * @example {
+                 *       "expires_at": "2025-12-31T00:00:00Z"
+                 *     }
+                 */
                 properties?: {
                     [key: string]: unknown;
                 };
+                /** @description Properties to remove from this relationship (string array or nested object) */
+                properties_remove?: string[] | {
+                    [key: string]: unknown;
+                };
+            }[];
+            /** @description Relationships to remove */
+            relationships_remove?: {
+                /**
+                 * @description Relationship predicate
+                 * @example viewer
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID. If omitted, removes ALL relationships with this predicate.
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer?: string;
             }[];
         };
         CreateApiKeyResponse: {
@@ -4727,6 +4770,10 @@ export type components = {
             roles?: {
                 [key: string]: string[];
             };
+            /** @description Additional properties to store */
+            properties?: {
+                [key: string]: unknown;
+            };
             /** @description Initial relationships */
             relationships?: {
                 predicate: string;
@@ -4765,6 +4812,59 @@ export type components = {
              * @description Updated display image URL
              */
             display_image_url?: string;
+            /** @description Additional properties to merge */
+            properties?: {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to add or update */
+            relationships_add?: {
+                /**
+                 * @description Relationship predicate (e.g., "admin", "contains", "collection")
+                 * @example admin
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer: string;
+                /**
+                 * @description Target entity type hint
+                 * @example user
+                 */
+                peer_type?: string;
+                /**
+                 * @description Target entity label hint
+                 * @example Captain Ahab
+                 */
+                peer_label?: string;
+                /**
+                 * @description Properties to add/update on this relationship (deep merged if relationship exists)
+                 * @example {
+                 *       "expires_at": "2025-12-31T00:00:00Z"
+                 *     }
+                 */
+                properties?: {
+                    [key: string]: unknown;
+                };
+                /** @description Properties to remove from this relationship (string array or nested object) */
+                properties_remove?: string[] | {
+                    [key: string]: unknown;
+                };
+            }[];
+            /** @description Relationships to remove */
+            relationships_remove?: {
+                /**
+                 * @description Relationship predicate
+                 * @example viewer
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID. If omitted, removes ALL relationships with this predicate.
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer?: string;
+            }[];
         };
         RoleResponse: {
             /**
@@ -5089,24 +5189,74 @@ export type components = {
              */
             note?: string;
             /**
-             * @description Updated properties (replaces all existing properties)
+             * @description Properties to add or update (deep merged with existing)
              * @example {
              *       "label": "Chapter 1: Loomings (Revised)",
-             *       "author": "Herman Melville"
+             *       "metadata": {
+             *         "status": "reviewed"
+             *       }
              *     }
              */
             properties?: {
                 [key: string]: unknown;
             };
-            /** @description Updated relationships (replaces all existing relationships) */
-            relationships?: {
+            /**
+             * @description Properties to remove (string array or nested object)
+             * @example [
+             *       "deprecated_field"
+             *     ]
+             */
+            properties_remove?: string[] | {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to add or update (upsert semantics) */
+            relationships_add?: {
+                /**
+                 * @description Relationship predicate (e.g., "admin", "contains", "collection")
+                 * @example admin
+                 */
                 predicate: string;
+                /**
+                 * @description Target entity ID
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
                 peer: string;
+                /**
+                 * @description Target entity type hint
+                 * @example user
+                 */
                 peer_type?: string;
+                /**
+                 * @description Target entity label hint
+                 * @example Captain Ahab
+                 */
                 peer_label?: string;
+                /**
+                 * @description Properties to add/update on this relationship (deep merged if relationship exists)
+                 * @example {
+                 *       "expires_at": "2025-12-31T00:00:00Z"
+                 *     }
+                 */
                 properties?: {
                     [key: string]: unknown;
                 };
+                /** @description Properties to remove from this relationship (string array or nested object) */
+                properties_remove?: string[] | {
+                    [key: string]: unknown;
+                };
+            }[];
+            /** @description Relationships to remove */
+            relationships_remove?: {
+                /**
+                 * @description Relationship predicate
+                 * @example viewer
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID. If omitted, removes ALL relationships with this predicate.
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer?: string;
             }[];
             /**
              * @description Components to add or update (key → CID)
@@ -5299,7 +5449,27 @@ export type components = {
              */
             description?: string;
             /**
-             * @description Collection to add this file to (for permissions)
+             * @description Additional properties to store
+             * @example {
+             *       "source": "upload",
+             *       "category": "financial"
+             *     }
+             */
+            properties?: {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to create */
+            relationships?: {
+                predicate: string;
+                peer: string;
+                peer_type?: string;
+                peer_label?: string;
+                properties?: {
+                    [key: string]: unknown;
+                };
+            }[];
+            /**
+             * @description Collection to add this file to (for permissions). Shortcut for adding a collection relationship.
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
             collection?: string;
@@ -5368,7 +5538,7 @@ export type components = {
             /** @description New description */
             description?: string;
             /**
-             * @description Additional properties to merge into the file metadata (e.g., log_data)
+             * @description Additional properties to merge into the file metadata
              * @example {
              *       "log_data": {
              *         "status": "done",
@@ -5376,9 +5546,58 @@ export type components = {
              *       }
              *     }
              */
-            extra_properties?: {
+            properties?: {
                 [key: string]: unknown;
             };
+            /** @description Relationships to add or update */
+            relationships_add?: {
+                /**
+                 * @description Relationship predicate (e.g., "admin", "contains", "collection")
+                 * @example admin
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer: string;
+                /**
+                 * @description Target entity type hint
+                 * @example user
+                 */
+                peer_type?: string;
+                /**
+                 * @description Target entity label hint
+                 * @example Captain Ahab
+                 */
+                peer_label?: string;
+                /**
+                 * @description Properties to add/update on this relationship (deep merged if relationship exists)
+                 * @example {
+                 *       "expires_at": "2025-12-31T00:00:00Z"
+                 *     }
+                 */
+                properties?: {
+                    [key: string]: unknown;
+                };
+                /** @description Properties to remove from this relationship (string array or nested object) */
+                properties_remove?: string[] | {
+                    [key: string]: unknown;
+                };
+            }[];
+            /** @description Relationships to remove */
+            relationships_remove?: {
+                /**
+                 * @description Relationship predicate
+                 * @example viewer
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID. If omitted, removes ALL relationships with this predicate.
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer?: string;
+            }[];
         };
         ReuploadFileResponse: components["schemas"]["UpdateFileResponse"] & {
             /**
@@ -5493,8 +5712,22 @@ export type components = {
             metadata?: {
                 [key: string]: unknown;
             };
+            /** @description Additional properties to store */
+            properties?: {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to create */
+            relationships?: {
+                predicate: string;
+                peer: string;
+                peer_type?: string;
+                peer_label?: string;
+                properties?: {
+                    [key: string]: unknown;
+                };
+            }[];
             /**
-             * @description Collection to add folder to (for permissions)
+             * @description Collection to add folder to (for permissions). Shortcut for adding a collection relationship.
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
             collection?: string;
@@ -5532,10 +5765,63 @@ export type components = {
             description?: string;
             /** @description New rich description */
             rich_description?: string;
-            /** @description New metadata (replaces existing) */
+            /** @description New metadata (deep merged) */
             metadata?: {
                 [key: string]: unknown;
             };
+            /** @description Additional properties to merge */
+            properties?: {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to add or update */
+            relationships_add?: {
+                /**
+                 * @description Relationship predicate (e.g., "admin", "contains", "collection")
+                 * @example admin
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer: string;
+                /**
+                 * @description Target entity type hint
+                 * @example user
+                 */
+                peer_type?: string;
+                /**
+                 * @description Target entity label hint
+                 * @example Captain Ahab
+                 */
+                peer_label?: string;
+                /**
+                 * @description Properties to add/update on this relationship (deep merged if relationship exists)
+                 * @example {
+                 *       "expires_at": "2025-12-31T00:00:00Z"
+                 *     }
+                 */
+                properties?: {
+                    [key: string]: unknown;
+                };
+                /** @description Properties to remove from this relationship (string array or nested object) */
+                properties_remove?: string[] | {
+                    [key: string]: unknown;
+                };
+            }[];
+            /** @description Relationships to remove */
+            relationships_remove?: {
+                /**
+                 * @description Relationship predicate
+                 * @example viewer
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID. If omitted, removes ALL relationships with this predicate.
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer?: string;
+            }[];
         };
         AddChildResponse: {
             folder: components["schemas"]["FolderResponse"] & unknown;
@@ -5955,11 +6241,6 @@ export type components = {
              */
             label: string;
             /**
-             * @description Agent description
-             * @example Extracts text from scanned documents using OCR
-             */
-            description?: string;
-            /**
              * Format: uri
              * @description Agent service base URL
              * @example https://ocr.example.com/v1
@@ -5974,6 +6255,13 @@ export type components = {
              *     ]
              */
             actions_required: string[];
+            /** @description Collection to place agent in */
+            collection: string;
+            /**
+             * @description Agent description
+             * @example Extracts text from scanned documents using OCR
+             */
+            description?: string;
             /** @description Sub-agents used by this orchestrator */
             uses_agents?: components["schemas"]["SubAgentRef"][];
             /** @description JSON Schema for input validation */
@@ -5984,8 +6272,20 @@ export type components = {
             output_schema?: {
                 [key: string]: unknown;
             };
-            /** @description Collection to place agent in */
-            collection: string;
+            /** @description Additional properties to store */
+            properties?: {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to create */
+            relationships?: {
+                predicate: string;
+                peer: string;
+                peer_type?: string;
+                peer_label?: string;
+                properties?: {
+                    [key: string]: unknown;
+                };
+            }[];
         };
         AgentUpdateResponse: components["schemas"]["AgentResponse"] & {
             /**
@@ -6023,6 +6323,12 @@ export type components = {
              *     ]
              */
             actions_required?: string[];
+            /**
+             * @description Agent status
+             * @example development
+             * @enum {string}
+             */
+            status?: "development" | "active" | "disabled";
             /** @description Updated sub-agents */
             uses_agents?: components["schemas"]["SubAgentRef"][];
             /** @description Updated input schema */
@@ -6033,12 +6339,59 @@ export type components = {
             output_schema?: {
                 [key: string]: unknown;
             };
-            /**
-             * @description Agent status
-             * @example development
-             * @enum {string}
-             */
-            status?: "development" | "active" | "disabled";
+            /** @description Additional properties to merge */
+            properties?: {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to add or update */
+            relationships_add?: {
+                /**
+                 * @description Relationship predicate (e.g., "admin", "contains", "collection")
+                 * @example admin
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer: string;
+                /**
+                 * @description Target entity type hint
+                 * @example user
+                 */
+                peer_type?: string;
+                /**
+                 * @description Target entity label hint
+                 * @example Captain Ahab
+                 */
+                peer_label?: string;
+                /**
+                 * @description Properties to add/update on this relationship (deep merged if relationship exists)
+                 * @example {
+                 *       "expires_at": "2025-12-31T00:00:00Z"
+                 *     }
+                 */
+                properties?: {
+                    [key: string]: unknown;
+                };
+                /** @description Properties to remove from this relationship (string array or nested object) */
+                properties_remove?: string[] | {
+                    [key: string]: unknown;
+                };
+            }[];
+            /** @description Relationships to remove */
+            relationships_remove?: {
+                /**
+                 * @description Relationship predicate
+                 * @example viewer
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID. If omitted, removes ALL relationships with this predicate.
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer?: string;
+            }[];
         };
         InvokeGrant: {
             agent: {

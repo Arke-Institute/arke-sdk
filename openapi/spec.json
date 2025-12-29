@@ -373,6 +373,12 @@
             "description": "Optional note describing this change",
             "example": "Added Chapter 42: The Whiteness of the Whale"
           },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Updated display name",
+            "example": "Captain Ahab"
+          },
           "properties": {
             "type": "object",
             "additionalProperties": {
@@ -380,48 +386,95 @@
             },
             "description": "Properties to merge with existing (partial update)",
             "example": {
-              "label": "Captain Ahab",
               "bio": "Commander of the Pequod, hunter of the white whale"
             }
           },
-          "relationships": {
+          "relationships_add": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
                 "predicate": {
                   "type": "string",
-                  "minLength": 1
+                  "minLength": 1,
+                  "description": "Relationship predicate (e.g., \"admin\", \"contains\", \"collection\")",
+                  "example": "admin"
                 },
                 "peer": {
                   "type": "string",
-                  "minLength": 1
+                  "minLength": 1,
+                  "description": "Target entity ID",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
                 },
                 "peer_type": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Target entity type hint",
+                  "example": "user"
                 },
                 "peer_label": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Target entity label hint",
+                  "example": "Captain Ahab"
                 },
                 "properties": {
                   "type": "object",
                   "additionalProperties": {
                     "nullable": true
+                  },
+                  "description": "Properties to add/update on this relationship (deep merged if relationship exists)",
+                  "example": {
+                    "expires_at": "2025-12-31T00:00:00Z"
                   }
+                },
+                "properties_remove": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "nullable": true
+                      }
+                    }
+                  ],
+                  "description": "Properties to remove from this relationship (string array or nested object)"
                 }
               },
               "required": [
                 "predicate",
                 "peer"
               ],
-              "description": "Entity relationship",
-              "example": {
-                "predicate": "crew",
-                "peer": "01KDETYWYWM0MJVKM8DK3AEXPY",
-                "peer_type": "collection"
-              }
+              "description": "Relationship to add or update (upsert semantics)"
             },
-            "description": "Relationships to set (replaces existing)"
+            "description": "Relationships to add or update"
+          },
+          "relationships_remove": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate",
+                  "example": "viewer"
+                },
+                "peer": {
+                  "type": "string",
+                  "description": "Target entity ID. If omitted, removes ALL relationships with this predicate.",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                }
+              },
+              "required": [
+                "predicate"
+              ],
+              "description": "Relationship to remove"
+            },
+            "description": "Relationships to remove"
           }
         },
         "required": [
@@ -610,6 +663,13 @@
               ]
             }
           },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Additional properties to store"
+          },
           "relationships": {
             "type": "array",
             "items": {
@@ -704,6 +764,100 @@
             "type": "string",
             "format": "uri",
             "description": "Updated display image URL"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Additional properties to merge"
+          },
+          "relationships_add": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate (e.g., \"admin\", \"contains\", \"collection\")",
+                  "example": "admin"
+                },
+                "peer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Target entity ID",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                },
+                "peer_type": {
+                  "type": "string",
+                  "description": "Target entity type hint",
+                  "example": "user"
+                },
+                "peer_label": {
+                  "type": "string",
+                  "description": "Target entity label hint",
+                  "example": "Captain Ahab"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "nullable": true
+                  },
+                  "description": "Properties to add/update on this relationship (deep merged if relationship exists)",
+                  "example": {
+                    "expires_at": "2025-12-31T00:00:00Z"
+                  }
+                },
+                "properties_remove": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "nullable": true
+                      }
+                    }
+                  ],
+                  "description": "Properties to remove from this relationship (string array or nested object)"
+                }
+              },
+              "required": [
+                "predicate",
+                "peer"
+              ],
+              "description": "Relationship to add or update (upsert semantics)"
+            },
+            "description": "Relationships to add or update"
+          },
+          "relationships_remove": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate",
+                  "example": "viewer"
+                },
+                "peer": {
+                  "type": "string",
+                  "description": "Target entity ID. If omitted, removes ALL relationships with this predicate.",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                }
+              },
+              "required": [
+                "predicate"
+              ],
+              "description": "Relationship to remove"
+            },
+            "description": "Relationships to remove"
           }
         },
         "required": [
@@ -1355,50 +1509,126 @@
             "additionalProperties": {
               "nullable": true
             },
-            "description": "Updated properties (replaces all existing properties)",
+            "description": "Properties to add or update (deep merged with existing)",
             "example": {
               "label": "Chapter 1: Loomings (Revised)",
-              "author": "Herman Melville"
+              "metadata": {
+                "status": "reviewed"
+              }
             }
           },
-          "relationships": {
+          "properties_remove": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Top-level property keys to remove",
+                "example": [
+                  "deprecated_field",
+                  "old_field"
+                ]
+              },
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "nullable": true
+                },
+                "description": "Nested removal structure (recursive: values can be string[] or nested objects)"
+              }
+            ],
+            "description": "Properties to remove (string array or nested object)",
+            "example": [
+              "deprecated_field"
+            ]
+          },
+          "relationships_add": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
                 "predicate": {
                   "type": "string",
-                  "minLength": 1
+                  "minLength": 1,
+                  "description": "Relationship predicate (e.g., \"admin\", \"contains\", \"collection\")",
+                  "example": "admin"
                 },
                 "peer": {
                   "type": "string",
-                  "minLength": 1
+                  "minLength": 1,
+                  "description": "Target entity ID",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
                 },
                 "peer_type": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Target entity type hint",
+                  "example": "user"
                 },
                 "peer_label": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Target entity label hint",
+                  "example": "Captain Ahab"
                 },
                 "properties": {
                   "type": "object",
                   "additionalProperties": {
                     "nullable": true
+                  },
+                  "description": "Properties to add/update on this relationship (deep merged if relationship exists)",
+                  "example": {
+                    "expires_at": "2025-12-31T00:00:00Z"
                   }
+                },
+                "properties_remove": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "nullable": true
+                      }
+                    }
+                  ],
+                  "description": "Properties to remove from this relationship (string array or nested object)"
                 }
               },
               "required": [
                 "predicate",
                 "peer"
               ],
-              "description": "Entity relationship",
-              "example": {
-                "predicate": "crew",
-                "peer": "01KDETYWYWM0MJVKM8DK3AEXPY",
-                "peer_type": "collection"
-              }
+              "description": "Relationship to add or update (upsert semantics)"
             },
-            "description": "Updated relationships (replaces all existing relationships)"
+            "description": "Relationships to add or update (upsert semantics)"
+          },
+          "relationships_remove": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate",
+                  "example": "viewer"
+                },
+                "peer": {
+                  "type": "string",
+                  "description": "Target entity ID. If omitted, removes ALL relationships with this predicate.",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                }
+              },
+              "required": [
+                "predicate"
+              ],
+              "description": "Relationship to remove"
+            },
+            "description": "Relationships to remove"
           },
           "components": {
             "type": "object",
@@ -1745,10 +1975,60 @@
             "description": "Description of the file",
             "example": "Q4 Financial Report"
           },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Additional properties to store",
+            "example": {
+              "source": "upload",
+              "category": "financial"
+            }
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "peer": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "peer_type": {
+                  "type": "string"
+                },
+                "peer_label": {
+                  "type": "string"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "nullable": true
+                  }
+                }
+              },
+              "required": [
+                "predicate",
+                "peer"
+              ],
+              "description": "Entity relationship",
+              "example": {
+                "predicate": "crew",
+                "peer": "01KDETYWYWM0MJVKM8DK3AEXPY",
+                "peer_type": "collection"
+              }
+            },
+            "description": "Relationships to create"
+          },
           "collection": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Collection to add this file to (for permissions)",
+            "description": "Collection to add this file to (for permissions). Shortcut for adding a collection relationship.",
             "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
           }
         },
@@ -1879,18 +2159,105 @@
             "type": "string",
             "description": "New description"
           },
-          "extra_properties": {
+          "properties": {
             "type": "object",
             "additionalProperties": {
               "nullable": true
             },
-            "description": "Additional properties to merge into the file metadata (e.g., log_data)",
+            "description": "Additional properties to merge into the file metadata",
             "example": {
               "log_data": {
                 "status": "done",
                 "entries": []
               }
             }
+          },
+          "relationships_add": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate (e.g., \"admin\", \"contains\", \"collection\")",
+                  "example": "admin"
+                },
+                "peer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Target entity ID",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                },
+                "peer_type": {
+                  "type": "string",
+                  "description": "Target entity type hint",
+                  "example": "user"
+                },
+                "peer_label": {
+                  "type": "string",
+                  "description": "Target entity label hint",
+                  "example": "Captain Ahab"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "nullable": true
+                  },
+                  "description": "Properties to add/update on this relationship (deep merged if relationship exists)",
+                  "example": {
+                    "expires_at": "2025-12-31T00:00:00Z"
+                  }
+                },
+                "properties_remove": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "nullable": true
+                      }
+                    }
+                  ],
+                  "description": "Properties to remove from this relationship (string array or nested object)"
+                }
+              },
+              "required": [
+                "predicate",
+                "peer"
+              ],
+              "description": "Relationship to add or update (upsert semantics)"
+            },
+            "description": "Relationships to add or update"
+          },
+          "relationships_remove": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate",
+                  "example": "viewer"
+                },
+                "peer": {
+                  "type": "string",
+                  "description": "Target entity ID. If omitted, removes ALL relationships with this predicate.",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                }
+              },
+              "required": [
+                "predicate"
+              ],
+              "description": "Relationship to remove"
+            },
+            "description": "Relationships to remove"
           }
         },
         "required": [
@@ -2107,10 +2474,56 @@
             },
             "description": "Flexible metadata"
           },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Additional properties to store"
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "peer": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "peer_type": {
+                  "type": "string"
+                },
+                "peer_label": {
+                  "type": "string"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "nullable": true
+                  }
+                }
+              },
+              "required": [
+                "predicate",
+                "peer"
+              ],
+              "description": "Entity relationship",
+              "example": {
+                "predicate": "crew",
+                "peer": "01KDETYWYWM0MJVKM8DK3AEXPY",
+                "peer_type": "collection"
+              }
+            },
+            "description": "Relationships to create"
+          },
           "collection": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Collection to add folder to (for permissions)",
+            "description": "Collection to add folder to (for permissions). Shortcut for adding a collection relationship.",
             "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
           },
           "parent": {
@@ -2195,7 +2608,101 @@
             "additionalProperties": {
               "nullable": true
             },
-            "description": "New metadata (replaces existing)"
+            "description": "New metadata (deep merged)"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Additional properties to merge"
+          },
+          "relationships_add": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate (e.g., \"admin\", \"contains\", \"collection\")",
+                  "example": "admin"
+                },
+                "peer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Target entity ID",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                },
+                "peer_type": {
+                  "type": "string",
+                  "description": "Target entity type hint",
+                  "example": "user"
+                },
+                "peer_label": {
+                  "type": "string",
+                  "description": "Target entity label hint",
+                  "example": "Captain Ahab"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "nullable": true
+                  },
+                  "description": "Properties to add/update on this relationship (deep merged if relationship exists)",
+                  "example": {
+                    "expires_at": "2025-12-31T00:00:00Z"
+                  }
+                },
+                "properties_remove": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "nullable": true
+                      }
+                    }
+                  ],
+                  "description": "Properties to remove from this relationship (string array or nested object)"
+                }
+              },
+              "required": [
+                "predicate",
+                "peer"
+              ],
+              "description": "Relationship to add or update (upsert semantics)"
+            },
+            "description": "Relationships to add or update"
+          },
+          "relationships_remove": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate",
+                  "example": "viewer"
+                },
+                "peer": {
+                  "type": "string",
+                  "description": "Target entity ID. If omitted, removes ALL relationships with this predicate.",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                }
+              },
+              "required": [
+                "predicate"
+              ],
+              "description": "Relationship to remove"
+            },
+            "description": "Relationships to remove"
           }
         },
         "required": [
@@ -3066,12 +3573,6 @@
             "description": "Agent display name",
             "example": "OCR Processor"
           },
-          "description": {
-            "type": "string",
-            "maxLength": 2000,
-            "description": "Agent description",
-            "example": "Extracts text from scanned documents using OCR"
-          },
           "endpoint": {
             "type": "string",
             "format": "uri",
@@ -3091,6 +3592,17 @@
               "entity:update",
               "file:create"
             ]
+          },
+          "collection": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Collection to place agent in"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Agent description",
+            "example": "Extracts text from scanned documents using OCR"
           },
           "uses_agents": {
             "type": "array",
@@ -3113,10 +3625,51 @@
             },
             "description": "JSON Schema for output description"
           },
-          "collection": {
-            "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Collection to place agent in"
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Additional properties to store"
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "peer": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "peer_type": {
+                  "type": "string"
+                },
+                "peer_label": {
+                  "type": "string"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "nullable": true
+                  }
+                }
+              },
+              "required": [
+                "predicate",
+                "peer"
+              ],
+              "description": "Entity relationship",
+              "example": {
+                "predicate": "crew",
+                "peer": "01KDETYWYWM0MJVKM8DK3AEXPY",
+                "peer_type": "collection"
+              }
+            },
+            "description": "Relationships to create"
           }
         },
         "required": [
@@ -3191,6 +3744,16 @@
               "file:create"
             ]
           },
+          "status": {
+            "type": "string",
+            "enum": [
+              "development",
+              "active",
+              "disabled"
+            ],
+            "description": "Agent status",
+            "example": "development"
+          },
           "uses_agents": {
             "type": "array",
             "items": {
@@ -3212,15 +3775,99 @@
             },
             "description": "Updated output schema"
           },
-          "status": {
-            "type": "string",
-            "enum": [
-              "development",
-              "active",
-              "disabled"
-            ],
-            "description": "Agent status",
-            "example": "development"
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Additional properties to merge"
+          },
+          "relationships_add": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate (e.g., \"admin\", \"contains\", \"collection\")",
+                  "example": "admin"
+                },
+                "peer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Target entity ID",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                },
+                "peer_type": {
+                  "type": "string",
+                  "description": "Target entity type hint",
+                  "example": "user"
+                },
+                "peer_label": {
+                  "type": "string",
+                  "description": "Target entity label hint",
+                  "example": "Captain Ahab"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "nullable": true
+                  },
+                  "description": "Properties to add/update on this relationship (deep merged if relationship exists)",
+                  "example": {
+                    "expires_at": "2025-12-31T00:00:00Z"
+                  }
+                },
+                "properties_remove": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "nullable": true
+                      }
+                    }
+                  ],
+                  "description": "Properties to remove from this relationship (string array or nested object)"
+                }
+              },
+              "required": [
+                "predicate",
+                "peer"
+              ],
+              "description": "Relationship to add or update (upsert semantics)"
+            },
+            "description": "Relationships to add or update"
+          },
+          "relationships_remove": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate",
+                  "example": "viewer"
+                },
+                "peer": {
+                  "type": "string",
+                  "description": "Target entity ID. If omitted, removes ALL relationships with this predicate.",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                }
+              },
+              "required": [
+                "predicate"
+              ],
+              "description": "Relationship to remove"
+            },
+            "description": "Relationships to remove"
           }
         },
         "required": [
@@ -5299,7 +5946,7 @@
           "Entities"
         ],
         "summary": "Update entity",
-        "description": "Updates any entity. Properties and relationships are replaced (not merged). Note: entity:update on a collection requires collection:update permission.",
+        "description": "Updates any entity with merge semantics. Properties are deep merged, relationships use upsert semantics. Use properties_remove and relationships_remove for deletions. Note: entity:update on a collection requires collection:update permission.",
         "x-arke-action": "entity:update",
         "x-arke-auth": "required",
         "security": [
