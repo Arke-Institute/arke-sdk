@@ -1,16 +1,23 @@
 /**
- * Folder Operations
+ * Folder Operations (Legacy)
  *
- * High-level operations for working with folders and directory structures.
+ * @deprecated Use the new upload module instead:
+ * ```typescript
+ * import { uploadTree, scanDirectory } from '@arke-institute/sdk/operations';
  *
- * TODO: Implement folder operations
- * - uploadDirectory: Recursively upload a local directory
- * - createFolderHierarchy: Create folder structure from paths
- * - moveFolderContents: Move files between folders
+ * const tree = await scanDirectory('/path/to/folder');
+ * const result = await uploadTree(client, tree, {
+ *   target: { collectionId: '...' },
+ * });
+ * ```
  */
 
 import type { ArkeClient } from '../client/ArkeClient.js';
+import { uploadTree, scanDirectory, type UploadResult } from './upload/index.js';
 
+/**
+ * @deprecated Use UploadProgress from upload module
+ */
 export interface UploadProgress {
   phase: 'scanning' | 'creating-folders' | 'uploading-files' | 'linking' | 'complete';
   totalFiles: number;
@@ -20,6 +27,9 @@ export interface UploadProgress {
   currentFile?: string;
 }
 
+/**
+ * @deprecated Use UploadOptions from upload module
+ */
 export interface UploadDirectoryOptions {
   /** Collection to upload into */
   collectionId: string;
@@ -31,9 +41,12 @@ export interface UploadDirectoryOptions {
   concurrency?: number;
 }
 
+/**
+ * @deprecated Use UploadResult from upload module
+ */
 export interface UploadDirectoryResult {
   /** Root folder entity */
-  rootFolder: unknown; // TODO: Type from generated types
+  rootFolder: unknown;
   /** All created folder entities */
   folders: unknown[];
   /** All created file entities */
@@ -43,11 +56,13 @@ export interface UploadDirectoryResult {
 /**
  * Folder operations helper
  *
- * @example
+ * @deprecated Use uploadTree and scanDirectory functions instead:
  * ```typescript
- * const folders = new FolderOperations(arkeClient);
- * const result = await folders.uploadDirectory('/path/to/local/folder', {
- *   collectionId: '01ABC...',
+ * import { uploadTree, scanDirectory } from '@arke-institute/sdk/operations';
+ *
+ * const tree = await scanDirectory('/path/to/folder');
+ * const result = await uploadTree(client, tree, {
+ *   target: { collectionId: '...' },
  *   onProgress: (p) => console.log(`${p.completedFiles}/${p.totalFiles} files`),
  * });
  * ```
@@ -58,17 +73,49 @@ export class FolderOperations {
   /**
    * Upload a local directory to Arke
    *
-   * TODO: Implement this method
-   * Steps:
-   * 1. Scan directory structure
-   * 2. Create folder hierarchy (depth-first)
-   * 3. Upload files in parallel (with concurrency limit)
-   * 4. Create bidirectional relationships (folder contains file)
+   * @deprecated Use uploadTree and scanDirectory instead
    */
   async uploadDirectory(
-    _localPath: string,
-    _options: UploadDirectoryOptions
+    localPath: string,
+    options: UploadDirectoryOptions
   ): Promise<UploadDirectoryResult> {
-    throw new Error('FolderOperations.uploadDirectory is not yet implemented');
+    // Use the new implementation
+    const tree = await scanDirectory(localPath);
+
+    const result: UploadResult = await uploadTree(this.client, tree, {
+      target: {
+        collectionId: options.collectionId,
+        parentId: options.parentFolderId,
+      },
+      concurrency: options.concurrency,
+      onProgress: options.onProgress
+        ? (p) => {
+            // Map new progress to old format
+            options.onProgress!({
+              phase:
+                p.phase === 'computing-cids' || p.phase === 'creating-folders'
+                  ? 'creating-folders'
+                  : p.phase === 'creating-files' || p.phase === 'uploading-content'
+                    ? 'uploading-files'
+                    : p.phase === 'linking'
+                      ? 'linking'
+                      : p.phase === 'complete'
+                        ? 'complete'
+                        : 'scanning',
+              totalFiles: p.totalFiles,
+              completedFiles: p.completedFiles,
+              totalFolders: p.totalFolders,
+              completedFolders: p.completedFolders,
+              currentFile: p.currentFile,
+            });
+          }
+        : undefined,
+    });
+
+    return {
+      rootFolder: result.folders[0] || null,
+      folders: result.folders,
+      files: result.files,
+    };
   }
 }

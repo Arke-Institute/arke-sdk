@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2025-12-29T18:57:22.965Z
+ * Generated: 2025-12-29T23:59:23.351Z
  */
 
 export type paths = {
@@ -5960,7 +5960,7 @@ export type components = {
              */
             note?: string;
             /**
-             * @description Parent folder ID to add
+             * @description Parent folder or collection ID to add
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
             parent_id: string;

@@ -151,6 +151,111 @@ const arke = new ArkeClient({
 });
 ```
 
+## Folder Upload
+
+Upload entire folder structures with automatic CID computation and relationship linking:
+
+### Node.js
+
+```typescript
+import { ArkeClient } from '@arke-institute/sdk';
+import { uploadTree, scanDirectory } from '@arke-institute/sdk/operations';
+
+const arke = new ArkeClient({ authToken: 'your-token' });
+
+// Scan a local directory
+const tree = await scanDirectory('/path/to/my-folder');
+
+// Upload to a new collection
+const result = await uploadTree(arke, tree, {
+  target: {
+    createCollection: {
+      label: 'My Upload',
+      description: 'Uploaded folder contents',
+    },
+  },
+  onProgress: (p) => {
+    console.log(`${p.phase}: ${p.completedFiles}/${p.totalFiles} files`);
+  },
+});
+
+console.log('Collection:', result.collection.id);
+console.log('Files:', result.files.length);
+console.log('Folders:', result.folders.length);
+```
+
+### Browser (Drag & Drop)
+
+```typescript
+import { uploadTree, scanFileSystemEntries } from '@arke-institute/sdk/operations';
+
+dropzone.ondrop = async (e) => {
+  e.preventDefault();
+  const entries = Array.from(e.dataTransfer.items)
+    .map(item => item.webkitGetAsEntry())
+    .filter(Boolean);
+
+  const tree = await scanFileSystemEntries(entries);
+  const result = await uploadTree(client, tree, {
+    target: { collectionId: 'existing-collection-id' },
+  });
+};
+```
+
+### Browser (File Input)
+
+```typescript
+import { uploadTree, scanFileList } from '@arke-institute/sdk/operations';
+
+// <input type="file" webkitdirectory multiple />
+input.onchange = async (e) => {
+  const tree = await scanFileList(e.target.files);
+  const result = await uploadTree(client, tree, {
+    target: { parentId: 'existing-folder-id', collectionId: 'collection-id' },
+  });
+};
+```
+
+### Upload Options
+
+```typescript
+const result = await uploadTree(client, tree, {
+  target: {
+    // Option 1: Create new collection
+    createCollection: { label: 'New Collection' },
+
+    // Option 2: Upload to existing collection root
+    collectionId: '01ABC...',
+
+    // Option 3: Upload to existing folder
+    collectionId: '01ABC...',
+    parentId: '01XYZ...',
+  },
+
+  // Progress tracking
+  onProgress: (p) => console.log(p.phase, p.completedFiles),
+
+  // Parallel uploads (default: 5)
+  concurrency: 10,
+
+  // Continue if some files fail
+  continueOnError: true,
+});
+```
+
+### CID Utilities
+
+```typescript
+import { computeCid, verifyCid } from '@arke-institute/sdk/operations';
+
+// Compute CIDv1 for any content
+const cid = await computeCid(new TextEncoder().encode('hello'));
+// => "bafkreifzjut3te2nhyekklss27nh3k72ysco7y32koao5eei66wof36n5e"
+
+// Verify content matches CID
+const isValid = await verifyCid(content, expectedCid);
+```
+
 ## Development
 
 ### Regenerate Types
@@ -187,13 +292,12 @@ npm run publish-all:dry
 npm run publish-all
 ```
 
-## Future Operations (TODO)
+## Future Operations
 
-The SDK includes placeholder modules for high-level operations:
+The SDK includes placeholder modules for additional high-level operations:
 
-- **FolderOperations**: Recursive directory upload
 - **BatchOperations**: Bulk entity/relationship creation
-- **CryptoOperations**: Ed25519 key generation, CID computation
+- **CryptoOperations**: Ed25519 key generation
 
 ## License
 

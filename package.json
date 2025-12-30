@@ -1,6 +1,6 @@
 {
   "name": "@arke-institute/sdk",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "TypeScript SDK for the Arke API - auto-generated from OpenAPI spec",
   "type": "module",
   "main": "dist/index.cjs",
@@ -37,6 +37,7 @@
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run build",
@@ -46,15 +47,17 @@
     "publish-all:dry": "npm run generate && npm run test && npm run build && npm run publish:dry"
   },
   "dependencies": {
+    "multiformats": "^13.4.2",
     "openapi-fetch": "^0.13.0"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
+    "jose": "^6.1.3",
     "openapi-typescript": "^7.4.0",
     "tsup": "^8.3.0",
-    "typescript": "^5.7.0",
-    "vitest": "^2.1.0",
     "tsx": "^4.19.0",
-    "@types/node": "^22.0.0"
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
   },
   "publishConfig": {
     "access": "public"

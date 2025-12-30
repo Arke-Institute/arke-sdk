@@ -3001,7 +3001,7 @@
           "parent_id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Parent folder ID to add",
+            "description": "Parent folder or collection ID to add",
             "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
           },
           "expect_parent_tip": {
