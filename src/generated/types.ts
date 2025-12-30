@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2025-12-29T23:59:23.351Z
+ * Generated: 2025-12-30T18:35:49.017Z
  */
 
 export type paths = {

@@ -449,48 +449,59 @@ export async function uploadTree(
 
     // Execute bulk add children for each parent
     // We need to get current CID for each parent before linking
+    // Batch large groups to avoid API limits (max 50 children per request)
+    const BATCH_SIZE = 50;
+
     for (const [parentId, group] of parentGroups) {
       if (group.children.length === 0) continue;
 
+      // Split children into batches
+      const batches: Array<{ id: string }[]> = [];
+      for (let i = 0; i < group.children.length; i += BATCH_SIZE) {
+        batches.push(group.children.slice(i, i + BATCH_SIZE));
+      }
+
       try {
-        // Get current parent CID
-        // If parent is collection, we already have it. Otherwise fetch folder.
-        let expectTip: string;
+        // Process each batch sequentially (need updated CID after each)
+        for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+          const batch = batches[batchIndex]!;
 
-        if (parentId === collectionId) {
-          // For collection, refetch to get current CID (might have changed)
-          const { data, error } = await client.api.GET('/collections/{id}', {
-            params: { path: { id: collectionId } },
-          });
-          if (error || !data) {
-            throw new Error(`Failed to fetch collection CID: ${JSON.stringify(error)}`);
+          // Get current parent CID (refetch each time as it changes after each batch)
+          let expectTip: string;
+
+          if (parentId === collectionId) {
+            const { data, error } = await client.api.GET('/collections/{id}', {
+              params: { path: { id: collectionId } },
+            });
+            if (error || !data) {
+              throw new Error(`Failed to fetch collection CID: ${JSON.stringify(error)}`);
+            }
+            expectTip = data.cid;
+          } else {
+            const { data, error } = await client.api.GET('/folders/{id}', {
+              params: { path: { id: parentId } },
+            });
+            if (error || !data) {
+              throw new Error(`Failed to fetch folder CID: ${JSON.stringify(error)}`);
+            }
+            expectTip = data.cid;
           }
-          expectTip = data.cid;
-        } else {
-          // For folder, fetch current state
-          const { data, error } = await client.api.GET('/folders/{id}', {
+
+          // Bulk add this batch of children
+          const bulkBody: BulkAddChildrenRequest = {
+            expect_tip: expectTip,
+            children: batch,
+            note: batches.length > 1 ? `${note || 'Upload'} (batch ${batchIndex + 1}/${batches.length})` : note,
+          };
+
+          const { error } = await client.api.POST('/folders/{id}/children/bulk', {
             params: { path: { id: parentId } },
+            body: bulkBody,
           });
-          if (error || !data) {
-            throw new Error(`Failed to fetch folder CID: ${JSON.stringify(error)}`);
+
+          if (error) {
+            throw new Error(JSON.stringify(error));
           }
-          expectTip = data.cid;
-        }
-
-        // Bulk add children
-        const bulkBody: BulkAddChildrenRequest = {
-          expect_tip: expectTip,
-          children: group.children,
-          note,
-        };
-
-        const { error } = await client.api.POST('/folders/{id}/children/bulk', {
-          params: { path: { id: parentId } },
-          body: bulkBody,
-        });
-
-        if (error) {
-          throw new Error(JSON.stringify(error));
         }
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);

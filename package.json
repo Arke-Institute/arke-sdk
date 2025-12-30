@@ -21,10 +21,15 @@
       "types": "./dist/operations/index.d.ts",
       "import": "./dist/operations/index.js",
       "require": "./dist/operations/index.cjs"
+    },
+    "./spec": {
+      "import": "./openapi/spec.json",
+      "require": "./openapi/spec.json"
     }
   },
   "files": [
     "dist",
+    "openapi",
     "README.md"
   ],
   "scripts": {
