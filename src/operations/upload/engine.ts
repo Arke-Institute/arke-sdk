@@ -7,7 +7,10 @@
  * 3. Create file entities (metadata only, high parallelism)
  * 4. Backlink parents with 'contains' relationships
  *    → Tree is now browsable! Users can explore structure immediately.
- * 5. Upload file content to S3 (byte-based pool, ~200MB in flight)
+ * 5. Upload file content to S3 + confirm (byte-based pool, ~200MB in flight)
+ *    - PUT to presigned S3 URL
+ *    - POST /files/{id}/confirm-upload to set uploaded: true
+ *    - Auto-retry on CAS conflict (entity may have changed during upload)
  *
  * Byte-based pool (for S3 uploads):
  * - Maintains ~200MB of data in flight at all times
@@ -570,6 +573,51 @@ export async function uploadTree(
 
             if (!uploadResponse.ok) {
               throw new Error(`S3 upload failed with status ${uploadResponse.status}`);
+            }
+
+            // Confirm upload completed - sets uploaded: true on entity
+            // Retry on CAS conflict (entity may have been updated during upload)
+            let confirmTip = file.entityCid;
+            let confirmAttempts = 0;
+            const MAX_CONFIRM_ATTEMPTS = 3;
+
+            while (confirmAttempts < MAX_CONFIRM_ATTEMPTS) {
+              confirmAttempts++;
+
+              const { error: confirmError } = await client.api.POST('/files/{id}/confirm-upload', {
+                params: { path: { id: file.id } },
+                body: {
+                  expect_tip: confirmTip,
+                  note: note ? `${note} (confirmed)` : 'Upload confirmed',
+                },
+              });
+
+              if (!confirmError) {
+                break; // Success
+              }
+
+              // Check for CAS conflict (409)
+              const errorStr = JSON.stringify(confirmError);
+              if (errorStr.includes('409') || errorStr.includes('CAS') || errorStr.includes('conflict')) {
+                // Fetch current file to get updated CID
+                const { data: currentFile, error: fetchError } = await client.api.GET('/files/{id}', {
+                  params: { path: { id: file.id } },
+                });
+
+                if (fetchError || !currentFile) {
+                  throw new Error(`Failed to fetch file for confirm retry: ${JSON.stringify(fetchError)}`);
+                }
+
+                confirmTip = currentFile.cid;
+                // Loop will retry with new tip
+              } else {
+                // Non-CAS error - throw
+                throw new Error(`Confirm upload failed: ${errorStr}`);
+              }
+            }
+
+            if (confirmAttempts >= MAX_CONFIRM_ATTEMPTS) {
+              throw new Error(`Confirm upload failed after ${MAX_CONFIRM_ATTEMPTS} CAS retries`);
             }
 
             bytesUploaded += file.size;

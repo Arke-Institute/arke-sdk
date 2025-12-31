@@ -2375,6 +2375,51 @@
           "size"
         ]
       },
+      "ConfirmUploadResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FileResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "prev_cid": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Previous version CID. Not present if upload was already confirmed.",
+                "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+              },
+              "already_confirmed": {
+                "type": "boolean",
+                "description": "True if upload was already confirmed. Entity was not modified.",
+                "example": false
+              }
+            },
+            "required": [
+              "already_confirmed"
+            ]
+          }
+        ]
+      },
+      "ConfirmUploadRequest": {
+        "type": "object",
+        "properties": {
+          "expect_tip": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Current tip CID for CAS validation. Request fails with 409 if this does not match.",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional note describing this change",
+            "example": "Added Chapter 42: The Whiteness of the Whale"
+          }
+        },
+        "required": [
+          "expect_tip"
+        ]
+      },
       "CreateFolderResponse": {
         "type": "object",
         "properties": {
@@ -6367,7 +6412,7 @@
           "Files"
         ],
         "summary": "Create file entity",
-        "description": "Creates a new file entity and returns a presigned upload URL.\n\n## Flow\n1. Call this endpoint with file metadata (key, filename, content_type, size)\n2. Receive entity data + presigned S3 upload URL\n3. PUT the file content to the upload URL\n4. File is now stored and accessible\n\n## Key Best Practice\nUse the file's CID as the key for content-addressable storage.\nThe system does NOT verify the CID - it's just metadata.",
+        "description": "Creates a new file entity and returns a presigned upload URL.\n\n## Flow\n1. Call this endpoint with file metadata (key, filename, content_type, size)\n2. Receive entity data + presigned S3 upload URL (uploaded: false)\n3. PUT the file content to the upload URL\n4. Call POST /{id}/confirm-upload to verify and set uploaded: true\n\n## Key Best Practice\nUse the file's CID as the key for content-addressable storage.\nThe system does NOT verify the CID - it's just metadata.",
         "x-arke-action": "file:create",
         "x-arke-auth": "required",
         "security": [
@@ -6726,7 +6771,7 @@
           "Files"
         ],
         "summary": "Upload new file version",
-        "description": "Uploads a new version of a file.\n\n## Flow\n1. Call this endpoint with new key and file metadata\n2. Receive updated entity + presigned upload URL\n3. PUT the new file content to the upload URL\n4. Old file versions remain accessible via manifest history\n\n## Key Requirement\nThe new key must NOT already exist in S3 (no overwrites).\nPrevious file versions are preserved.",
+        "description": "Uploads a new version of a file.\n\n## Flow\n1. Call this endpoint with new key and file metadata\n2. Receive updated entity + presigned upload URL (uploaded: false)\n3. PUT the new file content to the upload URL\n4. Call POST /{id}/confirm-upload to verify and set uploaded: true\n5. Old file versions remain accessible via manifest history\n\n## Key Requirement\nThe new key must NOT already exist in S3 (no overwrites).\nPrevious file versions are preserved.",
         "x-arke-action": "file:reupload",
         "x-arke-auth": "required",
         "security": [
@@ -6764,6 +6809,137 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReuploadFileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - CAS validation failed (entity was modified)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CASErrorResponse"
+                },
+                "example": {
+                  "error": "Conflict: entity was modified",
+                  "details": {
+                    "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                    "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/files/{id}/confirm-upload": {
+      "post": {
+        "tags": [
+          "Files"
+        ],
+        "summary": "Confirm upload completed",
+        "description": "Confirms that file content has been uploaded to S3.\n\n## Flow\n1. Create file entity (POST /files) - sets uploaded: false\n2. PUT file content to the presigned upload URL\n3. Call this endpoint to confirm - verifies file exists in S3, sets uploaded: true\n\n## Verification\nThe server verifies the file exists in S3 before setting uploaded: true.\nIf the file doesn't exist, returns 400 error.\n\n## Idempotency\nIf already uploaded: true, returns success without modification.",
+        "x-arke-action": "file:update",
+        "x-arke-auth": "required",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Upload confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmUploadResponse"
                 }
               }
             }

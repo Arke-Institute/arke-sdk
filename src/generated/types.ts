@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2025-12-31T16:24:48.200Z
+ * Generated: 2025-12-31T18:09:13.616Z
  */
 
 export type paths = {
@@ -2070,9 +2070,9 @@ export type paths = {
          *
          *     ## Flow
          *     1. Call this endpoint with file metadata (key, filename, content_type, size)
-         *     2. Receive entity data + presigned S3 upload URL
+         *     2. Receive entity data + presigned S3 upload URL (uploaded: false)
          *     3. PUT the file content to the upload URL
-         *     4. File is now stored and accessible
+         *     4. Call POST /{id}/confirm-upload to verify and set uploaded: true
          *
          *     ## Key Best Practice
          *     Use the file's CID as the key for content-addressable storage.
@@ -2455,9 +2455,10 @@ export type paths = {
          *
          *     ## Flow
          *     1. Call this endpoint with new key and file metadata
-         *     2. Receive updated entity + presigned upload URL
+         *     2. Receive updated entity + presigned upload URL (uploaded: false)
          *     3. PUT the new file content to the upload URL
-         *     4. Old file versions remain accessible via manifest history
+         *     4. Call POST /{id}/confirm-upload to verify and set uploaded: true
+         *     5. Old file versions remain accessible via manifest history
          *
          *     ## Key Requirement
          *     The new key must NOT already exist in S3 (no overwrites).
@@ -2486,6 +2487,149 @@ export type paths = {
                     };
                     content: {
                         "application/json": components["schemas"]["ReuploadFileResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict - CAS validation failed (entity was modified) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Conflict: entity was modified",
+                         *       "details": {
+                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["CASErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/{id}/confirm-upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm upload completed
+         * @description Confirms that file content has been uploaded to S3.
+         *
+         *     ## Flow
+         *     1. Create file entity (POST /files) - sets uploaded: false
+         *     2. PUT file content to the presigned upload URL
+         *     3. Call this endpoint to confirm - verifies file exists in S3, sets uploaded: true
+         *
+         *     ## Verification
+         *     The server verifies the file exists in S3 before setting uploaded: true.
+         *     If the file doesn't exist, returns 400 error.
+         *
+         *     ## Idempotency
+         *     If already uploaded: true, returns success without modification.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ConfirmUploadRequest"];
+                };
+            };
+            responses: {
+                /** @description Upload confirmed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConfirmUploadResponse"];
                     };
                 };
                 /** @description Bad Request - Invalid input */
@@ -5617,6 +5761,30 @@ export type components = {
             cid?: string;
             /** @description New description */
             description?: string;
+        };
+        ConfirmUploadResponse: components["schemas"]["FileResponse"] & {
+            /**
+             * @description Previous version CID. Not present if upload was already confirmed.
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            prev_cid?: string;
+            /**
+             * @description True if upload was already confirmed. Entity was not modified.
+             * @example false
+             */
+            already_confirmed: boolean;
+        };
+        ConfirmUploadRequest: {
+            /**
+             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            expect_tip: string;
+            /**
+             * @description Optional note describing this change
+             * @example Added Chapter 42: The Whiteness of the Whale
+             */
+            note?: string;
         };
         CreateFolderResponse: {
             /**
