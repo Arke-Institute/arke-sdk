@@ -373,21 +373,35 @@
             "description": "Optional note describing this change",
             "example": "Added Chapter 42: The Whiteness of the Whale"
           },
-          "label": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Updated display name",
-            "example": "Captain Ahab"
-          },
           "properties": {
             "type": "object",
             "additionalProperties": {
               "nullable": true
             },
-            "description": "Properties to merge with existing (partial update)",
-            "example": {
-              "bio": "Commander of the Pequod, hunter of the white whale"
-            }
+            "description": "Properties to add or update (deep merged)"
+          },
+          "properties_remove": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Top-level property keys to remove",
+                "example": [
+                  "deprecated_field",
+                  "old_field"
+                ]
+              },
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "nullable": true
+                },
+                "description": "Nested removal structure (recursive: values can be string[] or nested objects)"
+              }
+            ],
+            "description": "Properties to remove"
           },
           "relationships_add": {
             "type": "array",
@@ -450,7 +464,7 @@
               ],
               "description": "Relationship to add or update (upsert semantics)"
             },
-            "description": "Relationships to add or update"
+            "description": "Relationships to add or update (upsert semantics)"
           },
           "relationships_remove": {
             "type": "array",
@@ -475,6 +489,12 @@
               "description": "Relationship to remove"
             },
             "description": "Relationships to remove"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Updated display name",
+            "example": "Captain Ahab"
           }
         },
         "required": [
@@ -749,28 +769,35 @@
             "description": "Optional note describing this change",
             "example": "Added Chapter 42: The Whiteness of the Whale"
           },
-          "label": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200,
-            "description": "Updated collection display name"
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 2000,
-            "description": "Updated collection description"
-          },
-          "display_image_url": {
-            "type": "string",
-            "format": "uri",
-            "description": "Updated display image URL"
-          },
           "properties": {
             "type": "object",
             "additionalProperties": {
               "nullable": true
             },
-            "description": "Additional properties to merge"
+            "description": "Properties to add or update (deep merged)"
+          },
+          "properties_remove": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Top-level property keys to remove",
+                "example": [
+                  "deprecated_field",
+                  "old_field"
+                ]
+              },
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "nullable": true
+                },
+                "description": "Nested removal structure (recursive: values can be string[] or nested objects)"
+              }
+            ],
+            "description": "Properties to remove"
           },
           "relationships_add": {
             "type": "array",
@@ -833,7 +860,7 @@
               ],
               "description": "Relationship to add or update (upsert semantics)"
             },
-            "description": "Relationships to add or update"
+            "description": "Relationships to add or update (upsert semantics)"
           },
           "relationships_remove": {
             "type": "array",
@@ -858,6 +885,22 @@
               "description": "Relationship to remove"
             },
             "description": "Relationships to remove"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Updated collection display name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Updated collection description"
+          },
+          "display_image_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Updated display image URL"
           }
         },
         "required": [
@@ -1509,13 +1552,7 @@
             "additionalProperties": {
               "nullable": true
             },
-            "description": "Properties to add or update (deep merged with existing)",
-            "example": {
-              "label": "Chapter 1: Loomings (Revised)",
-              "metadata": {
-                "status": "reviewed"
-              }
-            }
+            "description": "Properties to add or update (deep merged)"
           },
           "properties_remove": {
             "anyOf": [
@@ -1538,10 +1575,7 @@
                 "description": "Nested removal structure (recursive: values can be string[] or nested objects)"
               }
             ],
-            "description": "Properties to remove (string array or nested object)",
-            "example": [
-              "deprecated_field"
-            ]
+            "description": "Properties to remove"
           },
           "relationships_add": {
             "type": "array",
@@ -1629,26 +1663,6 @@
               "description": "Relationship to remove"
             },
             "description": "Relationships to remove"
-          },
-          "components": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "Components to add or update (key → CID)",
-            "example": {
-              "transcript.txt": "bafyrei..."
-            }
-          },
-          "components_remove": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Component keys to remove",
-            "example": [
-              "old_version.txt"
-            ]
           }
         },
         "required": [
@@ -2131,46 +2145,35 @@
             "description": "Optional note describing this change",
             "example": "Added Chapter 42: The Whiteness of the Whale"
           },
-          "key": {
-            "type": "string",
-            "minLength": 1,
-            "description": "New storage key. Must already exist in S3 (for regression to old version)."
-          },
-          "filename": {
-            "type": "string",
-            "minLength": 1,
-            "description": "New filename"
-          },
-          "content_type": {
-            "type": "string",
-            "minLength": 1,
-            "description": "New MIME type"
-          },
-          "size": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "New file size in bytes"
-          },
-          "cid": {
-            "type": "string",
-            "description": "New content identifier"
-          },
-          "description": {
-            "type": "string",
-            "description": "New description"
-          },
           "properties": {
             "type": "object",
             "additionalProperties": {
               "nullable": true
             },
-            "description": "Additional properties to merge into the file metadata",
-            "example": {
-              "log_data": {
-                "status": "done",
-                "entries": []
+            "description": "Properties to add or update (deep merged)"
+          },
+          "properties_remove": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Top-level property keys to remove",
+                "example": [
+                  "deprecated_field",
+                  "old_field"
+                ]
+              },
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "nullable": true
+                },
+                "description": "Nested removal structure (recursive: values can be string[] or nested objects)"
               }
-            }
+            ],
+            "description": "Properties to remove"
           },
           "relationships_add": {
             "type": "array",
@@ -2233,7 +2236,7 @@
               ],
               "description": "Relationship to add or update (upsert semantics)"
             },
-            "description": "Relationships to add or update"
+            "description": "Relationships to add or update (upsert semantics)"
           },
           "relationships_remove": {
             "type": "array",
@@ -2258,6 +2261,34 @@
               "description": "Relationship to remove"
             },
             "description": "Relationships to remove"
+          },
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "description": "New storage key. Must already exist in S3 (for regression to old version)."
+          },
+          "filename": {
+            "type": "string",
+            "minLength": 1,
+            "description": "New filename"
+          },
+          "content_type": {
+            "type": "string",
+            "minLength": 1,
+            "description": "New MIME type"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "New file size in bytes"
+          },
+          "cid": {
+            "type": "string",
+            "description": "New content identifier"
+          },
+          "description": {
+            "type": "string",
+            "description": "New description"
           }
         },
         "required": [
@@ -2590,32 +2621,35 @@
             "description": "Optional note describing this change",
             "example": "Added Chapter 42: The Whiteness of the Whale"
           },
-          "label": {
-            "type": "string",
-            "minLength": 1,
-            "description": "New display name"
-          },
-          "description": {
-            "type": "string",
-            "description": "New description"
-          },
-          "rich_description": {
-            "type": "string",
-            "description": "New rich description"
-          },
-          "metadata": {
-            "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
-            "description": "New metadata (deep merged)"
-          },
           "properties": {
             "type": "object",
             "additionalProperties": {
               "nullable": true
             },
-            "description": "Additional properties to merge"
+            "description": "Properties to add or update (deep merged)"
+          },
+          "properties_remove": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Top-level property keys to remove",
+                "example": [
+                  "deprecated_field",
+                  "old_field"
+                ]
+              },
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "nullable": true
+                },
+                "description": "Nested removal structure (recursive: values can be string[] or nested objects)"
+              }
+            ],
+            "description": "Properties to remove"
           },
           "relationships_add": {
             "type": "array",
@@ -2678,7 +2712,7 @@
               ],
               "description": "Relationship to add or update (upsert semantics)"
             },
-            "description": "Relationships to add or update"
+            "description": "Relationships to add or update (upsert semantics)"
           },
           "relationships_remove": {
             "type": "array",
@@ -2703,6 +2737,26 @@
               "description": "Relationship to remove"
             },
             "description": "Relationships to remove"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "New display name"
+          },
+          "description": {
+            "type": "string",
+            "description": "New description"
+          },
+          "rich_description": {
+            "type": "string",
+            "description": "New rich description"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "New metadata (deep merged)"
           }
         },
         "required": [
@@ -2938,7 +2992,8 @@
               ]
             },
             "minItems": 1,
-            "description": "Children to add",
+            "maxItems": 50,
+            "description": "Children to add (max 50 per request)",
             "example": [
               {
                 "id": "01JFILE123ABCDEFGHJKMNPQRS"
@@ -3276,26 +3331,6 @@
                     "peer_type": "collection"
                   }
                 }
-              },
-              "components": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "object",
-                  "properties": {
-                    "/": {
-                      "type": "string",
-                      "minLength": 1
-                    }
-                  },
-                  "required": [
-                    "/"
-                  ],
-                  "description": "IPLD link object",
-                  "example": {
-                    "/": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
-                  }
-                },
-                "description": "IPLD links to components (files, chunks, etc.)"
               },
               "edited_by": {
                 "type": "object",
@@ -3714,73 +3749,35 @@
             "description": "Optional note describing this change",
             "example": "Added Chapter 42: The Whiteness of the Whale"
           },
-          "label": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200,
-            "description": "Updated agent display name"
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 2000,
-            "description": "Updated agent description"
-          },
-          "endpoint": {
-            "type": "string",
-            "format": "uri",
-            "description": "Updated agent service URL"
-          },
-          "actions_required": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "pattern": "^[a-z_]+:[a-z_]+$"
-            },
-            "minItems": 1,
-            "description": "Actions this agent requires on target collections",
-            "example": [
-              "entity:view",
-              "entity:update",
-              "file:create"
-            ]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "development",
-              "active",
-              "disabled"
-            ],
-            "description": "Agent status",
-            "example": "development"
-          },
-          "uses_agents": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SubAgentRef"
-            },
-            "description": "Updated sub-agents"
-          },
-          "input_schema": {
-            "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
-            "description": "Updated input schema"
-          },
-          "output_schema": {
-            "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
-            "description": "Updated output schema"
-          },
           "properties": {
             "type": "object",
             "additionalProperties": {
               "nullable": true
             },
-            "description": "Additional properties to merge"
+            "description": "Properties to add or update (deep merged)"
+          },
+          "properties_remove": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Top-level property keys to remove",
+                "example": [
+                  "deprecated_field",
+                  "old_field"
+                ]
+              },
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "nullable": true
+                },
+                "description": "Nested removal structure (recursive: values can be string[] or nested objects)"
+              }
+            ],
+            "description": "Properties to remove"
           },
           "relationships_add": {
             "type": "array",
@@ -3843,7 +3840,7 @@
               ],
               "description": "Relationship to add or update (upsert semantics)"
             },
-            "description": "Relationships to add or update"
+            "description": "Relationships to add or update (upsert semantics)"
           },
           "relationships_remove": {
             "type": "array",
@@ -3868,6 +3865,67 @@
               "description": "Relationship to remove"
             },
             "description": "Relationships to remove"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Updated agent display name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Updated agent description"
+          },
+          "endpoint": {
+            "type": "string",
+            "format": "uri",
+            "description": "Updated agent service URL"
+          },
+          "actions_required": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z_]+:[a-z_]+$"
+            },
+            "minItems": 1,
+            "description": "Actions this agent requires on target collections",
+            "example": [
+              "entity:view",
+              "entity:update",
+              "file:create"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "development",
+              "active",
+              "disabled"
+            ],
+            "description": "Agent status",
+            "example": "development"
+          },
+          "uses_agents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubAgentRef"
+            },
+            "description": "Updated sub-agents"
+          },
+          "input_schema": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Updated input schema"
+          },
+          "output_schema": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Updated output schema"
           }
         },
         "required": [
@@ -7352,7 +7410,7 @@
           "Folders"
         ],
         "summary": "Bulk add children to folder",
-        "description": "Efficiently adds multiple children to a folder.\n\n**Strategy**:\n1. Updates folder once with all 'contains' relationships\n2. Updates each child in parallel with 'in' back-link\n\n**Idempotent**: skips children that already have the relationship.\nReturns both added and skipped children in the response.",
+        "description": "Efficiently adds multiple children to a folder.\n\n**Limit**: Maximum 50 children per request. For larger batches, make multiple\nrequests, refetching the folder's CID between each to satisfy the CAS guard.\n\n**Strategy**:\n1. Updates folder once with all 'contains' relationships\n2. Updates each child in parallel with 'in' back-link\n\n**Idempotent**: skips children that already have the relationship.\nReturns both added and skipped children in the response.",
         "x-arke-action": "folder:update",
         "x-arke-auth": "required",
         "security": [

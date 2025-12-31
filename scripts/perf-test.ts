@@ -8,8 +8,8 @@ import { ArkeClient } from '../src/client/ArkeClient.js';
 import { uploadTree, scanDirectory } from '../src/operations/upload/index.js';
 import { loadConfig, createTestUser, createJWT, registerUser, type E2EConfig } from '../tests/e2e/setup.js';
 
-async function testUpload(targetPath: string, client: ArkeClient) {
-  console.log(`\n=== Testing: ${targetPath} ===`);
+async function testUpload(targetPath: string, client: ArkeClient, concurrency: number) {
+  console.log(`\n=== Testing: ${targetPath} (concurrency=${concurrency}) ===`);
 
   // Scan
   const scanStart = performance.now();
@@ -32,6 +32,7 @@ async function testUpload(targetPath: string, client: ArkeClient) {
         label: `Perf Test - ${targetPath.split('/').pop()} - ${Date.now()}`,
       },
     },
+    concurrency,
     onProgress: (p) => {
       if (p.phase !== lastPhase) {
         if (lastPhase) {
@@ -69,9 +70,19 @@ async function testUpload(targetPath: string, client: ArkeClient) {
 }
 
 async function main() {
-  const paths = process.argv.slice(2);
+  const args = process.argv.slice(2);
+
+  // Parse --concurrency flag
+  let concurrency = 10;
+  const concurrencyIdx = args.indexOf('--concurrency');
+  if (concurrencyIdx !== -1 && args[concurrencyIdx + 1]) {
+    concurrency = parseInt(args[concurrencyIdx + 1], 10);
+    args.splice(concurrencyIdx, 2);
+  }
+
+  const paths = args.filter(a => !a.startsWith('--'));
   if (paths.length === 0) {
-    console.error('Usage: npx tsx scripts/perf-test.ts <path1> [path2] ...');
+    console.error('Usage: npx tsx scripts/perf-test.ts [--concurrency N] <path1> [path2] ...');
     process.exit(1);
   }
 
@@ -91,7 +102,7 @@ async function main() {
 
   // Run tests
   for (const p of paths) {
-    await testUpload(p, client);
+    await testUpload(p, client, concurrency);
   }
 }
 

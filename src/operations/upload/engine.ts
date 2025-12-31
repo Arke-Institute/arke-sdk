@@ -1,15 +1,25 @@
 /**
  * Upload Engine
  *
- * Core upload implementation using optimized relationship strategy:
- * 1. Compute CIDs for all files
+ * Core upload implementation optimized for fast tree visibility:
+ * 1. Compute CIDs for all files (high parallelism)
  * 2. Create folders by depth (with unidirectional 'in' → parent)
- * 3. Create files with pipelined S3 upload (with unidirectional 'in' → parent)
- * 4. Update each parent once with all 'contains' → children relationships
+ * 3. Create file entities (metadata only, high parallelism)
+ * 4. Backlink parents with 'contains' relationships
+ *    → Tree is now browsable! Users can explore structure immediately.
+ * 5. Upload file content to S3 (byte-based pool, ~200MB in flight)
  *
- * This minimizes API calls by:
+ * Byte-based pool (for S3 uploads):
+ * - Maintains ~200MB of data in flight at all times
+ * - When a file completes, next file starts immediately (no gaps)
+ * - Small files: Many upload in parallel
+ * - Large files: Fewer upload in parallel (bandwidth-limited)
+ * - Single file > 200MB: Uploads alone when pool is empty
+ *
+ * This minimizes time-to-browse by:
+ * - Creating all entities before uploading content
  * - Using unidirectional 'in' relationship on entity creation
- * - Batching all 'contains' relationships into a single PUT per parent
+ * - Adding all 'contains' relationships in a single PUT per parent
  */
 
 import type { ArkeClient } from '../../client/ArkeClient.js';
@@ -30,15 +40,17 @@ import type {
 type CreateCollectionRequest = components['schemas']['CreateCollectionRequest'];
 type CreateFolderRequest = components['schemas']['CreateFolderRequest'];
 type CreateFileRequest = components['schemas']['CreateFileRequest'];
-type BulkAddChildrenRequest = components['schemas']['BulkAddChildrenRequest'];
+type UpdateFolderRequest = components['schemas']['UpdateFolderRequest'];
+type UpdateCollectionRequest = components['schemas']['UpdateCollectionRequest'];
 
 // Phase constants
-const PHASE_COUNT = 3; // computing-cids, creating, backlinking (excluding complete/error)
+const PHASE_COUNT = 4; // computing-cids, creating, backlinking, uploading (excluding complete/error)
 const PHASE_INDEX: Record<string, number> = {
   'computing-cids': 0,
   'creating': 1,
   'backlinking': 2,
-  'complete': 3,
+  'uploading': 3,
+  'complete': 4,
   'error': -1,
 };
 
@@ -71,31 +83,42 @@ async function parallelLimit<T, R>(
   return results;
 }
 
+// =============================================================================
+// Byte-Based Pool
+// =============================================================================
+
+/** Target bytes in flight (~200MB) */
+const TARGET_BYTES_IN_FLIGHT = 200 * 1024 * 1024;
+
 /**
- * Dynamic concurrency pool that adjusts based on item size.
+ * Pool that maintains a target number of bytes in flight.
+ *
+ * When a file completes, its bytes are released and the next
+ * waiting file can start immediately. This keeps the pipeline full.
+ *
+ * - Small files: Many run in parallel (up to ~200MB worth)
+ * - Large files: Fewer run in parallel
+ * - Single file > 200MB: Runs alone (allowed when pool is empty)
  */
-class DynamicConcurrencyPool {
-  private activeCount = 0;
+class BytePool {
+  private bytesInFlight = 0;
   private waitQueue: Array<() => void> = [];
 
-  constructor(
-    private maxConcurrency: number,
-    private maxConcurrencyLargeFiles: number,
-    private largeFileThreshold: number
-  ) {}
+  constructor(private targetBytes: number = TARGET_BYTES_IN_FLIGHT) {}
 
   async run<T>(size: number, fn: () => Promise<T>): Promise<T> {
-    const effectiveLimit = size > this.largeFileThreshold ? this.maxConcurrencyLargeFiles : this.maxConcurrency;
-
-    while (this.activeCount >= effectiveLimit) {
+    // Wait until we have room
+    // Exception: if pool is empty, always allow (handles files > targetBytes)
+    while (this.bytesInFlight > 0 && this.bytesInFlight + size > this.targetBytes) {
       await new Promise<void>((resolve) => this.waitQueue.push(resolve));
     }
 
-    this.activeCount++;
+    this.bytesInFlight += size;
     try {
       return await fn();
     } finally {
-      this.activeCount--;
+      this.bytesInFlight -= size;
+      // Wake up next waiting task
       const next = this.waitQueue.shift();
       if (next) next();
     }
@@ -180,6 +203,10 @@ export async function uploadTree(
         const done = progress.completedParents ?? 0;
         const total = progress.totalParents ?? 0;
         phasePercent = total > 0 ? Math.round((done / total) * 100) : 100;
+      } else if (phase === 'uploading') {
+        // Uploading phase: progress is based on bytes uploaded
+        const done = progress.bytesUploaded ?? bytesUploaded;
+        phasePercent = totalBytes > 0 ? Math.round((done / totalBytes) * 100) : 100;
       } else if (phase === 'complete') {
         phasePercent = 100;
       }
@@ -340,95 +367,60 @@ export async function uploadTree(
       );
     }
 
-    // Create files with pipelined S3 upload
-    const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024; // 10MB
-    const pool = new DynamicConcurrencyPool(
-      concurrency,
-      Math.max(3, Math.floor(concurrency / 3)),
-      LARGE_FILE_THRESHOLD
-    );
+    // Create file entities (metadata only, no content upload yet)
+    // Use simple concurrency limit for API calls
+    const FILE_CREATION_CONCURRENCY = 50;
 
-    await Promise.all(
-      preparedFiles.map(async (file) => {
-        await pool.run(file.size, async () => {
-          try {
-            const parentPath = getParentPath(file.relativePath);
-            const parentId = parentPath ? foldersByPath.get(parentPath)!.id : rootParentId;
-            const parentType = parentPath ? 'folder' : parentId === collectionId ? 'collection' : 'folder';
+    await parallelLimit(preparedFiles, FILE_CREATION_CONCURRENCY, async (file) => {
+      try {
+        const parentPath = getParentPath(file.relativePath);
+        const parentId = parentPath ? foldersByPath.get(parentPath)!.id : rootParentId;
+        const parentType = parentPath ? 'folder' : parentId === collectionId ? 'collection' : 'folder';
 
-            // Create file entity with 'in' relationship
-            const fileBody: CreateFileRequest = {
-              key: file.cid,
-              filename: file.name,
-              content_type: file.mimeType,
-              size: file.size,
-              cid: file.cid,
-              collection: collectionId,
-              relationships: [{ predicate: 'in', peer: parentId, peer_type: parentType }],
-            };
+        // Create file entity with 'in' relationship
+        const fileBody: CreateFileRequest = {
+          key: file.cid,
+          filename: file.name,
+          content_type: file.mimeType,
+          size: file.size,
+          cid: file.cid,
+          collection: collectionId,
+          relationships: [{ predicate: 'in', peer: parentId, peer_type: parentType }],
+        };
 
-            const { data, error } = await client.api.POST('/files', {
-              body: fileBody,
-            });
-
-            if (error || !data) {
-              throw new Error(`Entity creation failed: ${JSON.stringify(error)}`);
-            }
-
-            // Immediately upload to S3
-            const fileData = await file.getData();
-
-            let body: Blob;
-            if (fileData instanceof Blob) {
-              body = fileData;
-            } else if (fileData instanceof Uint8Array) {
-              const arrayBuffer = new ArrayBuffer(fileData.byteLength);
-              new Uint8Array(arrayBuffer).set(fileData);
-              body = new Blob([arrayBuffer], { type: file.mimeType });
-            } else {
-              body = new Blob([fileData], { type: file.mimeType });
-            }
-
-            const uploadResponse = await fetch(data.upload_url, {
-              method: 'PUT',
-              body,
-              headers: { 'Content-Type': file.mimeType },
-            });
-
-            if (!uploadResponse.ok) {
-              throw new Error(`S3 upload failed with status ${uploadResponse.status}`);
-            }
-
-            // Track file
-            createdFiles.push({
-              ...file,
-              id: data.id,
-              entityCid: data.cid,
-              uploadUrl: data.upload_url,
-              uploadExpiresAt: data.upload_expires_at,
-            });
-
-            bytesUploaded += file.size;
-            completedEntities++;
-
-            reportProgress({
-              phase: 'creating',
-              completedEntities,
-              currentItem: file.relativePath,
-              bytesUploaded,
-            });
-          } catch (err) {
-            const errorMsg = err instanceof Error ? err.message : String(err);
-            if (continueOnError) {
-              errors.push({ path: file.relativePath, error: errorMsg });
-              completedEntities++;
-            } else {
-              throw new Error(`Failed to process ${file.relativePath}: ${errorMsg}`);
-            }
-          }
+        const { data, error } = await client.api.POST('/files', {
+          body: fileBody,
         });
-      })
-    );
+
+        if (error || !data) {
+          throw new Error(`Entity creation failed: ${JSON.stringify(error)}`);
+        }
+
+        // Track file with presigned URL for later upload
+        createdFiles.push({
+          ...file,
+          id: data.id,
+          entityCid: data.cid,
+          uploadUrl: data.upload_url,
+          uploadExpiresAt: data.upload_expires_at,
+        });
+
+        completedEntities++;
+        reportProgress({
+          phase: 'creating',
+          completedEntities,
+          currentItem: file.relativePath,
+        });
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        if (continueOnError) {
+          errors.push({ path: file.relativePath, error: errorMsg });
+          completedEntities++;
+        } else {
+          throw new Error(`Failed to create file ${file.relativePath}: ${errorMsg}`);
+        }
+      }
+    });
 
     // ─────────────────────────────────────────────────────────────────────────
     // PHASE 3: Backlink - Update each parent with 'contains' relationships
@@ -460,60 +452,63 @@ export async function uploadTree(
 
     reportProgress({ phase: 'backlinking', totalParents, completedParents: 0 });
 
-    // Update all parents sequentially
-    // Note: We use the bulk children endpoint because relationships_add doesn't work for 'contains'
-    // The bulk endpoint has a limit of 50 children per call, so we batch if needed
-    const BATCH_SIZE = 50;
+    // Update all parents in parallel - each parent gets one PUT with all its children
+    const parentEntries = [...childrenByParent.entries()];
 
-    for (const [parentId, children] of childrenByParent.entries()) {
+    await parallelLimit(parentEntries, concurrency, async ([parentId, children]) => {
       try {
         const isCollection = parentId === collectionId;
 
-        // Split children into batches
-        const batches: Array<{ id: string }[]> = [];
-        for (let i = 0; i < children.length; i += BATCH_SIZE) {
-          batches.push(children.slice(i, i + BATCH_SIZE).map((c) => ({ id: c.id })));
-        }
+        // Build relationships_add array with all children
+        const relationshipsAdd = children.map((child) => ({
+          predicate: 'contains' as const,
+          peer: child.id,
+          peer_type: child.type,
+        }));
 
-        // Process each batch sequentially (CID changes after each batch)
-        for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-          const batch = batches[batchIndex]!;
-
-          // Get current CID (must refetch after each batch since it changes)
-          let currentCid: string;
-          if (isCollection) {
-            const { data, error } = await client.api.GET('/collections/{id}', {
-              params: { path: { id: parentId } },
-            });
-            if (error || !data) {
-              throw new Error(`Failed to fetch collection: ${JSON.stringify(error)}`);
-            }
-            currentCid = data.cid;
-          } else {
-            const { data, error } = await client.api.GET('/folders/{id}', {
-              params: { path: { id: parentId } },
-            });
-            if (error || !data) {
-              throw new Error(`Failed to fetch folder: ${JSON.stringify(error)}`);
-            }
-            currentCid = data.cid;
+        if (isCollection) {
+          // Get current collection CID for CAS
+          const { data: collData, error: getError } = await client.api.GET('/collections/{id}', {
+            params: { path: { id: parentId } },
+          });
+          if (getError || !collData) {
+            throw new Error(`Failed to fetch collection: ${JSON.stringify(getError)}`);
           }
 
-          // Use bulk children endpoint to add contains relationships
-          const bulkBody: BulkAddChildrenRequest = {
-            expect_tip: currentCid,
-            children: batch,
-            note:
-              batches.length > 1
-                ? `${note || 'Upload'} (batch ${batchIndex + 1}/${batches.length})`
-                : note
-                  ? `${note} (backlink)`
-                  : 'Upload backlink',
+          // Update collection with relationships_add
+          const updateBody: UpdateCollectionRequest = {
+            expect_tip: collData.cid,
+            relationships_add: relationshipsAdd,
+            note: note ? `${note} (backlink)` : 'Upload backlink',
           };
 
-          const { error } = await client.api.POST('/folders/{id}/children/bulk', {
+          const { error } = await client.api.PUT('/collections/{id}', {
             params: { path: { id: parentId } },
-            body: bulkBody,
+            body: updateBody,
+          });
+
+          if (error) {
+            throw new Error(JSON.stringify(error));
+          }
+        } else {
+          // Get current folder CID for CAS
+          const { data: folderData, error: getError } = await client.api.GET('/folders/{id}', {
+            params: { path: { id: parentId } },
+          });
+          if (getError || !folderData) {
+            throw new Error(`Failed to fetch folder: ${JSON.stringify(getError)}`);
+          }
+
+          // Update folder with relationships_add
+          const updateBody: UpdateFolderRequest = {
+            expect_tip: folderData.cid,
+            relationships_add: relationshipsAdd,
+            note: note ? `${note} (backlink)` : 'Upload backlink',
+          };
+
+          const { error } = await client.api.PUT('/folders/{id}', {
+            params: { path: { id: parentId } },
+            body: updateBody,
           });
 
           if (error) {
@@ -537,12 +532,68 @@ export async function uploadTree(
           throw new Error(`Failed to backlink parent ${parentId}: ${errorMsg}`);
         }
       }
-    }
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PHASE 4: Upload file content to S3
+    // Tree is now browsable! Users can explore while content uploads.
+    // ─────────────────────────────────────────────────────────────────────────
+    reportProgress({ phase: 'uploading', bytesUploaded: 0 });
+
+    // Use byte-based pool to maintain ~200MB in flight
+    const pool = new BytePool();
+
+    await Promise.all(
+      createdFiles.map(async (file) => {
+        await pool.run(file.size, async () => {
+          try {
+            // Get file data
+            const fileData = await file.getData();
+
+            let body: Blob;
+            if (fileData instanceof Blob) {
+              body = fileData;
+            } else if (fileData instanceof Uint8Array) {
+              const arrayBuffer = new ArrayBuffer(fileData.byteLength);
+              new Uint8Array(arrayBuffer).set(fileData);
+              body = new Blob([arrayBuffer], { type: file.mimeType });
+            } else {
+              body = new Blob([fileData], { type: file.mimeType });
+            }
+
+            // Upload to presigned URL
+            const uploadResponse = await fetch(file.uploadUrl, {
+              method: 'PUT',
+              body,
+              headers: { 'Content-Type': file.mimeType },
+            });
+
+            if (!uploadResponse.ok) {
+              throw new Error(`S3 upload failed with status ${uploadResponse.status}`);
+            }
+
+            bytesUploaded += file.size;
+            reportProgress({
+              phase: 'uploading',
+              bytesUploaded,
+              currentItem: file.relativePath,
+            });
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            if (continueOnError) {
+              errors.push({ path: file.relativePath, error: `Upload failed: ${errorMsg}` });
+            } else {
+              throw new Error(`Failed to upload ${file.relativePath}: ${errorMsg}`);
+            }
+          }
+        });
+      })
+    );
 
     // ─────────────────────────────────────────────────────────────────────────
     // Complete!
     // ─────────────────────────────────────────────────────────────────────────
-    reportProgress({ phase: 'complete', totalParents, completedParents });
+    reportProgress({ phase: 'complete', totalParents, completedParents, bytesUploaded });
 
     const resultFolders: CreatedEntity[] = createdFolders.map((f) => ({
       id: f.id,

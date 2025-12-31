@@ -92,15 +92,16 @@ export interface UploadProgress {
   /** Current phase of the upload */
   phase:
     | 'computing-cids' // Computing content hashes
-    | 'creating' // Creating folder + file entities (merged phase)
-    | 'backlinking' // Updating parents with contains relationships
+    | 'creating' // Creating folder + file entities
+    | 'backlinking' // Updating parents with contains relationships (tree now browsable!)
+    | 'uploading' // Uploading file content to S3
     | 'complete'
     | 'error';
 
-  /** Current phase index (0=computing-cids, 1=creating, 2=backlinking) */
+  /** Current phase index (0=computing-cids, 1=creating, 2=backlinking, 3=uploading) */
   phaseIndex: number;
 
-  /** Total number of phases (3, excluding complete/error) */
+  /** Total number of phases (4, excluding complete/error) */
   phaseCount: number;
 
   /** Progress within current phase (0-100) */

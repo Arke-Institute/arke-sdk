@@ -132,8 +132,9 @@ describe('Upload E2E', () => {
 
       // Verify progress phases occurred in order
       expect(progressLog).toContain('computing-cids');
-      expect(progressLog).toContain('creating'); // Combined folders + files creation
-      expect(progressLog).toContain('backlinking'); // Parent contains updates
+      expect(progressLog).toContain('creating'); // Folders + file entities
+      expect(progressLog).toContain('backlinking'); // Parent contains updates (tree now browsable!)
+      expect(progressLog).toContain('uploading'); // S3 content upload
       expect(progressLog).toContain('complete');
 
       // Verify folder structure via API

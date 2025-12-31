@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2025-12-30T18:35:49.017Z
+ * Generated: 2025-12-31T16:24:48.200Z
  */
 
 export type paths = {
@@ -3149,6 +3149,9 @@ export type paths = {
          * Bulk add children to folder
          * @description Efficiently adds multiple children to a folder.
          *
+         *     **Limit**: Maximum 50 children per request. For larger batches, make multiple
+         *     requests, refetching the folder's CID between each to satisfy the CAS guard.
+         *
          *     **Strategy**:
          *     1. Updates folder once with all 'contains' relationships
          *     2. Updates each child in parallel with 'in' back-link
@@ -4588,21 +4591,15 @@ export type components = {
              * @example Added Chapter 42: The Whiteness of the Whale
              */
             note?: string;
-            /**
-             * @description Updated display name
-             * @example Captain Ahab
-             */
-            label?: string;
-            /**
-             * @description Properties to merge with existing (partial update)
-             * @example {
-             *       "bio": "Commander of the Pequod, hunter of the white whale"
-             *     }
-             */
+            /** @description Properties to add or update (deep merged) */
             properties?: {
                 [key: string]: unknown;
             };
-            /** @description Relationships to add or update */
+            /** @description Properties to remove */
+            properties_remove?: string[] | {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to add or update (upsert semantics) */
             relationships_add?: {
                 /**
                  * @description Relationship predicate (e.g., "admin", "contains", "collection")
@@ -4651,6 +4648,11 @@ export type components = {
                  */
                 peer?: string;
             }[];
+            /**
+             * @description Updated display name
+             * @example Captain Ahab
+             */
+            label?: string;
         };
         CreateApiKeyResponse: {
             /**
@@ -4803,20 +4805,15 @@ export type components = {
              * @example Added Chapter 42: The Whiteness of the Whale
              */
             note?: string;
-            /** @description Updated collection display name */
-            label?: string;
-            /** @description Updated collection description */
-            description?: string;
-            /**
-             * Format: uri
-             * @description Updated display image URL
-             */
-            display_image_url?: string;
-            /** @description Additional properties to merge */
+            /** @description Properties to add or update (deep merged) */
             properties?: {
                 [key: string]: unknown;
             };
-            /** @description Relationships to add or update */
+            /** @description Properties to remove */
+            properties_remove?: string[] | {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to add or update (upsert semantics) */
             relationships_add?: {
                 /**
                  * @description Relationship predicate (e.g., "admin", "contains", "collection")
@@ -4865,6 +4862,15 @@ export type components = {
                  */
                 peer?: string;
             }[];
+            /** @description Updated collection display name */
+            label?: string;
+            /** @description Updated collection description */
+            description?: string;
+            /**
+             * Format: uri
+             * @description Updated display image URL
+             */
+            display_image_url?: string;
         };
         RoleResponse: {
             /**
@@ -5188,24 +5194,11 @@ export type components = {
              * @example Added Chapter 42: The Whiteness of the Whale
              */
             note?: string;
-            /**
-             * @description Properties to add or update (deep merged with existing)
-             * @example {
-             *       "label": "Chapter 1: Loomings (Revised)",
-             *       "metadata": {
-             *         "status": "reviewed"
-             *       }
-             *     }
-             */
+            /** @description Properties to add or update (deep merged) */
             properties?: {
                 [key: string]: unknown;
             };
-            /**
-             * @description Properties to remove (string array or nested object)
-             * @example [
-             *       "deprecated_field"
-             *     ]
-             */
+            /** @description Properties to remove */
             properties_remove?: string[] | {
                 [key: string]: unknown;
             };
@@ -5258,22 +5251,6 @@ export type components = {
                  */
                 peer?: string;
             }[];
-            /**
-             * @description Components to add or update (key → CID)
-             * @example {
-             *       "transcript.txt": "bafyrei..."
-             *     }
-             */
-            components?: {
-                [key: string]: string;
-            };
-            /**
-             * @description Component keys to remove
-             * @example [
-             *       "old_version.txt"
-             *     ]
-             */
-            components_remove?: string[];
         };
         AddRelationshipResponse: {
             source: components["schemas"]["EntityResponse"] & unknown;
@@ -5525,31 +5502,15 @@ export type components = {
              * @example Added Chapter 42: The Whiteness of the Whale
              */
             note?: string;
-            /** @description New storage key. Must already exist in S3 (for regression to old version). */
-            key?: string;
-            /** @description New filename */
-            filename?: string;
-            /** @description New MIME type */
-            content_type?: string;
-            /** @description New file size in bytes */
-            size?: number;
-            /** @description New content identifier */
-            cid?: string;
-            /** @description New description */
-            description?: string;
-            /**
-             * @description Additional properties to merge into the file metadata
-             * @example {
-             *       "log_data": {
-             *         "status": "done",
-             *         "entries": []
-             *       }
-             *     }
-             */
+            /** @description Properties to add or update (deep merged) */
             properties?: {
                 [key: string]: unknown;
             };
-            /** @description Relationships to add or update */
+            /** @description Properties to remove */
+            properties_remove?: string[] | {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to add or update (upsert semantics) */
             relationships_add?: {
                 /**
                  * @description Relationship predicate (e.g., "admin", "contains", "collection")
@@ -5598,6 +5559,18 @@ export type components = {
                  */
                 peer?: string;
             }[];
+            /** @description New storage key. Must already exist in S3 (for regression to old version). */
+            key?: string;
+            /** @description New filename */
+            filename?: string;
+            /** @description New MIME type */
+            content_type?: string;
+            /** @description New file size in bytes */
+            size?: number;
+            /** @description New content identifier */
+            cid?: string;
+            /** @description New description */
+            description?: string;
         };
         ReuploadFileResponse: components["schemas"]["UpdateFileResponse"] & {
             /**
@@ -5759,21 +5732,15 @@ export type components = {
              * @example Added Chapter 42: The Whiteness of the Whale
              */
             note?: string;
-            /** @description New display name */
-            label?: string;
-            /** @description New description */
-            description?: string;
-            /** @description New rich description */
-            rich_description?: string;
-            /** @description New metadata (deep merged) */
-            metadata?: {
-                [key: string]: unknown;
-            };
-            /** @description Additional properties to merge */
+            /** @description Properties to add or update (deep merged) */
             properties?: {
                 [key: string]: unknown;
             };
-            /** @description Relationships to add or update */
+            /** @description Properties to remove */
+            properties_remove?: string[] | {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to add or update (upsert semantics) */
             relationships_add?: {
                 /**
                  * @description Relationship predicate (e.g., "admin", "contains", "collection")
@@ -5822,6 +5789,16 @@ export type components = {
                  */
                 peer?: string;
             }[];
+            /** @description New display name */
+            label?: string;
+            /** @description New description */
+            description?: string;
+            /** @description New rich description */
+            rich_description?: string;
+            /** @description New metadata (deep merged) */
+            metadata?: {
+                [key: string]: unknown;
+            };
         };
         AddChildResponse: {
             folder: components["schemas"]["FolderResponse"] & unknown;
@@ -5924,7 +5901,7 @@ export type components = {
              */
             note?: string;
             /**
-             * @description Children to add
+             * @description Children to add (max 50 per request)
              * @example [
              *       {
              *         "id": "01JFILE123ABCDEFGHJKMNPQRS"
@@ -6096,12 +6073,6 @@ export type components = {
                         [key: string]: unknown;
                     };
                 }[];
-                /** @description IPLD links to components (files, chunks, etc.) */
-                components?: {
-                    [key: string]: {
-                        "/": string;
-                    };
-                };
                 /**
                  * @description Audit trail for edits
                  * @example {
@@ -6305,45 +6276,15 @@ export type components = {
              * @example Added Chapter 42: The Whiteness of the Whale
              */
             note?: string;
-            /** @description Updated agent display name */
-            label?: string;
-            /** @description Updated agent description */
-            description?: string;
-            /**
-             * Format: uri
-             * @description Updated agent service URL
-             */
-            endpoint?: string;
-            /**
-             * @description Actions this agent requires on target collections
-             * @example [
-             *       "entity:view",
-             *       "entity:update",
-             *       "file:create"
-             *     ]
-             */
-            actions_required?: string[];
-            /**
-             * @description Agent status
-             * @example development
-             * @enum {string}
-             */
-            status?: "development" | "active" | "disabled";
-            /** @description Updated sub-agents */
-            uses_agents?: components["schemas"]["SubAgentRef"][];
-            /** @description Updated input schema */
-            input_schema?: {
-                [key: string]: unknown;
-            };
-            /** @description Updated output schema */
-            output_schema?: {
-                [key: string]: unknown;
-            };
-            /** @description Additional properties to merge */
+            /** @description Properties to add or update (deep merged) */
             properties?: {
                 [key: string]: unknown;
             };
-            /** @description Relationships to add or update */
+            /** @description Properties to remove */
+            properties_remove?: string[] | {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to add or update (upsert semantics) */
             relationships_add?: {
                 /**
                  * @description Relationship predicate (e.g., "admin", "contains", "collection")
@@ -6392,6 +6333,40 @@ export type components = {
                  */
                 peer?: string;
             }[];
+            /** @description Updated agent display name */
+            label?: string;
+            /** @description Updated agent description */
+            description?: string;
+            /**
+             * Format: uri
+             * @description Updated agent service URL
+             */
+            endpoint?: string;
+            /**
+             * @description Actions this agent requires on target collections
+             * @example [
+             *       "entity:view",
+             *       "entity:update",
+             *       "file:create"
+             *     ]
+             */
+            actions_required?: string[];
+            /**
+             * @description Agent status
+             * @example development
+             * @enum {string}
+             */
+            status?: "development" | "active" | "disabled";
+            /** @description Updated sub-agents */
+            uses_agents?: components["schemas"]["SubAgentRef"][];
+            /** @description Updated input schema */
+            input_schema?: {
+                [key: string]: unknown;
+            };
+            /** @description Updated output schema */
+            output_schema?: {
+                [key: string]: unknown;
+            };
         };
         InvokeGrant: {
             agent: {
