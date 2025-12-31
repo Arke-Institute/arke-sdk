@@ -1,12 +1,15 @@
 /**
  * Upload Engine
  *
- * Core upload implementation that handles the multi-phase upload process:
- * 1. Create collection (if needed)
- * 2. Compute CIDs for all files
- * 3. Create all entities (folders + files) in parallel
- * 4. Upload file content to presigned URLs
- * 5. Bulk link children to their parents
+ * Core upload implementation using optimized relationship strategy:
+ * 1. Compute CIDs for all files
+ * 2. Create folders by depth (with unidirectional 'in' → parent)
+ * 3. Create files with pipelined S3 upload (with unidirectional 'in' → parent)
+ * 4. Update each parent once with all 'contains' → children relationships
+ *
+ * This minimizes API calls by:
+ * - Using unidirectional 'in' relationship on entity creation
+ * - Batching all 'contains' relationships into a single PUT per parent
  */
 
 import type { ArkeClient } from '../../client/ArkeClient.js';
@@ -17,18 +20,31 @@ import type {
   UploadOptions,
   UploadResult,
   UploadProgress,
-  UploadFile,
-  UploadFolder,
   PreparedFile,
   CreatedFolder,
   CreatedFile,
   CreatedEntity,
+  UploadFolder,
 } from './types.js';
 
 type CreateCollectionRequest = components['schemas']['CreateCollectionRequest'];
 type CreateFolderRequest = components['schemas']['CreateFolderRequest'];
 type CreateFileRequest = components['schemas']['CreateFileRequest'];
 type BulkAddChildrenRequest = components['schemas']['BulkAddChildrenRequest'];
+
+// Phase constants
+const PHASE_COUNT = 3; // computing-cids, creating, backlinking (excluding complete/error)
+const PHASE_INDEX: Record<string, number> = {
+  'computing-cids': 0,
+  'creating': 1,
+  'backlinking': 2,
+  'complete': 3,
+  'error': -1,
+};
+
+// =============================================================================
+// Concurrency Utilities
+// =============================================================================
 
 /**
  * Simple concurrency limiter for parallel operations.
@@ -56,6 +72,41 @@ async function parallelLimit<T, R>(
 }
 
 /**
+ * Dynamic concurrency pool that adjusts based on item size.
+ */
+class DynamicConcurrencyPool {
+  private activeCount = 0;
+  private waitQueue: Array<() => void> = [];
+
+  constructor(
+    private maxConcurrency: number,
+    private maxConcurrencyLargeFiles: number,
+    private largeFileThreshold: number
+  ) {}
+
+  async run<T>(size: number, fn: () => Promise<T>): Promise<T> {
+    const effectiveLimit = size > this.largeFileThreshold ? this.maxConcurrencyLargeFiles : this.maxConcurrency;
+
+    while (this.activeCount >= effectiveLimit) {
+      await new Promise<void>((resolve) => this.waitQueue.push(resolve));
+    }
+
+    this.activeCount++;
+    try {
+      return await fn();
+    } finally {
+      this.activeCount--;
+      const next = this.waitQueue.shift();
+      if (next) next();
+    }
+  }
+}
+
+// =============================================================================
+// Helper Functions
+// =============================================================================
+
+/**
  * Parse folder path to get parent path.
  * e.g., "docs/images/photos" -> "docs/images"
  */
@@ -66,42 +117,84 @@ function getParentPath(relativePath: string): string | null {
 }
 
 /**
- * Get the immediate children paths for a given parent path.
+ * Group folders by depth level.
  */
-function getImmediateChildren(
-  parentPath: string | null,
-  folders: UploadFolder[],
-  files: PreparedFile[]
-): { folders: UploadFolder[]; files: PreparedFile[] } {
-  const childFolders = folders.filter((f) => getParentPath(f.relativePath) === parentPath);
-  const childFiles = files.filter((f) => getParentPath(f.relativePath) === parentPath);
-  return { folders: childFolders, files: childFiles };
+function groupFoldersByDepth(folders: UploadFolder[]): Map<number, UploadFolder[]> {
+  const byDepth = new Map<number, UploadFolder[]>();
+
+  for (const folder of folders) {
+    const depth = folder.relativePath.split('/').length - 1;
+    if (!byDepth.has(depth)) byDepth.set(depth, []);
+    byDepth.get(depth)!.push(folder);
+  }
+
+  return byDepth;
 }
+
+// =============================================================================
+// Main Upload Function
+// =============================================================================
 
 /**
  * Main upload function.
- * Orchestrates the entire upload process.
+ * Orchestrates the entire upload process with optimized relationship strategy.
  */
 export async function uploadTree(
   client: ArkeClient,
   tree: UploadTree,
   options: UploadOptions
 ): Promise<UploadResult> {
-  const { target, onProgress, concurrency = 5, continueOnError = false, note } = options;
+  const { target, onProgress, concurrency = 10, continueOnError = false, note } = options;
 
   const errors: Array<{ path: string; error: string }> = [];
   const createdFolders: CreatedFolder[] = [];
   const createdFiles: CreatedFile[] = [];
 
+  // Maps for tracking
+  const foldersByPath = new Map<string, { id: string; cid: string }>();
+
+  // Calculate totals
+  const totalEntities = tree.files.length + tree.folders.length;
+  const totalBytes = tree.files.reduce((sum, f) => sum + f.size, 0);
+  let completedEntities = 0;
+  let bytesUploaded = 0;
+
   // Helper to report progress
   const reportProgress = (progress: Partial<UploadProgress>) => {
     if (onProgress) {
+      const phase = progress.phase || 'computing-cids';
+      const phaseIndex = PHASE_INDEX[phase] ?? -1;
+
+      // Calculate phase percent based on current phase
+      let phasePercent = 0;
+      if (phase === 'computing-cids') {
+        // CID phase: progress is based on files processed
+        const done = progress.completedEntities ?? completedEntities;
+        phasePercent = tree.files.length > 0 ? Math.round((done / tree.files.length) * 100) : 100;
+      } else if (phase === 'creating') {
+        // Creating phase: progress is based on entities created
+        const done = progress.completedEntities ?? completedEntities;
+        phasePercent = totalEntities > 0 ? Math.round((done / totalEntities) * 100) : 100;
+      } else if (phase === 'backlinking') {
+        // Backlinking phase: progress is based on parents updated
+        const done = progress.completedParents ?? 0;
+        const total = progress.totalParents ?? 0;
+        phasePercent = total > 0 ? Math.round((done / total) * 100) : 100;
+      } else if (phase === 'complete') {
+        phasePercent = 100;
+      }
+
       onProgress({
-        phase: 'scanning',
-        totalFiles: tree.files.length,
-        completedFiles: 0,
-        totalFolders: tree.folders.length,
-        completedFolders: 0,
+        phase,
+        phaseIndex,
+        phaseCount: PHASE_COUNT,
+        phasePercent,
+        totalEntities,
+        completedEntities,
+        totalParents: 0,
+        completedParents: 0,
+        totalBytes,
+        bytesUploaded,
         ...progress,
       } as UploadProgress);
     }
@@ -109,15 +202,13 @@ export async function uploadTree(
 
   try {
     // ─────────────────────────────────────────────────────────────────────────
-    // PHASE 1: Resolve or create collection
+    // SETUP: Resolve or create collection
     // ─────────────────────────────────────────────────────────────────────────
     let collectionId: string;
     let collectionCid: string;
     let collectionCreated = false;
 
     if (target.createCollection) {
-      reportProgress({ phase: 'scanning', currentFolder: 'Creating collection...' });
-
       const collectionBody: CreateCollectionRequest = {
         label: target.createCollection.label,
         description: target.createCollection.description,
@@ -139,7 +230,6 @@ export async function uploadTree(
     } else if (target.collectionId) {
       collectionId = target.collectionId;
 
-      // Fetch collection to get current CID
       const { data, error } = await client.api.GET('/collections/{id}', {
         params: { path: { id: collectionId } },
       });
@@ -157,32 +247,25 @@ export async function uploadTree(
     const rootParentId = target.parentId ?? collectionId;
 
     // ─────────────────────────────────────────────────────────────────────────
-    // PHASE 2: Compute CIDs for all files
+    // PHASE 1: Compute CIDs for all files
     // ─────────────────────────────────────────────────────────────────────────
-    reportProgress({
-      phase: 'computing-cids',
-      totalFiles: tree.files.length,
-      completedFiles: 0,
-    });
+    reportProgress({ phase: 'computing-cids', completedEntities: 0 });
 
     const preparedFiles: PreparedFile[] = [];
     let cidProgress = 0;
 
-    await parallelLimit(tree.files, concurrency, async (file) => {
+    await parallelLimit(tree.files, Math.max(concurrency, 20), async (file) => {
       try {
         const data = await file.getData();
         const cid = await computeCid(data);
 
-        preparedFiles.push({
-          ...file,
-          cid,
-        });
+        preparedFiles.push({ ...file, cid });
 
         cidProgress++;
         reportProgress({
           phase: 'computing-cids',
-          completedFiles: cidProgress,
-          currentFile: file.relativePath,
+          completedEntities: cidProgress,
+          currentItem: file.relativePath,
         });
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
@@ -195,303 +278,237 @@ export async function uploadTree(
     });
 
     // ─────────────────────────────────────────────────────────────────────────
-    // PHASE 3: Create all folder entities
+    // PHASE 2: Create entities (folders by depth, then files)
     // ─────────────────────────────────────────────────────────────────────────
-    reportProgress({
-      phase: 'creating-folders',
-      totalFolders: tree.folders.length,
-      completedFolders: 0,
-    });
+    reportProgress({ phase: 'creating', completedEntities: 0 });
 
-    // Sort folders by depth (parents first)
-    const sortedFolders = [...tree.folders].sort(
-      (a, b) => a.relativePath.split('/').length - b.relativePath.split('/').length
+    // Group folders by depth
+    const foldersByDepth = groupFoldersByDepth(tree.folders);
+    const sortedDepths = [...foldersByDepth.keys()].sort((a, b) => a - b);
+
+    // Create folders depth by depth (parents before children)
+    for (const depth of sortedDepths) {
+      const foldersAtDepth = foldersByDepth.get(depth)!;
+
+      await Promise.all(
+        foldersAtDepth.map(async (folder) => {
+          try {
+            const parentPath = getParentPath(folder.relativePath);
+            const parentId = parentPath ? foldersByPath.get(parentPath)!.id : rootParentId;
+            const parentType = parentPath ? 'folder' : parentId === collectionId ? 'collection' : 'folder';
+
+            const folderBody: CreateFolderRequest = {
+              label: folder.name,
+              collection: collectionId,
+              note,
+              relationships: [{ predicate: 'in', peer: parentId, peer_type: parentType }],
+            };
+
+            const { data, error } = await client.api.POST('/folders', {
+              body: folderBody,
+            });
+
+            if (error || !data) {
+              throw new Error(JSON.stringify(error));
+            }
+
+            // Track folder
+            foldersByPath.set(folder.relativePath, { id: data.id, cid: data.cid });
+            createdFolders.push({
+              name: folder.name,
+              relativePath: folder.relativePath,
+              id: data.id,
+              entityCid: data.cid,
+            });
+
+            completedEntities++;
+            reportProgress({
+              phase: 'creating',
+              completedEntities,
+              currentItem: folder.relativePath,
+            });
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            if (continueOnError) {
+              errors.push({ path: folder.relativePath, error: `Folder creation failed: ${errorMsg}` });
+              completedEntities++;
+            } else {
+              throw new Error(`Failed to create folder ${folder.relativePath}: ${errorMsg}`);
+            }
+          }
+        })
+      );
+    }
+
+    // Create files with pipelined S3 upload
+    const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024; // 10MB
+    const pool = new DynamicConcurrencyPool(
+      concurrency,
+      Math.max(3, Math.floor(concurrency / 3)),
+      LARGE_FILE_THRESHOLD
     );
 
-    // Create folders sequentially to ensure parents exist first
-    // (We don't set parent relationships here - we'll do that in the linking phase)
-    for (let i = 0; i < sortedFolders.length; i++) {
-      const folder = sortedFolders[i]!;
+    await Promise.all(
+      preparedFiles.map(async (file) => {
+        await pool.run(file.size, async () => {
+          try {
+            const parentPath = getParentPath(file.relativePath);
+            const parentId = parentPath ? foldersByPath.get(parentPath)!.id : rootParentId;
+            const parentType = parentPath ? 'folder' : parentId === collectionId ? 'collection' : 'folder';
 
-      try {
-        const folderBody: CreateFolderRequest = {
-          label: folder.name,
-          collection: collectionId,
-          note,
-        };
+            // Create file entity with 'in' relationship
+            const fileBody: CreateFileRequest = {
+              key: file.cid,
+              filename: file.name,
+              content_type: file.mimeType,
+              size: file.size,
+              cid: file.cid,
+              collection: collectionId,
+              relationships: [{ predicate: 'in', peer: parentId, peer_type: parentType }],
+            };
 
-        const { data, error } = await client.api.POST('/folders', {
-          body: folderBody,
+            const { data, error } = await client.api.POST('/files', {
+              body: fileBody,
+            });
+
+            if (error || !data) {
+              throw new Error(`Entity creation failed: ${JSON.stringify(error)}`);
+            }
+
+            // Immediately upload to S3
+            const fileData = await file.getData();
+
+            let body: Blob;
+            if (fileData instanceof Blob) {
+              body = fileData;
+            } else if (fileData instanceof Uint8Array) {
+              const arrayBuffer = new ArrayBuffer(fileData.byteLength);
+              new Uint8Array(arrayBuffer).set(fileData);
+              body = new Blob([arrayBuffer], { type: file.mimeType });
+            } else {
+              body = new Blob([fileData], { type: file.mimeType });
+            }
+
+            const uploadResponse = await fetch(data.upload_url, {
+              method: 'PUT',
+              body,
+              headers: { 'Content-Type': file.mimeType },
+            });
+
+            if (!uploadResponse.ok) {
+              throw new Error(`S3 upload failed with status ${uploadResponse.status}`);
+            }
+
+            // Track file
+            createdFiles.push({
+              ...file,
+              id: data.id,
+              entityCid: data.cid,
+              uploadUrl: data.upload_url,
+              uploadExpiresAt: data.upload_expires_at,
+            });
+
+            bytesUploaded += file.size;
+            completedEntities++;
+
+            reportProgress({
+              phase: 'creating',
+              completedEntities,
+              currentItem: file.relativePath,
+              bytesUploaded,
+            });
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            if (continueOnError) {
+              errors.push({ path: file.relativePath, error: errorMsg });
+              completedEntities++;
+            } else {
+              throw new Error(`Failed to process ${file.relativePath}: ${errorMsg}`);
+            }
+          }
         });
-
-        if (error || !data) {
-          throw new Error(JSON.stringify(error));
-        }
-
-        createdFolders.push({
-          name: folder.name,
-          relativePath: folder.relativePath,
-          id: data.id,
-          entityCid: data.cid,
-        });
-
-        reportProgress({
-          phase: 'creating-folders',
-          completedFolders: i + 1,
-          currentFolder: folder.relativePath,
-        });
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        if (continueOnError) {
-          errors.push({ path: folder.relativePath, error: `Folder creation failed: ${errorMsg}` });
-        } else {
-          throw new Error(`Failed to create folder ${folder.relativePath}: ${errorMsg}`);
-        }
-      }
-    }
-
-    // Build folder path -> entity map for linking phase
-    const folderPathToEntity = new Map<string, CreatedFolder>();
-    for (const folder of createdFolders) {
-      folderPathToEntity.set(folder.relativePath, folder);
-    }
+      })
+    );
 
     // ─────────────────────────────────────────────────────────────────────────
-    // PHASE 4: Create all file entities (parallel)
+    // PHASE 3: Backlink - Update each parent with 'contains' relationships
     // ─────────────────────────────────────────────────────────────────────────
-    reportProgress({
-      phase: 'creating-files',
-      totalFiles: preparedFiles.length,
-      completedFiles: 0,
-    });
 
-    let fileCreateProgress = 0;
+    // Build parent -> children map
+    const childrenByParent = new Map<string, Array<{ id: string; type: 'file' | 'folder' }>>();
 
-    await parallelLimit(preparedFiles, concurrency, async (file) => {
-      try {
-        const fileBody: CreateFileRequest = {
-          key: file.cid, // Use CID as storage key (best practice)
-          filename: file.name,
-          content_type: file.mimeType,
-          size: file.size,
-          cid: file.cid,
-          collection: collectionId,
-        };
-
-        const { data, error } = await client.api.POST('/files', {
-          body: fileBody,
-        });
-
-        if (error || !data) {
-          throw new Error(JSON.stringify(error));
-        }
-
-        createdFiles.push({
-          ...file,
-          id: data.id,
-          entityCid: data.cid,
-          uploadUrl: data.upload_url,
-          uploadExpiresAt: data.upload_expires_at,
-        });
-
-        fileCreateProgress++;
-        reportProgress({
-          phase: 'creating-files',
-          completedFiles: fileCreateProgress,
-          currentFile: file.relativePath,
-        });
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        if (continueOnError) {
-          errors.push({ path: file.relativePath, error: `File creation failed: ${errorMsg}` });
-        } else {
-          throw new Error(`Failed to create file ${file.relativePath}: ${errorMsg}`);
-        }
-      }
-    });
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // PHASE 5: Upload file content to presigned URLs
-    // ─────────────────────────────────────────────────────────────────────────
-    const totalBytes = createdFiles.reduce((sum, f) => sum + f.size, 0);
-    let bytesUploaded = 0;
-
-    reportProgress({
-      phase: 'uploading-content',
-      totalFiles: createdFiles.length,
-      completedFiles: 0,
-      totalBytes,
-      bytesUploaded: 0,
-    });
-
-    let uploadProgress = 0;
-
-    await parallelLimit(createdFiles, concurrency, async (file) => {
-      try {
-        // Get the file data again for upload
-        const data = await file.getData();
-
-        // Convert to appropriate format for fetch
-        let body: Blob;
-        if (data instanceof Blob) {
-          body = data;
-        } else if (data instanceof Uint8Array) {
-          // Convert Uint8Array to Blob - copy to new ArrayBuffer to handle SharedArrayBuffer case
-          const arrayBuffer = new ArrayBuffer(data.byteLength);
-          new Uint8Array(arrayBuffer).set(data);
-          body = new Blob([arrayBuffer], { type: file.mimeType });
-        } else {
-          // ArrayBuffer
-          body = new Blob([data], { type: file.mimeType });
-        }
-
-        // Upload to presigned URL
-        const response = await fetch(file.uploadUrl, {
-          method: 'PUT',
-          body,
-          headers: {
-            'Content-Type': file.mimeType,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Upload failed with status ${response.status}`);
-        }
-
-        bytesUploaded += file.size;
-        uploadProgress++;
-
-        reportProgress({
-          phase: 'uploading-content',
-          completedFiles: uploadProgress,
-          currentFile: file.relativePath,
-          bytesUploaded,
-          totalBytes,
-        });
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        if (continueOnError) {
-          errors.push({ path: file.relativePath, error: `Upload failed: ${errorMsg}` });
-        } else {
-          throw new Error(`Failed to upload ${file.relativePath}: ${errorMsg}`);
-        }
-      }
-    });
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // PHASE 6: Link children to parents using bulk operations
-    // ─────────────────────────────────────────────────────────────────────────
-    reportProgress({ phase: 'linking' });
-
-    // Build file path -> entity map
-    const filePathToEntity = new Map<string, CreatedFile>();
-    for (const file of createdFiles) {
-      filePathToEntity.set(file.relativePath, file);
-    }
-
-    // Group items by their parent path
-    // For root items (no parent path), parent is rootParentId (collection or specified folder)
-    const parentGroups = new Map<string, { folderId: string; children: { id: string }[] }>();
-
-    // Add folders to their parent groups
+    // Add folders as children of their parents
     for (const folder of createdFolders) {
       const parentPath = getParentPath(folder.relativePath);
-      let parentId: string;
+      const parentId = parentPath ? foldersByPath.get(parentPath)!.id : rootParentId;
 
-      if (parentPath === null) {
-        // Root level folder - parent is the target
-        parentId = rootParentId;
-      } else {
-        // Nested folder - find parent folder entity
-        const parentFolder = folderPathToEntity.get(parentPath);
-        if (!parentFolder) {
-          errors.push({
-            path: folder.relativePath,
-            error: `Parent folder not found: ${parentPath}`,
-          });
-          continue;
-        }
-        parentId = parentFolder.id;
-      }
-
-      if (!parentGroups.has(parentId)) {
-        parentGroups.set(parentId, { folderId: parentId, children: [] });
-      }
-      parentGroups.get(parentId)!.children.push({ id: folder.id });
+      if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
+      childrenByParent.get(parentId)!.push({ id: folder.id, type: 'folder' });
     }
 
-    // Add files to their parent groups
+    // Add files as children of their parents
     for (const file of createdFiles) {
       const parentPath = getParentPath(file.relativePath);
-      let parentId: string;
+      const parentId = parentPath ? foldersByPath.get(parentPath)!.id : rootParentId;
 
-      if (parentPath === null) {
-        // Root level file - parent is the target
-        parentId = rootParentId;
-      } else {
-        // Nested file - find parent folder entity
-        const parentFolder = folderPathToEntity.get(parentPath);
-        if (!parentFolder) {
-          errors.push({
-            path: file.relativePath,
-            error: `Parent folder not found: ${parentPath}`,
-          });
-          continue;
-        }
-        parentId = parentFolder.id;
-      }
-
-      if (!parentGroups.has(parentId)) {
-        parentGroups.set(parentId, { folderId: parentId, children: [] });
-      }
-      parentGroups.get(parentId)!.children.push({ id: file.id });
+      if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
+      childrenByParent.get(parentId)!.push({ id: file.id, type: 'file' });
     }
 
-    // Execute bulk add children for each parent
-    // We need to get current CID for each parent before linking
-    // Batch large groups to avoid API limits (max 50 children per request)
+    const totalParents = childrenByParent.size;
+    let completedParents = 0;
+
+    reportProgress({ phase: 'backlinking', totalParents, completedParents: 0 });
+
+    // Update all parents sequentially
+    // Note: We use the bulk children endpoint because relationships_add doesn't work for 'contains'
+    // The bulk endpoint has a limit of 50 children per call, so we batch if needed
     const BATCH_SIZE = 50;
 
-    for (const [parentId, group] of parentGroups) {
-      if (group.children.length === 0) continue;
-
-      // Split children into batches
-      const batches: Array<{ id: string }[]> = [];
-      for (let i = 0; i < group.children.length; i += BATCH_SIZE) {
-        batches.push(group.children.slice(i, i + BATCH_SIZE));
-      }
-
+    for (const [parentId, children] of childrenByParent.entries()) {
       try {
-        // Process each batch sequentially (need updated CID after each)
+        const isCollection = parentId === collectionId;
+
+        // Split children into batches
+        const batches: Array<{ id: string }[]> = [];
+        for (let i = 0; i < children.length; i += BATCH_SIZE) {
+          batches.push(children.slice(i, i + BATCH_SIZE).map((c) => ({ id: c.id })));
+        }
+
+        // Process each batch sequentially (CID changes after each batch)
         for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
           const batch = batches[batchIndex]!;
 
-          // Get current parent CID (refetch each time as it changes after each batch)
-          let expectTip: string;
-
-          if (parentId === collectionId) {
+          // Get current CID (must refetch after each batch since it changes)
+          let currentCid: string;
+          if (isCollection) {
             const { data, error } = await client.api.GET('/collections/{id}', {
-              params: { path: { id: collectionId } },
+              params: { path: { id: parentId } },
             });
             if (error || !data) {
-              throw new Error(`Failed to fetch collection CID: ${JSON.stringify(error)}`);
+              throw new Error(`Failed to fetch collection: ${JSON.stringify(error)}`);
             }
-            expectTip = data.cid;
+            currentCid = data.cid;
           } else {
             const { data, error } = await client.api.GET('/folders/{id}', {
               params: { path: { id: parentId } },
             });
             if (error || !data) {
-              throw new Error(`Failed to fetch folder CID: ${JSON.stringify(error)}`);
+              throw new Error(`Failed to fetch folder: ${JSON.stringify(error)}`);
             }
-            expectTip = data.cid;
+            currentCid = data.cid;
           }
 
-          // Bulk add this batch of children
+          // Use bulk children endpoint to add contains relationships
           const bulkBody: BulkAddChildrenRequest = {
-            expect_tip: expectTip,
+            expect_tip: currentCid,
             children: batch,
-            note: batches.length > 1 ? `${note || 'Upload'} (batch ${batchIndex + 1}/${batches.length})` : note,
+            note:
+              batches.length > 1
+                ? `${note || 'Upload'} (batch ${batchIndex + 1}/${batches.length})`
+                : note
+                  ? `${note} (backlink)`
+                  : 'Upload backlink',
           };
 
           const { error } = await client.api.POST('/folders/{id}/children/bulk', {
@@ -503,15 +520,21 @@ export async function uploadTree(
             throw new Error(JSON.stringify(error));
           }
         }
+
+        completedParents++;
+        reportProgress({
+          phase: 'backlinking',
+          totalParents,
+          completedParents,
+          currentItem: `parent:${parentId}`,
+        });
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         if (continueOnError) {
-          errors.push({
-            path: `parent:${parentId}`,
-            error: `Bulk linking failed: ${errorMsg}`,
-          });
+          errors.push({ path: `parent:${parentId}`, error: `Backlink failed: ${errorMsg}` });
+          completedParents++;
         } else {
-          throw new Error(`Failed to link children to ${parentId}: ${errorMsg}`);
+          throw new Error(`Failed to backlink parent ${parentId}: ${errorMsg}`);
         }
       }
     }
@@ -519,9 +542,8 @@ export async function uploadTree(
     // ─────────────────────────────────────────────────────────────────────────
     // Complete!
     // ─────────────────────────────────────────────────────────────────────────
-    reportProgress({ phase: 'complete' });
+    reportProgress({ phase: 'complete', totalParents, completedParents });
 
-    // Build result
     const resultFolders: CreatedEntity[] = createdFolders.map((f) => ({
       id: f.id,
       cid: f.entityCid,

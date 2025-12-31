@@ -132,10 +132,8 @@ describe('Upload E2E', () => {
 
       // Verify progress phases occurred in order
       expect(progressLog).toContain('computing-cids');
-      expect(progressLog).toContain('creating-folders');
-      expect(progressLog).toContain('creating-files');
-      expect(progressLog).toContain('uploading-content');
-      expect(progressLog).toContain('linking');
+      expect(progressLog).toContain('creating'); // Combined folders + files creation
+      expect(progressLog).toContain('backlinking'); // Parent contains updates
       expect(progressLog).toContain('complete');
 
       // Verify folder structure via API

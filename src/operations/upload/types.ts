@@ -91,37 +91,40 @@ export interface UploadTarget {
 export interface UploadProgress {
   /** Current phase of the upload */
   phase:
-    | 'scanning'
-    | 'computing-cids'
-    | 'creating-folders'
-    | 'creating-files'
-    | 'uploading-content'
-    | 'linking'
+    | 'computing-cids' // Computing content hashes
+    | 'creating' // Creating folder + file entities (merged phase)
+    | 'backlinking' // Updating parents with contains relationships
     | 'complete'
     | 'error';
 
-  /** Total number of files to upload */
-  totalFiles: number;
+  /** Current phase index (0=computing-cids, 1=creating, 2=backlinking) */
+  phaseIndex: number;
 
-  /** Number of files completed */
-  completedFiles: number;
+  /** Total number of phases (3, excluding complete/error) */
+  phaseCount: number;
 
-  /** Total number of folders to create */
-  totalFolders: number;
+  /** Progress within current phase (0-100) */
+  phasePercent: number;
 
-  /** Number of folders completed */
-  completedFolders: number;
+  /** Total number of entities (files + folders) */
+  totalEntities: number;
 
-  /** Current file being processed */
-  currentFile?: string;
+  /** Number of entities completed */
+  completedEntities: number;
 
-  /** Current folder being processed */
-  currentFolder?: string;
+  /** Total number of parents to backlink */
+  totalParents: number;
+
+  /** Number of parents backlinked */
+  completedParents: number;
+
+  /** Current item being processed */
+  currentItem?: string;
 
   /** Error message if phase is 'error' */
   error?: string;
 
-  /** Bytes uploaded so far (for content upload phase) */
+  /** Bytes uploaded so far */
   bytesUploaded?: number;
 
   /** Total bytes to upload */

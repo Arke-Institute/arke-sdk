@@ -93,20 +93,20 @@ export class FolderOperations {
             // Map new progress to old format
             options.onProgress!({
               phase:
-                p.phase === 'computing-cids' || p.phase === 'creating-folders'
+                p.phase === 'computing-cids'
                   ? 'creating-folders'
-                  : p.phase === 'creating-files' || p.phase === 'uploading-content'
+                  : p.phase === 'creating'
                     ? 'uploading-files'
-                    : p.phase === 'linking'
+                    : p.phase === 'backlinking'
                       ? 'linking'
                       : p.phase === 'complete'
                         ? 'complete'
                         : 'scanning',
-              totalFiles: p.totalFiles,
-              completedFiles: p.completedFiles,
-              totalFolders: p.totalFolders,
-              completedFolders: p.completedFolders,
-              currentFile: p.currentFile,
+              totalFiles: p.totalEntities,
+              completedFiles: p.completedEntities,
+              totalFolders: p.totalParents,
+              completedFolders: p.completedParents,
+              currentFile: p.currentItem,
             });
           }
         : undefined,
