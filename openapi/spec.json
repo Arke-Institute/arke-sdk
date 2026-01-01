@@ -47,6 +47,10 @@
     {
       "name": "Agents",
       "description": "Agent management and invocation"
+    },
+    {
+      "name": "Events",
+      "description": "Entity change event stream"
     }
   ],
   "components": {
@@ -4080,25 +4084,6 @@
           "grants_needed"
         ]
       },
-      "AgentLogRef": {
-        "type": "object",
-        "properties": {
-          "pi": {
-            "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "file"
-            ]
-          }
-        },
-        "required": [
-          "pi",
-          "type"
-        ]
-      },
       "InvokeGrantResult": {
         "type": "object",
         "properties": {
@@ -4138,8 +4123,10 @@
             "description": "Unique job identifier",
             "example": "job_01JEXAMPLEID12345678901"
           },
-          "log": {
-            "$ref": "#/components/schemas/AgentLogRef"
+          "job_collection": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "The job collection where agent writes logs"
           },
           "grants": {
             "type": "array",
@@ -4161,7 +4148,7 @@
         "required": [
           "status",
           "job_id",
-          "log",
+          "job_collection",
           "grants",
           "target_cid",
           "expires_at"
@@ -4226,6 +4213,11 @@
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
             "description": "Target collection ID to operate on"
+          },
+          "job_collection": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Job collection where agent should write logs. If not provided, creates new root collection."
           },
           "input": {
             "type": "object",
@@ -4360,6 +4352,101 @@
         },
         "required": [
           "keys"
+        ]
+      },
+      "EventItem": {
+        "type": "object",
+        "properties": {
+          "event_cid": {
+            "type": "string",
+            "minLength": 1,
+            "description": "CID of this event in the event chain",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ],
+            "description": "Type of entity change event",
+            "example": "create"
+          },
+          "pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID that was created or updated",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "ver": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Entity version number",
+            "example": 1
+          },
+          "tip_cid": {
+            "type": "string",
+            "minLength": 1,
+            "description": "CID of the entity manifest at this version",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "ts": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the event was recorded",
+            "example": "2025-12-26T12:00:00.000Z"
+          }
+        },
+        "required": [
+          "event_cid",
+          "type",
+          "pi",
+          "ver",
+          "tip_cid",
+          "ts"
+        ]
+      },
+      "EventsListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventItem"
+            },
+            "description": "Events in reverse chronological order"
+          },
+          "total_events": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total events in the event chain",
+            "example": 1542
+          },
+          "total_pis": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total unique entity IDs across all events",
+            "example": 987
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Whether more events exist beyond this page"
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1,
+            "description": "CID to use as \"cursor\" parameter for next page",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          }
+        },
+        "required": [
+          "items",
+          "total_events",
+          "total_pis",
+          "has_more",
+          "next_cursor"
         ]
       }
     },
@@ -8871,6 +8958,56 @@
                 },
                 "example": {
                   "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "List events",
+        "description": "Returns entity change events in reverse chronological order (newest first).\n\nEach event represents a create or update operation on an entity. Use cursor-based pagination to walk through the event history.\n\n**Use cases:**\n- Syncing entity changes to external systems\n- Building search indexes\n- Change tracking and audit logs\n\n**Note:** This endpoint is public. Access control is enforced at the entity level - if you don't have permission to view an entity, you won't be able to fetch its manifest even if you see an event for it.",
+        "x-arke-action": "events:list",
+        "x-arke-auth": "none",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50,
+              "example": 50
+            },
+            "required": false,
+            "description": "Maximum events to return (1-100, default 50)",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "IPFS Content Identifier (CID)",
+              "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+            },
+            "required": false,
+            "description": "Event CID to continue from (for pagination)",
+            "name": "cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventsListResponse"
                 }
               }
             }

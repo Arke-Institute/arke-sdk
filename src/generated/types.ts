@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2025-12-31T18:09:13.616Z
+ * Generated: 2026-01-01T18:48:14.305Z
  */
 
 export type paths = {
@@ -4594,6 +4594,59 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List events
+         * @description Returns entity change events in reverse chronological order (newest first).
+         *
+         *     Each event represents a create or update operation on an entity. Use cursor-based pagination to walk through the event history.
+         *
+         *     **Use cases:**
+         *     - Syncing entity changes to external systems
+         *     - Building search indexes
+         *     - Change tracking and audit logs
+         *
+         *     **Note:** This endpoint is public. Access control is enforced at the entity level - if you don't have permission to view an entity, you won't be able to fetch its manifest even if you see an event for it.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Maximum events to return (1-100, default 50) */
+                    limit?: number;
+                    /** @description Event CID to continue from (for pagination) */
+                    cursor?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Event list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EventsListResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 };
 export type webhooks = Record<string, never>;
 export type components = {
@@ -6564,11 +6617,6 @@ export type components = {
             /** @description True if some agents need permission grants */
             grants_needed: boolean;
         };
-        AgentLogRef: {
-            pi: string;
-            /** @enum {string} */
-            type: "file";
-        };
         InvokeGrantResult: {
             agent_id: string;
             role: string;
@@ -6584,7 +6632,8 @@ export type components = {
              * @example job_01JEXAMPLEID12345678901
              */
             job_id: string;
-            log: components["schemas"]["AgentLogRef"];
+            /** @description The job collection where agent writes logs */
+            job_collection: string;
             grants: components["schemas"]["InvokeGrantResult"][];
             /**
              * @description IPFS Content Identifier (CID)
@@ -6614,6 +6663,8 @@ export type components = {
         InvokeAgentRequest: {
             /** @description Target collection ID to operate on */
             target: string;
+            /** @description Job collection where agent should write logs. If not provided, creates new root collection. */
+            job_collection?: string;
             /** @description Input data for the agent (validated against agent input_schema) */
             input?: {
                 [key: string]: unknown;
@@ -6677,6 +6728,61 @@ export type components = {
         };
         ListAgentApiKeysResponse: {
             keys: components["schemas"]["AgentApiKeyInfo"][];
+        };
+        EventItem: {
+            /**
+             * @description CID of this event in the event chain
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            event_cid: string;
+            /**
+             * @description Type of entity change event
+             * @example create
+             * @enum {string}
+             */
+            type: "create" | "update";
+            /**
+             * @description Entity ID that was created or updated
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            pi: string;
+            /**
+             * @description Entity version number
+             * @example 1
+             */
+            ver: number;
+            /**
+             * @description CID of the entity manifest at this version
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            tip_cid: string;
+            /**
+             * Format: date-time
+             * @description When the event was recorded
+             * @example 2025-12-26T12:00:00.000Z
+             */
+            ts: string;
+        };
+        EventsListResponse: {
+            /** @description Events in reverse chronological order */
+            items: components["schemas"]["EventItem"][];
+            /**
+             * @description Total events in the event chain
+             * @example 1542
+             */
+            total_events: number;
+            /**
+             * @description Total unique entity IDs across all events
+             * @example 987
+             */
+            total_pis: number;
+            /** @description Whether more events exist beyond this page */
+            has_more: boolean;
+            /**
+             * @description CID to use as "cursor" parameter for next page
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            next_cursor: string | null;
         };
     };
     responses: never;
