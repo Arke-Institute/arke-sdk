@@ -11,11 +11,35 @@ import { ArkeClientConfig, DEFAULT_CONFIG } from './config.js';
 export type ArkeApiClient = Client<paths>;
 
 /**
+ * Check if a token is an API key (starts with 'ak_' or 'uk_')
+ */
+export function isApiKey(token: string): boolean {
+  return token.startsWith('ak_') || token.startsWith('uk_');
+}
+
+/**
+ * Get the appropriate Authorization header value for a token
+ * - API keys (ak_*, uk_*) use: ApiKey {token}
+ * - JWT tokens use: Bearer {token}
+ */
+export function getAuthorizationHeader(token: string): string {
+  if (isApiKey(token)) {
+    return `ApiKey ${token}`;
+  }
+  return `Bearer ${token}`;
+}
+
+/**
  * Type-safe client for the Arke API
  *
  * @example
  * ```typescript
+ * // With JWT token
  * const arke = new ArkeClient({ authToken: 'your-jwt-token' });
+ *
+ * // With API key (agent or user)
+ * const arke = new ArkeClient({ authToken: 'ak_your-agent-api-key' });
+ * const arke = new ArkeClient({ authToken: 'uk_your-user-api-key' });
  *
  * // Create an entity
  * const { data, error } = await arke.api.POST('/entities', {
@@ -57,7 +81,7 @@ export class ArkeClient {
     };
 
     if (this.config.authToken) {
-      headers['Authorization'] = `Bearer ${this.config.authToken}`;
+      headers['Authorization'] = getAuthorizationHeader(this.config.authToken);
     }
 
     if (this.config.network === 'test') {

@@ -27,7 +27,13 @@
  */
 
 // Main client
-export { ArkeClient, createArkeClient, type ArkeApiClient } from './client/ArkeClient.js';
+export {
+  ArkeClient,
+  createArkeClient,
+  isApiKey,
+  getAuthorizationHeader,
+  type ArkeApiClient,
+} from './client/ArkeClient.js';
 
 // Configuration
 export { type ArkeClientConfig, DEFAULT_CONFIG } from './client/config.js';

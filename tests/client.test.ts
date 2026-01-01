@@ -9,6 +9,8 @@ import {
   AuthenticationError,
   ForbiddenError,
   parseApiError,
+  isApiKey,
+  getAuthorizationHeader,
   DEFAULT_CONFIG,
 } from '../src/index.js';
 
@@ -68,6 +70,73 @@ describe('createArkeClient', () => {
   it('passes config to client', () => {
     const client = createArkeClient({ authToken: 'my-token' });
     expect(client.isAuthenticated).toBe(true);
+  });
+});
+
+describe('API Key Authentication', () => {
+  describe('isApiKey', () => {
+    it('returns true for agent API keys (ak_ prefix)', () => {
+      expect(isApiKey('ak_1234567890abcdef')).toBe(true);
+    });
+
+    it('returns true for user API keys (uk_ prefix)', () => {
+      expect(isApiKey('uk_1234567890abcdef')).toBe(true);
+    });
+
+    it('returns false for JWT tokens', () => {
+      expect(isApiKey('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U')).toBe(false);
+    });
+
+    it('returns false for random strings', () => {
+      expect(isApiKey('some-random-token')).toBe(false);
+    });
+
+    it('returns false for tokens starting with similar prefixes', () => {
+      expect(isApiKey('akx_not-valid')).toBe(false);
+      expect(isApiKey('ukx_not-valid')).toBe(false);
+    });
+  });
+
+  describe('getAuthorizationHeader', () => {
+    it('returns ApiKey header for agent API keys', () => {
+      const token = 'ak_1234567890abcdef';
+      expect(getAuthorizationHeader(token)).toBe('ApiKey ak_1234567890abcdef');
+    });
+
+    it('returns ApiKey header for user API keys', () => {
+      const token = 'uk_1234567890abcdef';
+      expect(getAuthorizationHeader(token)).toBe('ApiKey uk_1234567890abcdef');
+    });
+
+    it('returns Bearer header for JWT tokens', () => {
+      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U';
+      expect(getAuthorizationHeader(token)).toBe(`Bearer ${token}`);
+    });
+
+    it('returns Bearer header for other tokens', () => {
+      const token = 'some-other-token';
+      expect(getAuthorizationHeader(token)).toBe('Bearer some-other-token');
+    });
+  });
+
+  describe('ArkeClient with API keys', () => {
+    it('accepts agent API key as authToken', () => {
+      const client = new ArkeClient({ authToken: 'ak_test-agent-key' });
+      expect(client.isAuthenticated).toBe(true);
+    });
+
+    it('accepts user API key as authToken', () => {
+      const client = new ArkeClient({ authToken: 'uk_test-user-key' });
+      expect(client.isAuthenticated).toBe(true);
+    });
+
+    it('can set API key after initialization', () => {
+      const client = new ArkeClient();
+      expect(client.isAuthenticated).toBe(false);
+
+      client.setAuthToken('ak_new-agent-key');
+      expect(client.isAuthenticated).toBe(true);
+    });
   });
 });
 
