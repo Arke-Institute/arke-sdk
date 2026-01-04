@@ -1802,6 +1802,20 @@
           "expect_tip"
         ]
       },
+      "EntityCollectionResponse": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The collection ID this entity belongs to, or null if not in any collection",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          }
+        },
+        "required": [
+          "collection_id"
+        ]
+      },
       "AddRelationshipResponse": {
         "type": "object",
         "properties": {
@@ -6518,6 +6532,69 @@
                     "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
                     "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entities/{id}/collection": {
+      "get": {
+        "tags": [
+          "Entities"
+        ],
+        "summary": "Get entity collection",
+        "description": "Returns the collection ID that this entity belongs to. Returns null if the entity is not in any collection. If the entity IS a collection, returns its own ID.",
+        "x-arke-action": "entity:view",
+        "x-arke-auth": "optional",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Collection lookup result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityCollectionResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
                 }
               }
             }

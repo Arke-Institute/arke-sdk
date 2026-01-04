@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-01-03T11:01:54.822Z
+ * Generated: 2026-01-04T16:43:08.387Z
  */
 
 export type paths = {
@@ -2037,6 +2037,76 @@ export type paths = {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entities/{id}/collection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get entity collection
+         * @description Returns the collection ID that this entity belongs to. Returns null if the entity is not in any collection. If the entity IS a collection, returns its own ID.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Collection lookup result */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EntityCollectionResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5785,6 +5855,13 @@ export type components = {
              * @example Added Chapter 42: The Whiteness of the Whale
              */
             note?: string;
+        };
+        EntityCollectionResponse: {
+            /**
+             * @description The collection ID this entity belongs to, or null if not in any collection
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            collection_id: string | null;
         };
         AddRelationshipResponse: {
             source: components["schemas"]["EntityResponse"] & unknown;
