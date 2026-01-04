@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-01-04T17:59:16.167Z
+ * Generated: 2026-01-05T14:45:41.043Z
  */
 
 export type paths = {
@@ -1491,6 +1491,89 @@ export type paths = {
                 };
             };
         };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collections/{id}/entities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List entities in a collection
+         * @description Returns entities belonging to this collection from the graph database.
+         *
+         *     Supports pagination and optional type filtering. Results are ordered by creation date (newest first).
+         */
+        get: {
+            parameters: {
+                query?: {
+                    type?: string;
+                    limit?: number;
+                    offset?: number | null;
+                };
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Entities in collection */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CollectionEntitiesResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description GraphDB service unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -5619,6 +5702,45 @@ export type components = {
              * @example 01JQ3EQ3EG000000000000000
              */
             entity_id: string;
+        };
+        CollectionEntitySummary: {
+            /** @description Entity persistent identifier */
+            pi: string;
+            /**
+             * @description Entity type
+             * @example document
+             */
+            type: string;
+            /**
+             * @description Entity display label
+             * @example My Document
+             */
+            label: string;
+            /**
+             * Format: date-time
+             * @description When the entity was created
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the entity was last updated
+             */
+            updated_at: string;
+        };
+        CollectionEntitiesResponse: {
+            /** @description Collection ID */
+            collection_id: string;
+            /** @description Entities in this collection */
+            entities: components["schemas"]["CollectionEntitySummary"][];
+            /** @description Pagination info */
+            pagination: {
+                /** @description Current offset */
+                offset: number;
+                /** @description Requested limit */
+                limit: number;
+                /** @description Number of entities returned */
+                count: number;
+            };
         };
         EntityCreatedResponse: {
             /**

@@ -1329,6 +1329,88 @@
           "entity_id"
         ]
       },
+      "CollectionEntitySummary": {
+        "type": "object",
+        "properties": {
+          "pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity persistent identifier"
+          },
+          "type": {
+            "type": "string",
+            "description": "Entity type",
+            "example": "document"
+          },
+          "label": {
+            "type": "string",
+            "description": "Entity display label",
+            "example": "My Document"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the entity was created"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the entity was last updated"
+          }
+        },
+        "required": [
+          "pi",
+          "type",
+          "label",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "CollectionEntitiesResponse": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Collection ID"
+          },
+          "entities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectionEntitySummary"
+            },
+            "description": "Entities in this collection"
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "offset": {
+                "type": "integer",
+                "description": "Current offset"
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Requested limit"
+              },
+              "count": {
+                "type": "integer",
+                "description": "Number of entities returned"
+              }
+            },
+            "required": [
+              "offset",
+              "limit",
+              "count"
+            ],
+            "description": "Pagination info"
+          }
+        },
+        "required": [
+          "collection_id",
+          "entities",
+          "pagination"
+        ]
+      },
       "EntityCreatedResponse": {
         "type": "object",
         "properties": {
@@ -5979,6 +6061,108 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/collections/{id}/entities": {
+      "get": {
+        "tags": [
+          "Collections"
+        ],
+        "summary": "List entities in a collection",
+        "description": "Returns entities belonging to this collection from the graph database.\n\nSupports pagination and optional type filtering. Results are ordered by creation date (newest first).",
+        "x-arke-action": "collection:view",
+        "x-arke-auth": "optional",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Filter entities by type",
+              "example": "document"
+            },
+            "required": false,
+            "name": "type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1000,
+              "description": "Maximum number of entities to return",
+              "example": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "nullable": true,
+              "minimum": 0,
+              "default": 0,
+              "description": "Number of entities to skip",
+              "example": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entities in collection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionEntitiesResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GraphDB service unavailable"
           }
         }
       }
