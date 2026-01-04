@@ -2,17 +2,15 @@
  * Upload Engine
  *
  * Core upload implementation optimized for fast tree visibility:
- * 1. Compute CIDs for all files (high parallelism)
- * 2. Create folders by depth (with unidirectional 'in' → parent)
- * 3. Create file entities (metadata only, high parallelism)
- * 4. Backlink parents with 'contains' relationships
+ * 1. Create folders by depth (with unidirectional 'in' → parent)
+ * 2. Create file entities (metadata only, high parallelism)
+ * 3. Backlink parents with 'contains' relationships
  *    → Tree is now browsable! Users can explore structure immediately.
- * 5. Upload file content to S3 + confirm (byte-based pool, ~200MB in flight)
- *    - PUT to presigned S3 URL
- *    - POST /files/{id}/confirm-upload to set uploaded: true
- *    - Auto-retry on CAS conflict (entity may have changed during upload)
+ * 4. Upload file content via POST /files/{id}/content (byte-based pool, ~200MB in flight)
+ *    - Direct upload to API endpoint
+ *    - API streams to R2, computes CID, updates entity atomically
  *
- * Byte-based pool (for S3 uploads):
+ * Byte-based pool (for uploads):
  * - Maintains ~200MB of data in flight at all times
  * - When a file completes, next file starts immediately (no gaps)
  * - Small files: Many upload in parallel
@@ -27,13 +25,11 @@
 
 import type { ArkeClient } from '../../client/ArkeClient.js';
 import type { components } from '../../generated/types.js';
-import { computeCid } from './cid.js';
 import type {
   UploadTree,
   UploadOptions,
   UploadResult,
   UploadProgress,
-  PreparedFile,
   CreatedFolder,
   CreatedFile,
   CreatedEntity,
@@ -47,14 +43,13 @@ type UpdateFolderRequest = components['schemas']['UpdateFolderRequest'];
 type UpdateCollectionRequest = components['schemas']['UpdateCollectionRequest'];
 
 // Phase constants
-const PHASE_COUNT = 4; // computing-cids, creating, backlinking, uploading (excluding complete/error)
+const PHASE_COUNT = 3; // creating, backlinking, uploading (excluding complete/error)
 const PHASE_INDEX: Record<string, number> = {
-  'computing-cids': 0,
-  'creating': 1,
-  'backlinking': 2,
-  'uploading': 3,
-  'complete': 4,
-  'error': -1,
+  creating: 0,
+  backlinking: 1,
+  uploading: 2,
+  complete: 3,
+  error: -1,
 };
 
 // =============================================================================
@@ -188,16 +183,12 @@ export async function uploadTree(
   // Helper to report progress
   const reportProgress = (progress: Partial<UploadProgress>) => {
     if (onProgress) {
-      const phase = progress.phase || 'computing-cids';
+      const phase = progress.phase || 'creating';
       const phaseIndex = PHASE_INDEX[phase] ?? -1;
 
       // Calculate phase percent based on current phase
       let phasePercent = 0;
-      if (phase === 'computing-cids') {
-        // CID phase: progress is based on files processed
-        const done = progress.completedEntities ?? completedEntities;
-        phasePercent = tree.files.length > 0 ? Math.round((done / tree.files.length) * 100) : 100;
-      } else if (phase === 'creating') {
+      if (phase === 'creating') {
         // Creating phase: progress is based on entities created
         const done = progress.completedEntities ?? completedEntities;
         phasePercent = totalEntities > 0 ? Math.round((done / totalEntities) * 100) : 100;
@@ -277,38 +268,7 @@ export async function uploadTree(
     const rootParentId = target.parentId ?? collectionId;
 
     // ─────────────────────────────────────────────────────────────────────────
-    // PHASE 1: Compute CIDs for all files
-    // ─────────────────────────────────────────────────────────────────────────
-    reportProgress({ phase: 'computing-cids', completedEntities: 0 });
-
-    const preparedFiles: PreparedFile[] = [];
-    let cidProgress = 0;
-
-    await parallelLimit(tree.files, Math.max(concurrency, 20), async (file) => {
-      try {
-        const data = await file.getData();
-        const cid = await computeCid(data);
-
-        preparedFiles.push({ ...file, cid });
-
-        cidProgress++;
-        reportProgress({
-          phase: 'computing-cids',
-          completedEntities: cidProgress,
-          currentItem: file.relativePath,
-        });
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        if (continueOnError) {
-          errors.push({ path: file.relativePath, error: `CID computation failed: ${errorMsg}` });
-        } else {
-          throw new Error(`Failed to compute CID for ${file.relativePath}: ${errorMsg}`);
-        }
-      }
-    });
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // PHASE 2: Create entities (folders by depth, then files)
+    // PHASE 1: Create entities (folders by depth, then files)
     // ─────────────────────────────────────────────────────────────────────────
     reportProgress({ phase: 'creating', completedEntities: 0 });
 
@@ -374,19 +334,19 @@ export async function uploadTree(
     // Use simple concurrency limit for API calls
     const FILE_CREATION_CONCURRENCY = 50;
 
-    await parallelLimit(preparedFiles, FILE_CREATION_CONCURRENCY, async (file) => {
+    await parallelLimit(tree.files, FILE_CREATION_CONCURRENCY, async (file) => {
       try {
         const parentPath = getParentPath(file.relativePath);
         const parentId = parentPath ? foldersByPath.get(parentPath)!.id : rootParentId;
         const parentType = parentPath ? 'folder' : parentId === collectionId ? 'collection' : 'folder';
 
         // Create file entity with 'in' relationship
+        // Server computes CID when content is uploaded
         const fileBody: CreateFileRequest = {
-          key: file.cid,
+          key: crypto.randomUUID(), // Generate unique storage key
           filename: file.name,
           content_type: file.mimeType,
           size: file.size,
-          cid: file.cid,
           collection: collectionId,
           relationships: [{ predicate: 'in', peer: parentId, peer_type: parentType }],
         };
@@ -399,13 +359,11 @@ export async function uploadTree(
           throw new Error(`Entity creation failed: ${JSON.stringify(error)}`);
         }
 
-        // Track file with presigned URL for later upload
+        // Track file for later upload
         createdFiles.push({
           ...file,
           id: data.id,
           entityCid: data.cid,
-          uploadUrl: data.upload_url,
-          uploadExpiresAt: data.upload_expires_at,
         });
 
         completedEntities++;
@@ -426,7 +384,7 @@ export async function uploadTree(
     });
 
     // ─────────────────────────────────────────────────────────────────────────
-    // PHASE 3: Backlink - Update each parent with 'contains' relationships
+    // PHASE 2: Backlink - Update each parent with 'contains' relationships
     // ─────────────────────────────────────────────────────────────────────────
 
     // Build parent -> children map
@@ -538,7 +496,7 @@ export async function uploadTree(
     });
 
     // ─────────────────────────────────────────────────────────────────────────
-    // PHASE 4: Upload file content to S3
+    // PHASE 3: Upload file content directly to API
     // Tree is now browsable! Users can explore while content uploads.
     // ─────────────────────────────────────────────────────────────────────────
     reportProgress({ phase: 'uploading', bytesUploaded: 0 });
@@ -564,60 +522,17 @@ export async function uploadTree(
               body = new Blob([fileData], { type: file.mimeType });
             }
 
-            // Upload to presigned URL
-            const uploadResponse = await fetch(file.uploadUrl, {
-              method: 'PUT',
-              body,
+            // Upload content directly to API endpoint
+            // The API streams to R2, computes CID, and updates the entity atomically
+            const { error: uploadError } = await client.api.POST('/files/{id}/content', {
+              params: { path: { id: file.id } },
+              body: body as unknown as Record<string, never>,
+              bodySerializer: (b: unknown) => b as BodyInit,
               headers: { 'Content-Type': file.mimeType },
-            });
+            } as Parameters<typeof client.api.POST>[1]);
 
-            if (!uploadResponse.ok) {
-              throw new Error(`S3 upload failed with status ${uploadResponse.status}`);
-            }
-
-            // Confirm upload completed - sets uploaded: true on entity
-            // Retry on CAS conflict (entity may have been updated during upload)
-            let confirmTip = file.entityCid;
-            let confirmAttempts = 0;
-            const MAX_CONFIRM_ATTEMPTS = 3;
-
-            while (confirmAttempts < MAX_CONFIRM_ATTEMPTS) {
-              confirmAttempts++;
-
-              const { error: confirmError } = await client.api.POST('/files/{id}/confirm-upload', {
-                params: { path: { id: file.id } },
-                body: {
-                  expect_tip: confirmTip,
-                  note: note ? `${note} (confirmed)` : 'Upload confirmed',
-                },
-              });
-
-              if (!confirmError) {
-                break; // Success
-              }
-
-              // Check for CAS conflict (409)
-              const errorStr = JSON.stringify(confirmError);
-              if (errorStr.includes('409') || errorStr.includes('CAS') || errorStr.includes('conflict')) {
-                // Fetch current file to get updated CID
-                const { data: currentFile, error: fetchError } = await client.api.GET('/files/{id}', {
-                  params: { path: { id: file.id } },
-                });
-
-                if (fetchError || !currentFile) {
-                  throw new Error(`Failed to fetch file for confirm retry: ${JSON.stringify(fetchError)}`);
-                }
-
-                confirmTip = currentFile.cid;
-                // Loop will retry with new tip
-              } else {
-                // Non-CAS error - throw
-                throw new Error(`Confirm upload failed: ${errorStr}`);
-              }
-            }
-
-            if (confirmAttempts >= MAX_CONFIRM_ATTEMPTS) {
-              throw new Error(`Confirm upload failed after ${MAX_CONFIRM_ATTEMPTS} CAS retries`);
+            if (uploadError) {
+              throw new Error(`Upload failed: ${JSON.stringify(uploadError)}`);
             }
 
             bytesUploaded += file.size;

@@ -1673,6 +1673,135 @@
           "expect_tip"
         ]
       },
+      "EntityDeletedResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "cid": {
+            "type": "string",
+            "minLength": 1,
+            "description": "IPFS Content Identifier (CID)",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "deleted_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO timestamp when the entity was deleted"
+          },
+          "ver": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Entity version number",
+            "example": 1
+          },
+          "prev_cid": {
+            "type": "string",
+            "minLength": 1,
+            "description": "IPFS Content Identifier (CID)",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          }
+        },
+        "required": [
+          "id",
+          "cid",
+          "deleted_at",
+          "ver",
+          "prev_cid"
+        ]
+      },
+      "DeleteEntityRequest": {
+        "type": "object",
+        "properties": {
+          "expect_tip": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Current tip CID for CAS validation. Request fails with 409 if this does not match.",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional note describing this change",
+            "example": "Added Chapter 42: The Whiteness of the Whale"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Reason for deleting the entity",
+            "example": "Duplicate entry"
+          }
+        },
+        "required": [
+          "expect_tip"
+        ]
+      },
+      "EntityUpdateResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "prev_cid": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Previous version CID",
+                "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+              }
+            },
+            "required": [
+              "prev_cid"
+            ]
+          }
+        ]
+      },
+      "EntityRestoredResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityUpdateResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "restored_from_ver": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "description": "The version number that was restored from",
+                "example": 1
+              }
+            },
+            "required": [
+              "restored_from_ver"
+            ]
+          }
+        ]
+      },
+      "RestoreEntityRequest": {
+        "type": "object",
+        "properties": {
+          "expect_tip": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Current tip CID for CAS validation. Request fails with 409 if this does not match.",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional note describing this change",
+            "example": "Added Chapter 42: The Whiteness of the Whale"
+          }
+        },
+        "required": [
+          "expect_tip"
+        ]
+      },
       "AddRelationshipResponse": {
         "type": "object",
         "properties": {
@@ -1929,18 +2058,6 @@
             "exclusiveMinimum": true,
             "description": "Unix timestamp in milliseconds",
             "example": 1735214400000
-          },
-          "upload_url": {
-            "type": "string",
-            "format": "uri",
-            "description": "Presigned S3 URL for uploading file content",
-            "example": "https://arke-blocks.s3.amazonaws.com/01JFILE123.../v1?X-Amz-..."
-          },
-          "upload_expires_at": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When the upload URL expires (15 minutes)",
-            "example": "2025-12-26T12:00:00.000Z"
           }
         },
         "required": [
@@ -1951,9 +2068,7 @@
           "relationships",
           "ver",
           "created_at",
-          "ts",
-          "upload_url",
-          "upload_expires_at"
+          "ts"
         ]
       },
       "CreateFileRequest": {
@@ -1962,7 +2077,7 @@
           "key": {
             "type": "string",
             "minLength": 1,
-            "description": "Storage key in S3. Best practice: use the CID.",
+            "description": "Storage key in R2. Best practice: use the CID.",
             "example": "bafkreiabc123..."
           },
           "filename": {
@@ -1980,13 +2095,8 @@
           "size": {
             "type": "integer",
             "minimum": 0,
-            "description": "File size in bytes",
+            "description": "Expected file size in bytes (verified on upload)",
             "example": 1048576
-          },
-          "cid": {
-            "type": "string",
-            "description": "Content identifier (CID). Not verified, just metadata.",
-            "example": "bafkreiabc123..."
           },
           "description": {
             "type": "string",
@@ -2075,43 +2185,31 @@
           }
         ]
       },
-      "DownloadResponse": {
-        "type": "object",
-        "properties": {
-          "download_url": {
-            "type": "string",
-            "format": "uri",
-            "description": "Presigned S3 URL for downloading file content",
-            "example": "https://arke-blocks.s3.amazonaws.com/01JFILE123.../v1?X-Amz-..."
+      "UploadContentResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityResponse"
           },
-          "expires_at": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When the download URL expires (5 minutes)",
-            "example": "2025-12-26T12:00:00.000Z"
-          },
-          "filename": {
-            "type": "string",
-            "description": "Filename for download",
-            "example": "document.pdf"
-          },
-          "content_type": {
-            "type": "string",
-            "description": "MIME type of the file",
-            "example": "application/pdf"
-          },
-          "size": {
-            "type": "integer",
-            "description": "File size in bytes",
-            "example": 1048576
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "file"
+                ]
+              },
+              "prev_cid": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Previous version CID",
+                "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+              }
+            },
+            "required": [
+              "prev_cid"
+            ]
           }
-        },
-        "required": [
-          "download_url",
-          "expires_at",
-          "filename",
-          "content_type",
-          "size"
         ]
       },
       "UpdateFileResponse": {
@@ -2269,7 +2367,7 @@
           "key": {
             "type": "string",
             "minLength": 1,
-            "description": "New storage key. Must already exist in S3 (for regression to old version)."
+            "description": "New storage key. Must already exist in R2 (for regression to old version)."
           },
           "filename": {
             "type": "string",
@@ -2286,10 +2384,6 @@
             "minimum": 0,
             "description": "New file size in bytes"
           },
-          "cid": {
-            "type": "string",
-            "description": "New content identifier"
-          },
           "description": {
             "type": "string",
             "description": "New description"
@@ -2302,26 +2396,20 @@
       "ReuploadFileResponse": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/UpdateFileResponse"
+            "$ref": "#/components/schemas/FileResponse"
           },
           {
             "type": "object",
             "properties": {
-              "upload_url": {
+              "prev_cid": {
                 "type": "string",
-                "format": "uri",
-                "description": "Presigned S3 URL for uploading new file content"
-              },
-              "upload_expires_at": {
-                "type": "string",
-                "format": "date-time",
-                "description": "When the upload URL expires (15 minutes)",
-                "example": "2025-12-26T12:00:00.000Z"
+                "minLength": 1,
+                "description": "Previous version CID",
+                "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
               }
             },
             "required": [
-              "upload_url",
-              "upload_expires_at"
+              "prev_cid"
             ]
           }
         ]
@@ -2343,7 +2431,7 @@
           "key": {
             "type": "string",
             "minLength": 1,
-            "description": "New storage key. Must NOT already exist in S3.",
+            "description": "New storage key. Must NOT already exist in R2.",
             "example": "v2"
           },
           "content_type": {
@@ -2355,17 +2443,13 @@
           "size": {
             "type": "integer",
             "minimum": 0,
-            "description": "Size of the new file in bytes",
+            "description": "Expected size of the new file in bytes (verified on upload)",
             "example": 2097152
           },
           "filename": {
             "type": "string",
             "minLength": 1,
             "description": "New filename (optional, keeps current if not provided)"
-          },
-          "cid": {
-            "type": "string",
-            "description": "Content identifier for new file"
           },
           "description": {
             "type": "string",
@@ -2377,51 +2461,6 @@
           "key",
           "content_type",
           "size"
-        ]
-      },
-      "ConfirmUploadResponse": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/FileResponse"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "prev_cid": {
-                "type": "string",
-                "minLength": 1,
-                "description": "Previous version CID. Not present if upload was already confirmed.",
-                "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
-              },
-              "already_confirmed": {
-                "type": "boolean",
-                "description": "True if upload was already confirmed. Entity was not modified.",
-                "example": false
-              }
-            },
-            "required": [
-              "already_confirmed"
-            ]
-          }
-        ]
-      },
-      "ConfirmUploadRequest": {
-        "type": "object",
-        "properties": {
-          "expect_tip": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Current tip CID for CAS validation. Request fails with 409 if this does not match.",
-            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
-          },
-          "note": {
-            "type": "string",
-            "description": "Optional note describing this change",
-            "example": "Added Chapter 42: The Whiteness of the Whale"
-          }
-        },
-        "required": [
-          "expect_tip"
         ]
       },
       "CreateFolderResponse": {
@@ -4354,99 +4393,64 @@
           "keys"
         ]
       },
-      "EventItem": {
+      "Event": {
         "type": "object",
         "properties": {
-          "event_cid": {
-            "type": "string",
-            "minLength": 1,
-            "description": "CID of this event in the event chain",
-            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "create",
-              "update"
-            ],
-            "description": "Type of entity change event",
-            "example": "create"
+          "id": {
+            "type": "integer",
+            "description": "Auto-increment event ID (use as cursor)",
+            "example": 12346
           },
           "pi": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Entity ID that was created or updated",
+            "description": "Entity ID that changed",
             "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
           },
-          "ver": {
-            "type": "integer",
-            "minimum": 0,
-            "exclusiveMinimum": true,
-            "description": "Entity version number",
-            "example": 1
-          },
-          "tip_cid": {
+          "cid": {
             "type": "string",
             "minLength": 1,
-            "description": "CID of the entity manifest at this version",
+            "description": "New manifest CID",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "ts": {
             "type": "string",
-            "format": "date-time",
-            "description": "When the event was recorded",
-            "example": "2025-12-26T12:00:00.000Z"
+            "description": "ISO timestamp of the event",
+            "example": "2025-01-15T12:00:01Z"
           }
         },
         "required": [
-          "event_cid",
-          "type",
+          "id",
           "pi",
-          "ver",
-          "tip_cid",
+          "cid",
           "ts"
         ]
       },
       "EventsListResponse": {
         "type": "object",
         "properties": {
-          "items": {
+          "events": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/EventItem"
+              "$ref": "#/components/schemas/Event"
             },
-            "description": "Events in reverse chronological order"
-          },
-          "total_events": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Total events in the event chain",
-            "example": 1542
-          },
-          "total_pis": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Total unique entity IDs across all events",
-            "example": 987
+            "description": "List of events"
           },
           "has_more": {
             "type": "boolean",
-            "description": "Whether more events exist beyond this page"
+            "description": "Whether there are more events available",
+            "example": true
           },
-          "next_cursor": {
-            "type": "string",
-            "nullable": true,
-            "minLength": 1,
-            "description": "CID to use as \"cursor\" parameter for next page",
-            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          "cursor": {
+            "type": "integer",
+            "description": "Cursor for the next page (pass as ?after= parameter)",
+            "example": 12347
           }
         },
         "required": [
-          "items",
-          "total_events",
-          "total_pis",
+          "events",
           "has_more",
-          "next_cursor"
+          "cursor"
         ]
       }
     },
@@ -6259,6 +6263,266 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "Entities"
+        ],
+        "summary": "Delete entity",
+        "description": "Soft-deletes an entity by creating a tombstone version. The entity can be restored later via POST /entities/:id/restore. Note: entity:delete on a collection requires collection:delete permission.",
+        "x-arke-action": "entity:delete",
+        "x-arke-auth": "required",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteEntityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Entity deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityDeletedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - CAS validation failed (entity was modified)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CASErrorResponse"
+                },
+                "example": {
+                  "error": "Conflict: entity was modified",
+                  "details": {
+                    "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                    "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entities/{id}/restore": {
+      "post": {
+        "tags": [
+          "Entities"
+        ],
+        "summary": "Restore deleted entity",
+        "description": "Restores a deleted entity by finding the last non-deleted version and creating a new version from it. Note: entity:restore on a collection requires collection:restore permission.",
+        "x-arke-action": "entity:restore",
+        "x-arke-auth": "required",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreEntityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Entity restored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityRestoredResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - CAS validation failed (entity was modified)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CASErrorResponse"
+                },
+                "example": {
+                  "error": "Conflict: entity was modified",
+                  "details": {
+                    "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                    "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/relationships": {
@@ -6499,7 +6763,7 @@
           "Files"
         ],
         "summary": "Create file entity",
-        "description": "Creates a new file entity and returns a presigned upload URL.\n\n## Flow\n1. Call this endpoint with file metadata (key, filename, content_type, size)\n2. Receive entity data + presigned S3 upload URL (uploaded: false)\n3. PUT the file content to the upload URL\n4. Call POST /{id}/confirm-upload to verify and set uploaded: true\n\n## Key Best Practice\nUse the file's CID as the key for content-addressable storage.\nThe system does NOT verify the CID - it's just metadata.",
+        "description": "Creates a new file entity.\n\n## Flow\n1. Call this endpoint with file metadata (key, filename, content_type, size)\n2. Receive entity data (uploaded: false)\n3. POST the file content to /{id}/content\n4. Entity will be updated with uploaded: true and verified CID\n\n## Key Best Practice\nUse a unique identifier as the key (e.g., version number, timestamp).\nThe actual CID is computed during upload.",
         "x-arke-action": "file:create",
         "x-arke-auth": "required",
         "security": [
@@ -6603,7 +6867,7 @@
           "Files"
         ],
         "summary": "Get file metadata",
-        "description": "Returns file entity metadata. Use /download to get the file content.",
+        "description": "Returns file entity metadata. Use /{id}/content to download the file content.",
         "x-arke-action": "file:view",
         "x-arke-auth": "optional",
         "parameters": [
@@ -6664,7 +6928,7 @@
           "Files"
         ],
         "summary": "Update file metadata",
-        "description": "Updates file metadata without changing the file content.\n\n## Key Changes\nThe key can be changed, but ONLY to a key that already exists in S3.\nThis allows \"regressing\" to a previous file version.\n\nTo upload a new file, use POST /{id}/reupload instead.",
+        "description": "Updates file metadata without changing the file content.\n\n## Key Changes\nThe key can be changed, but ONLY to a key that already exists in R2.\nThis allows \"regressing\" to a previous file version.\n\nTo upload a new file, use POST /{id}/reupload instead.",
         "x-arke-action": "file:update",
         "x-arke-auth": "required",
         "security": [
@@ -6789,77 +7053,14 @@
         }
       }
     },
-    "/files/{id}/download": {
-      "get": {
-        "tags": [
-          "Files"
-        ],
-        "summary": "Get download URL",
-        "description": "Returns a presigned URL for downloading the file content. URL expires in 5 minutes.",
-        "x-arke-action": "file:download",
-        "x-arke-auth": "optional",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-              "description": "Entity ID (ULID format)",
-              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
-            },
-            "required": true,
-            "description": "Entity ID (ULID)",
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Download URL generated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DownloadResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - Insufficient permissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Forbidden: You do not have permission to perform this action"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Entity not found"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/files/{id}/reupload": {
+    "/files/{id}/content": {
       "post": {
         "tags": [
           "Files"
         ],
-        "summary": "Upload new file version",
-        "description": "Uploads a new version of a file.\n\n## Flow\n1. Call this endpoint with new key and file metadata\n2. Receive updated entity + presigned upload URL (uploaded: false)\n3. PUT the new file content to the upload URL\n4. Call POST /{id}/confirm-upload to verify and set uploaded: true\n5. Old file versions remain accessible via manifest history\n\n## Key Requirement\nThe new key must NOT already exist in S3 (no overwrites).\nPrevious file versions are preserved.",
-        "x-arke-action": "file:reupload",
+        "summary": "Upload file content",
+        "description": "Uploads the binary content for a file entity.\n\n## Request\n- Content-Type: The MIME type of the file (must match entity's content_type)\n- Body: Binary file content (streaming supported)\n\n## Limits\n- Maximum file size: 500 MB\n\n## Behavior\n- Streams content directly to R2\n- Computes CID from file bytes\n- Updates entity with uploaded: true, verified size, and computed CID\n- Atomic operation - either fully succeeds or fails\n\n## Idempotency\nRe-uploading content for an already-uploaded file will fail with 409 Conflict.\nUse POST /{id}/reupload first to create a new version.",
+        "x-arke-action": "file:upload",
         "x-arke-auth": "required",
         "security": [
           {
@@ -6880,22 +7081,13 @@
             "in": "path"
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReuploadFileRequest"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
-            "description": "File version created",
+            "description": "File content uploaded",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReuploadFileResponse"
+                  "$ref": "#/components/schemas/UploadContentResponse"
                 }
               }
             }
@@ -6979,18 +7171,103 @@
                 }
               }
             }
+          },
+          "413": {
+            "description": "File too large (max 500 MB)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Internal server error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Files"
+        ],
+        "summary": "Download file content",
+        "description": "Downloads the binary content of a file entity.\n\n## Response Headers\n- Content-Type: The MIME type of the file\n- Content-Length: File size in bytes\n- Content-Disposition: attachment; filename=\"original_filename\"\n\n## Streaming\nResponse is streamed directly from R2 storage.",
+        "x-arke-action": "file:download",
+        "x-arke-auth": "optional",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/files/{id}/confirm-upload": {
+    "/files/{id}/reupload": {
       "post": {
         "tags": [
           "Files"
         ],
-        "summary": "Confirm upload completed",
-        "description": "Confirms that file content has been uploaded to S3.\n\n## Flow\n1. Create file entity (POST /files) - sets uploaded: false\n2. PUT file content to the presigned upload URL\n3. Call this endpoint to confirm - verifies file exists in S3, sets uploaded: true\n\n## Verification\nThe server verifies the file exists in S3 before setting uploaded: true.\nIf the file doesn't exist, returns 400 error.\n\n## Idempotency\nIf already uploaded: true, returns success without modification.",
-        "x-arke-action": "file:update",
+        "summary": "Prepare for new file version",
+        "description": "Prepares the entity for uploading a new file version.\n\n## Flow\n1. Call this endpoint with new key and file metadata\n2. Receive updated entity (uploaded: false)\n3. POST the new file content to /{id}/content\n4. Entity will be updated with uploaded: true and verified CID\n\n## Key Requirement\nThe new key must NOT already exist in R2 (no overwrites).\nPrevious file versions remain accessible via manifest history.",
+        "x-arke-action": "file:reupload",
         "x-arke-auth": "required",
         "security": [
           {
@@ -7015,18 +7292,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ConfirmUploadRequest"
+                "$ref": "#/components/schemas/ReuploadFileRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Upload confirmed",
+            "description": "Ready for new file version upload",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ConfirmUploadResponse"
+                  "$ref": "#/components/schemas/ReuploadFileResponse"
                 }
               }
             }
@@ -8970,40 +9247,53 @@
         "tags": [
           "Events"
         ],
-        "summary": "List events",
-        "description": "Returns entity change events in reverse chronological order (newest first).\n\nEach event represents a create or update operation on an entity. Use cursor-based pagination to walk through the event history.\n\n**Use cases:**\n- Syncing entity changes to external systems\n- Building search indexes\n- Change tracking and audit logs\n\n**Note:** This endpoint is public. Access control is enforced at the entity level - if you don't have permission to view an entity, you won't be able to fetch its manifest even if you see an event for it.",
+        "summary": "List entity change events",
+        "description": "Returns a cursor-based list of entity change events for client synchronization.\n\n**Usage:**\n- Start with `?after=0` to get all events\n- Use the returned `cursor` as `?after=` for the next page\n- Poll periodically (e.g., every 10s) to stay in sync\n\n**Event data:**\n- `id`: Auto-increment ID (use as cursor)\n- `pi`: Entity ID that changed\n- `cid`: New manifest CID\n- `ts`: ISO timestamp\n\nEvents are ephemeral (30-day rolling window) - for full sync, use snapshots.",
         "x-arke-action": "events:list",
         "x-arke-auth": "none",
         "parameters": [
           {
             "schema": {
               "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 50,
-              "example": 50
+              "nullable": true,
+              "minimum": 0,
+              "example": 12345
             },
             "required": false,
-            "description": "Maximum events to return (1-100, default 50)",
+            "description": "Return events with id > after (cursor for pagination)",
+            "name": "after",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "example": 100
+            },
+            "required": false,
+            "description": "Maximum number of events to return (default: 100, max: 1000)",
             "name": "limit",
             "in": "query"
           },
           {
             "schema": {
               "type": "string",
-              "minLength": 1,
-              "description": "IPFS Content Identifier (CID)",
-              "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+              "enum": [
+                "main",
+                "test"
+              ],
+              "example": "main"
             },
             "required": false,
-            "description": "Event CID to continue from (for pagination)",
-            "name": "cursor",
+            "description": "Network to query (default: main)",
+            "name": "network",
             "in": "query"
           }
         ],
         "responses": {
           "200": {
-            "description": "Event list",
+            "description": "Events list",
             "content": {
               "application/json": {
                 "schema": {

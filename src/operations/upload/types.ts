@@ -91,17 +91,16 @@ export interface UploadTarget {
 export interface UploadProgress {
   /** Current phase of the upload */
   phase:
-    | 'computing-cids' // Computing content hashes
     | 'creating' // Creating folder + file entities
     | 'backlinking' // Updating parents with contains relationships (tree now browsable!)
-    | 'uploading' // Uploading file content to S3
+    | 'uploading' // Uploading file content to storage
     | 'complete'
     | 'error';
 
-  /** Current phase index (0=computing-cids, 1=creating, 2=backlinking, 3=uploading) */
+  /** Current phase index (0=creating, 1=backlinking, 2=uploading) */
   phaseIndex: number;
 
-  /** Total number of phases (4, excluding complete/error) */
+  /** Total number of phases (3, excluding complete/error) */
   phaseCount: number;
 
   /** Progress within current phase (0-100) */
@@ -197,14 +196,6 @@ export interface UploadResult {
 }
 
 /**
- * Internal type for tracking file with computed CID.
- */
-export interface PreparedFile extends UploadFile {
-  /** Computed CID for content-addressable storage */
-  cid: string;
-}
-
-/**
  * Internal type for folder with created entity info.
  */
 export interface CreatedFolder extends UploadFolder {
@@ -218,16 +209,10 @@ export interface CreatedFolder extends UploadFolder {
 /**
  * Internal type for file with created entity info.
  */
-export interface CreatedFile extends PreparedFile {
+export interface CreatedFile extends UploadFile {
   /** Created entity ID */
   id: string;
 
   /** Created entity CID */
   entityCid: string;
-
-  /** Presigned upload URL */
-  uploadUrl: string;
-
-  /** Upload URL expiration */
-  uploadExpiresAt: string;
 }

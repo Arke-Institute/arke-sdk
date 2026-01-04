@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-01-01T18:48:14.305Z
+ * Generated: 2026-01-03T11:01:54.822Z
  */
 
 export type paths = {
@@ -1791,6 +1791,252 @@ export type paths = {
             };
         };
         post?: never;
+        /**
+         * Delete entity
+         * @description Soft-deletes an entity by creating a tombstone version. The entity can be restored later via POST /entities/:id/restore. Note: entity:delete on a collection requires collection:delete permission.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DeleteEntityRequest"];
+                };
+            };
+            responses: {
+                /** @description Entity deleted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EntityDeletedResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict - CAS validation failed (entity was modified) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Conflict: entity was modified",
+                         *       "details": {
+                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["CASErrorResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entities/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore deleted entity
+         * @description Restores a deleted entity by finding the last non-deleted version and creating a new version from it. Note: entity:restore on a collection requires collection:restore permission.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["RestoreEntityRequest"];
+                };
+            };
+            responses: {
+                /** @description Entity restored */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EntityRestoredResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict - CAS validation failed (entity was modified) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Conflict: entity was modified",
+                         *       "details": {
+                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["CASErrorResponse"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -2066,17 +2312,17 @@ export type paths = {
         put?: never;
         /**
          * Create file entity
-         * @description Creates a new file entity and returns a presigned upload URL.
+         * @description Creates a new file entity.
          *
          *     ## Flow
          *     1. Call this endpoint with file metadata (key, filename, content_type, size)
-         *     2. Receive entity data + presigned S3 upload URL (uploaded: false)
-         *     3. PUT the file content to the upload URL
-         *     4. Call POST /{id}/confirm-upload to verify and set uploaded: true
+         *     2. Receive entity data (uploaded: false)
+         *     3. POST the file content to /{id}/content
+         *     4. Entity will be updated with uploaded: true and verified CID
          *
          *     ## Key Best Practice
-         *     Use the file's CID as the key for content-addressable storage.
-         *     The system does NOT verify the CID - it's just metadata.
+         *     Use a unique identifier as the key (e.g., version number, timestamp).
+         *     The actual CID is computed during upload.
          */
         post: {
             parameters: {
@@ -2188,7 +2434,7 @@ export type paths = {
         };
         /**
          * Get file metadata
-         * @description Returns file entity metadata. Use /download to get the file content.
+         * @description Returns file entity metadata. Use /{id}/content to download the file content.
          */
         get: {
             parameters: {
@@ -2246,7 +2492,7 @@ export type paths = {
          * @description Updates file metadata without changing the file content.
          *
          *     ## Key Changes
-         *     The key can be changed, but ONLY to a key that already exists in S3.
+         *     The key can be changed, but ONLY to a key that already exists in R2.
          *     This allows "regressing" to a previous file version.
          *
          *     To upload a new file, use POST /{id}/reupload instead.
@@ -2370,7 +2616,7 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
-    "/files/{id}/download": {
+    "/files/{id}/content": {
         parameters: {
             query?: never;
             header?: never;
@@ -2378,8 +2624,16 @@ export type paths = {
             cookie?: never;
         };
         /**
-         * Get download URL
-         * @description Returns a presigned URL for downloading the file content. URL expires in 5 minutes.
+         * Download file content
+         * @description Downloads the binary content of a file entity.
+         *
+         *     ## Response Headers
+         *     - Content-Type: The MIME type of the file
+         *     - Content-Length: File size in bytes
+         *     - Content-Disposition: attachment; filename="original_filename"
+         *
+         *     ## Streaming
+         *     Response is streamed directly from R2 storage.
          */
         get: {
             parameters: {
@@ -2393,13 +2647,13 @@ export type paths = {
             };
             requestBody?: never;
             responses: {
-                /** @description Download URL generated */
+                /** @description File content */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["DownloadResponse"];
+                        "application/octet-stream": string;
                     };
                 };
                 /** @description Forbidden - Insufficient permissions */
@@ -2433,36 +2687,26 @@ export type paths = {
             };
         };
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/files/{id}/reupload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
         /**
-         * Upload new file version
-         * @description Uploads a new version of a file.
+         * Upload file content
+         * @description Uploads the binary content for a file entity.
          *
-         *     ## Flow
-         *     1. Call this endpoint with new key and file metadata
-         *     2. Receive updated entity + presigned upload URL (uploaded: false)
-         *     3. PUT the new file content to the upload URL
-         *     4. Call POST /{id}/confirm-upload to verify and set uploaded: true
-         *     5. Old file versions remain accessible via manifest history
+         *     ## Request
+         *     - Content-Type: The MIME type of the file (must match entity's content_type)
+         *     - Body: Binary file content (streaming supported)
          *
-         *     ## Key Requirement
-         *     The new key must NOT already exist in S3 (no overwrites).
-         *     Previous file versions are preserved.
+         *     ## Limits
+         *     - Maximum file size: 500 MB
+         *
+         *     ## Behavior
+         *     - Streams content directly to R2
+         *     - Computes CID from file bytes
+         *     - Updates entity with uploaded: true, verified size, and computed CID
+         *     - Atomic operation - either fully succeeds or fails
+         *
+         *     ## Idempotency
+         *     Re-uploading content for an already-uploaded file will fail with 409 Conflict.
+         *     Use POST /{id}/reupload first to create a new version.
          */
         post: {
             parameters: {
@@ -2474,19 +2718,15 @@ export type paths = {
                 };
                 cookie?: never;
             };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["ReuploadFileRequest"];
-                };
-            };
+            requestBody?: never;
             responses: {
-                /** @description File version created */
+                /** @description File content uploaded */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ReuploadFileResponse"];
+                        "application/json": components["schemas"]["UploadContentResponse"];
                     };
                 };
                 /** @description Bad Request - Invalid input */
@@ -2574,6 +2814,29 @@ export type paths = {
                         "application/json": components["schemas"]["CASErrorResponse"];
                     };
                 };
+                /** @description File too large (max 500 MB) */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Internal server error"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
             };
         };
         delete?: never;
@@ -2582,7 +2845,7 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
-    "/files/{id}/confirm-upload": {
+    "/files/{id}/reupload": {
         parameters: {
             query?: never;
             header?: never;
@@ -2592,20 +2855,18 @@ export type paths = {
         get?: never;
         put?: never;
         /**
-         * Confirm upload completed
-         * @description Confirms that file content has been uploaded to S3.
+         * Prepare for new file version
+         * @description Prepares the entity for uploading a new file version.
          *
          *     ## Flow
-         *     1. Create file entity (POST /files) - sets uploaded: false
-         *     2. PUT file content to the presigned upload URL
-         *     3. Call this endpoint to confirm - verifies file exists in S3, sets uploaded: true
+         *     1. Call this endpoint with new key and file metadata
+         *     2. Receive updated entity (uploaded: false)
+         *     3. POST the new file content to /{id}/content
+         *     4. Entity will be updated with uploaded: true and verified CID
          *
-         *     ## Verification
-         *     The server verifies the file exists in S3 before setting uploaded: true.
-         *     If the file doesn't exist, returns 400 error.
-         *
-         *     ## Idempotency
-         *     If already uploaded: true, returns success without modification.
+         *     ## Key Requirement
+         *     The new key must NOT already exist in R2 (no overwrites).
+         *     Previous file versions remain accessible via manifest history.
          */
         post: {
             parameters: {
@@ -2619,17 +2880,17 @@ export type paths = {
             };
             requestBody?: {
                 content: {
-                    "application/json": components["schemas"]["ConfirmUploadRequest"];
+                    "application/json": components["schemas"]["ReuploadFileRequest"];
                 };
             };
             responses: {
-                /** @description Upload confirmed */
+                /** @description Ready for new file version upload */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ConfirmUploadResponse"];
+                        "application/json": components["schemas"]["ReuploadFileResponse"];
                     };
                 };
                 /** @description Bad Request - Invalid input */
@@ -4602,25 +4863,31 @@ export type paths = {
             cookie?: never;
         };
         /**
-         * List events
-         * @description Returns entity change events in reverse chronological order (newest first).
+         * List entity change events
+         * @description Returns a cursor-based list of entity change events for client synchronization.
          *
-         *     Each event represents a create or update operation on an entity. Use cursor-based pagination to walk through the event history.
+         *     **Usage:**
+         *     - Start with `?after=0` to get all events
+         *     - Use the returned `cursor` as `?after=` for the next page
+         *     - Poll periodically (e.g., every 10s) to stay in sync
          *
-         *     **Use cases:**
-         *     - Syncing entity changes to external systems
-         *     - Building search indexes
-         *     - Change tracking and audit logs
+         *     **Event data:**
+         *     - `id`: Auto-increment ID (use as cursor)
+         *     - `pi`: Entity ID that changed
+         *     - `cid`: New manifest CID
+         *     - `ts`: ISO timestamp
          *
-         *     **Note:** This endpoint is public. Access control is enforced at the entity level - if you don't have permission to view an entity, you won't be able to fetch its manifest even if you see an event for it.
+         *     Events are ephemeral (30-day rolling window) - for full sync, use snapshots.
          */
         get: {
             parameters: {
                 query?: {
-                    /** @description Maximum events to return (1-100, default 50) */
+                    /** @description Return events with id > after (cursor for pagination) */
+                    after?: number | null;
+                    /** @description Maximum number of events to return (default: 100, max: 1000) */
                     limit?: number;
-                    /** @description Event CID to continue from (for pagination) */
-                    cursor?: string;
+                    /** @description Network to query (default: main) */
+                    network?: "main" | "test";
                 };
                 header?: never;
                 path?: never;
@@ -4628,7 +4895,7 @@ export type paths = {
             };
             requestBody?: never;
             responses: {
-                /** @description Event list */
+                /** @description Events list */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -5449,6 +5716,76 @@ export type components = {
                 peer?: string;
             }[];
         };
+        EntityDeletedResponse: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            id: string;
+            /**
+             * @description IPFS Content Identifier (CID)
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            cid: string;
+            /**
+             * Format: date-time
+             * @description ISO timestamp when the entity was deleted
+             */
+            deleted_at: string;
+            /**
+             * @description Entity version number
+             * @example 1
+             */
+            ver: number;
+            /**
+             * @description IPFS Content Identifier (CID)
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            prev_cid: string;
+        };
+        DeleteEntityRequest: {
+            /**
+             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            expect_tip: string;
+            /**
+             * @description Optional note describing this change
+             * @example Added Chapter 42: The Whiteness of the Whale
+             */
+            note?: string;
+            /**
+             * @description Reason for deleting the entity
+             * @example Duplicate entry
+             */
+            reason?: string;
+        };
+        EntityUpdateResponse: components["schemas"]["EntityResponse"] & {
+            /**
+             * @description Previous version CID
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            prev_cid: string;
+        };
+        EntityRestoredResponse: components["schemas"]["EntityUpdateResponse"] & {
+            /**
+             * @description The version number that was restored from
+             * @example 1
+             */
+            restored_from_ver: number;
+        };
+        RestoreEntityRequest: {
+            /**
+             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            expect_tip: string;
+            /**
+             * @description Optional note describing this change
+             * @example Added Chapter 42: The Whiteness of the Whale
+             */
+            note?: string;
+        };
         AddRelationshipResponse: {
             source: components["schemas"]["EntityResponse"] & unknown;
             target?: components["schemas"]["EntityResponse"] & unknown;
@@ -5578,22 +5915,10 @@ export type components = {
              * @example 1735214400000
              */
             ts: number;
-            /**
-             * Format: uri
-             * @description Presigned S3 URL for uploading file content
-             * @example https://arke-blocks.s3.amazonaws.com/01JFILE123.../v1?X-Amz-...
-             */
-            upload_url: string;
-            /**
-             * Format: date-time
-             * @description When the upload URL expires (15 minutes)
-             * @example 2025-12-26T12:00:00.000Z
-             */
-            upload_expires_at: string;
         };
         CreateFileRequest: {
             /**
-             * @description Storage key in S3. Best practice: use the CID.
+             * @description Storage key in R2. Best practice: use the CID.
              * @example bafkreiabc123...
              */
             key: string;
@@ -5608,15 +5933,10 @@ export type components = {
              */
             content_type: string;
             /**
-             * @description File size in bytes
+             * @description Expected file size in bytes (verified on upload)
              * @example 1048576
              */
             size: number;
-            /**
-             * @description Content identifier (CID). Not verified, just metadata.
-             * @example bafkreiabc123...
-             */
-            cid?: string;
             /**
              * @description Description of the file
              * @example Q4 Financial Report
@@ -5652,34 +5972,14 @@ export type components = {
             /** @enum {string} */
             type?: "file";
         };
-        DownloadResponse: {
+        UploadContentResponse: components["schemas"]["EntityResponse"] & {
+            /** @enum {string} */
+            type?: "file";
             /**
-             * Format: uri
-             * @description Presigned S3 URL for downloading file content
-             * @example https://arke-blocks.s3.amazonaws.com/01JFILE123.../v1?X-Amz-...
+             * @description Previous version CID
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
-            download_url: string;
-            /**
-             * Format: date-time
-             * @description When the download URL expires (5 minutes)
-             * @example 2025-12-26T12:00:00.000Z
-             */
-            expires_at: string;
-            /**
-             * @description Filename for download
-             * @example document.pdf
-             */
-            filename: string;
-            /**
-             * @description MIME type of the file
-             * @example application/pdf
-             */
-            content_type: string;
-            /**
-             * @description File size in bytes
-             * @example 1048576
-             */
-            size: number;
+            prev_cid: string;
         };
         UpdateFileResponse: components["schemas"]["FileResponse"] & {
             /**
@@ -5756,7 +6056,7 @@ export type components = {
                  */
                 peer?: string;
             }[];
-            /** @description New storage key. Must already exist in S3 (for regression to old version). */
+            /** @description New storage key. Must already exist in R2 (for regression to old version). */
             key?: string;
             /** @description New filename */
             filename?: string;
@@ -5764,23 +6064,15 @@ export type components = {
             content_type?: string;
             /** @description New file size in bytes */
             size?: number;
-            /** @description New content identifier */
-            cid?: string;
             /** @description New description */
             description?: string;
         };
-        ReuploadFileResponse: components["schemas"]["UpdateFileResponse"] & {
+        ReuploadFileResponse: components["schemas"]["FileResponse"] & {
             /**
-             * Format: uri
-             * @description Presigned S3 URL for uploading new file content
+             * @description Previous version CID
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
-            upload_url: string;
-            /**
-             * Format: date-time
-             * @description When the upload URL expires (15 minutes)
-             * @example 2025-12-26T12:00:00.000Z
-             */
-            upload_expires_at: string;
+            prev_cid: string;
         };
         ReuploadFileRequest: {
             /**
@@ -5794,7 +6086,7 @@ export type components = {
              */
             note?: string;
             /**
-             * @description New storage key. Must NOT already exist in S3.
+             * @description New storage key. Must NOT already exist in R2.
              * @example v2
              */
             key: string;
@@ -5804,40 +6096,14 @@ export type components = {
              */
             content_type: string;
             /**
-             * @description Size of the new file in bytes
+             * @description Expected size of the new file in bytes (verified on upload)
              * @example 2097152
              */
             size: number;
             /** @description New filename (optional, keeps current if not provided) */
             filename?: string;
-            /** @description Content identifier for new file */
-            cid?: string;
             /** @description New description */
             description?: string;
-        };
-        ConfirmUploadResponse: components["schemas"]["FileResponse"] & {
-            /**
-             * @description Previous version CID. Not present if upload was already confirmed.
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            prev_cid?: string;
-            /**
-             * @description True if upload was already confirmed. Entity was not modified.
-             * @example false
-             */
-            already_confirmed: boolean;
-        };
-        ConfirmUploadRequest: {
-            /**
-             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_tip: string;
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
         };
         CreateFolderResponse: {
             /**
@@ -6729,60 +6995,41 @@ export type components = {
         ListAgentApiKeysResponse: {
             keys: components["schemas"]["AgentApiKeyInfo"][];
         };
-        EventItem: {
+        Event: {
             /**
-             * @description CID of this event in the event chain
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             * @description Auto-increment event ID (use as cursor)
+             * @example 12346
              */
-            event_cid: string;
+            id: number;
             /**
-             * @description Type of entity change event
-             * @example create
-             * @enum {string}
-             */
-            type: "create" | "update";
-            /**
-             * @description Entity ID that was created or updated
+             * @description Entity ID that changed
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
             pi: string;
             /**
-             * @description Entity version number
-             * @example 1
-             */
-            ver: number;
-            /**
-             * @description CID of the entity manifest at this version
+             * @description New manifest CID
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
-            tip_cid: string;
+            cid: string;
             /**
-             * Format: date-time
-             * @description When the event was recorded
-             * @example 2025-12-26T12:00:00.000Z
+             * @description ISO timestamp of the event
+             * @example 2025-01-15T12:00:01Z
              */
             ts: string;
         };
         EventsListResponse: {
-            /** @description Events in reverse chronological order */
-            items: components["schemas"]["EventItem"][];
+            /** @description List of events */
+            events: components["schemas"]["Event"][];
             /**
-             * @description Total events in the event chain
-             * @example 1542
+             * @description Whether there are more events available
+             * @example true
              */
-            total_events: number;
-            /**
-             * @description Total unique entity IDs across all events
-             * @example 987
-             */
-            total_pis: number;
-            /** @description Whether more events exist beyond this page */
             has_more: boolean;
             /**
-             * @description CID to use as "cursor" parameter for next page
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             * @description Cursor for the next page (pass as ?after= parameter)
+             * @example 12347
              */
-            next_cursor: string | null;
+            cursor: number;
         };
     };
     responses: never;

@@ -3,6 +3,11 @@
  *
  * Computes IPFS CIDv1 (base32) for file content.
  * Uses raw codec (0x55) and SHA-256 hash.
+ *
+ * Note: This module is not used internally by the upload engine (the server
+ * computes CIDs from uploaded content). It is exported for convenience in case
+ * you want to verify entity CIDs, detect duplicates before upload, or perform
+ * other content-addressed operations.
  */
 
 import { CID } from 'multiformats/cid';

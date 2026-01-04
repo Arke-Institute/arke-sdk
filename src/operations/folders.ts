@@ -93,9 +93,9 @@ export class FolderOperations {
             // Map new progress to old format
             options.onProgress!({
               phase:
-                p.phase === 'computing-cids'
+                p.phase === 'creating'
                   ? 'creating-folders'
-                  : p.phase === 'creating'
+                  : p.phase === 'uploading'
                     ? 'uploading-files'
                     : p.phase === 'backlinking'
                       ? 'linking'
