@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-01-04T16:43:08.387Z
+ * Generated: 2026-01-04T17:59:16.167Z
  */
 
 export type paths = {
@@ -4937,12 +4937,17 @@ export type paths = {
          * @description Returns a cursor-based list of entity change events for client synchronization.
          *
          *     **Usage:**
-         *     - Start with `?after=0` to get all events
-         *     - Use the returned `cursor` as `?after=` for the next page
-         *     - Poll periodically (e.g., every 10s) to stay in sync
+         *     - Call without cursor to get newest events
+         *     - Use returned `cursor` as `?cursor=` to get older events
+         *     - Poll without cursor periodically to check for new events
+         *
+         *     **Sync flow:**
+         *     1. Initial: `GET /events` → get newest, save highest `id` as high-water mark
+         *     2. Paginate: `GET /events?cursor=X` → get older events until `has_more=false`
+         *     3. Poll: `GET /events` → if newest `id` > high-water mark, process new events
          *
          *     **Event data:**
-         *     - `id`: Auto-increment ID (use as cursor)
+         *     - `id`: Auto-increment ID
          *     - `pi`: Entity ID that changed
          *     - `cid`: New manifest CID
          *     - `ts`: ISO timestamp
@@ -4952,8 +4957,8 @@ export type paths = {
         get: {
             parameters: {
                 query?: {
-                    /** @description Return events with id > after (cursor for pagination) */
-                    after?: number | null;
+                    /** @description Return events older than this id (from previous response cursor) */
+                    cursor?: number;
                     /** @description Maximum number of events to return (default: 100, max: 1000) */
                     limit?: number;
                     /** @description Network to query (default: main) */
@@ -7095,16 +7100,16 @@ export type components = {
             ts: string;
         };
         EventsListResponse: {
-            /** @description List of events */
+            /** @description List of events (newest first) */
             events: components["schemas"]["Event"][];
             /**
-             * @description Whether there are more events available
+             * @description Whether there are more (older) events available
              * @example true
              */
             has_more: boolean;
             /**
-             * @description Cursor for the next page (pass as ?after= parameter)
-             * @example 12347
+             * @description Cursor for the next page (oldest id in batch, pass as ?cursor= for older events)
+             * @example 12340
              */
             cursor: number;
         };

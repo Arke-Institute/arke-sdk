@@ -4448,17 +4448,17 @@
             "items": {
               "$ref": "#/components/schemas/Event"
             },
-            "description": "List of events"
+            "description": "List of events (newest first)"
           },
           "has_more": {
             "type": "boolean",
-            "description": "Whether there are more events available",
+            "description": "Whether there are more (older) events available",
             "example": true
           },
           "cursor": {
             "type": "integer",
-            "description": "Cursor for the next page (pass as ?after= parameter)",
-            "example": 12347
+            "description": "Cursor for the next page (oldest id in batch, pass as ?cursor= for older events)",
+            "example": 12340
           }
         },
         "required": [
@@ -9325,20 +9325,19 @@
           "Events"
         ],
         "summary": "List entity change events",
-        "description": "Returns a cursor-based list of entity change events for client synchronization.\n\n**Usage:**\n- Start with `?after=0` to get all events\n- Use the returned `cursor` as `?after=` for the next page\n- Poll periodically (e.g., every 10s) to stay in sync\n\n**Event data:**\n- `id`: Auto-increment ID (use as cursor)\n- `pi`: Entity ID that changed\n- `cid`: New manifest CID\n- `ts`: ISO timestamp\n\nEvents are ephemeral (30-day rolling window) - for full sync, use snapshots.",
+        "description": "Returns a cursor-based list of entity change events for client synchronization.\n\n**Usage:**\n- Call without cursor to get newest events\n- Use returned `cursor` as `?cursor=` to get older events\n- Poll without cursor periodically to check for new events\n\n**Sync flow:**\n1. Initial: `GET /events` → get newest, save highest `id` as high-water mark\n2. Paginate: `GET /events?cursor=X` → get older events until `has_more=false`\n3. Poll: `GET /events` → if newest `id` > high-water mark, process new events\n\n**Event data:**\n- `id`: Auto-increment ID\n- `pi`: Entity ID that changed\n- `cid`: New manifest CID\n- `ts`: ISO timestamp\n\nEvents are ephemeral (30-day rolling window) - for full sync, use snapshots.",
         "x-arke-action": "events:list",
         "x-arke-auth": "none",
         "parameters": [
           {
             "schema": {
               "type": "integer",
-              "nullable": true,
-              "minimum": 0,
+              "minimum": 1,
               "example": 12345
             },
             "required": false,
-            "description": "Return events with id > after (cursor for pagination)",
-            "name": "after",
+            "description": "Return events older than this id (from previous response cursor)",
+            "name": "cursor",
             "in": "query"
           },
           {
