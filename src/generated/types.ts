@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-01-05T14:45:41.043Z
+ * Generated: 2026-01-05T15:08:43.351Z
  */
 
 export type paths = {
@@ -5740,6 +5740,8 @@ export type components = {
                 limit: number;
                 /** @description Number of entities returned */
                 count: number;
+                /** @description Whether more entities exist beyond this page */
+                has_more: boolean;
             };
         };
         EntityCreatedResponse: {

@@ -1395,12 +1395,17 @@
               "count": {
                 "type": "integer",
                 "description": "Number of entities returned"
+              },
+              "has_more": {
+                "type": "boolean",
+                "description": "Whether more entities exist beyond this page"
               }
             },
             "required": [
               "offset",
               "limit",
-              "count"
+              "count",
+              "has_more"
             ],
             "description": "Pagination info"
           }
