@@ -51,6 +51,14 @@
     {
       "name": "Events",
       "description": "Entity change event stream"
+    },
+    {
+      "name": "Graph",
+      "description": "Graph traversal and path-finding"
+    },
+    {
+      "name": "Query",
+      "description": "Argo DSL query engine"
     }
   ],
   "components": {
@@ -3370,6 +3378,17 @@
           "note": {
             "type": "string",
             "description": "Optional note describing this version"
+          },
+          "arweave_tx": {
+            "type": "string",
+            "description": "Arweave transaction ID if this version has been attested",
+            "example": "abc123xyz..."
+          },
+          "arweave_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Arweave gateway URL for the attestation",
+            "example": "https://arweave.net/abc123xyz..."
           }
         },
         "required": [
@@ -4553,6 +4572,754 @@
           "has_more",
           "cursor"
         ]
+      },
+      "PathEdge": {
+        "type": "object",
+        "properties": {
+          "subject_pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Source entity PI",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "subject_label": {
+            "type": "string",
+            "description": "Source entity label"
+          },
+          "subject_type": {
+            "type": "string",
+            "description": "Source entity type"
+          },
+          "predicate": {
+            "type": "string",
+            "description": "Relationship predicate"
+          },
+          "object_pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Target entity PI",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "object_label": {
+            "type": "string",
+            "description": "Target entity label"
+          },
+          "object_type": {
+            "type": "string",
+            "description": "Target entity type"
+          }
+        },
+        "required": [
+          "subject_pi",
+          "subject_label",
+          "subject_type",
+          "predicate",
+          "object_pi",
+          "object_label",
+          "object_type"
+        ]
+      },
+      "PathResult": {
+        "type": "object",
+        "properties": {
+          "source_pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "target_pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "length": {
+            "type": "integer",
+            "description": "Path length (number of hops)"
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathEdge"
+            }
+          }
+        },
+        "required": [
+          "source_pi",
+          "target_pi",
+          "length",
+          "edges"
+        ]
+      },
+      "PathsBetweenResponse": {
+        "type": "object",
+        "properties": {
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathResult"
+            }
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Whether results were truncated due to limit"
+          }
+        },
+        "required": [
+          "paths",
+          "truncated"
+        ]
+      },
+      "PathsBetweenRequest": {
+        "type": "object",
+        "properties": {
+          "source_pis": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "minItems": 1,
+            "description": "Starting entity PIs",
+            "example": [
+              "01KE4ZY69F9R40E88PK9S0TQRQ"
+            ]
+          },
+          "target_pis": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "minItems": 1,
+            "description": "Target entity PIs",
+            "example": [
+              "01KE506KZGD8M2P1XK3VNQT4YR"
+            ]
+          },
+          "max_depth": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4,
+            "default": 4,
+            "description": "Maximum path depth (1-4)",
+            "example": 3
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "outgoing",
+              "incoming",
+              "both"
+            ],
+            "default": "both",
+            "description": "Relationship traversal direction",
+            "example": "both"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 100,
+            "description": "Maximum number of paths to return",
+            "example": 10
+          }
+        },
+        "required": [
+          "source_pis",
+          "target_pis"
+        ]
+      },
+      "ReachableResult": {
+        "type": "object",
+        "properties": {
+          "source_pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "target_pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "target_label": {
+            "type": "string"
+          },
+          "target_type": {
+            "type": "string"
+          },
+          "length": {
+            "type": "integer",
+            "description": "Path length (number of hops)"
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathEdge"
+            }
+          }
+        },
+        "required": [
+          "source_pi",
+          "target_pi",
+          "target_label",
+          "target_type",
+          "length",
+          "edges"
+        ]
+      },
+      "PathsReachableResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReachableResult"
+            }
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Whether results were truncated due to limit"
+          }
+        },
+        "required": [
+          "results",
+          "truncated"
+        ]
+      },
+      "PathsReachableRequest": {
+        "type": "object",
+        "properties": {
+          "source_pis": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "minItems": 1,
+            "description": "Starting entity PIs",
+            "example": [
+              "01KE4ZY69F9R40E88PK9S0TQRQ"
+            ]
+          },
+          "target_type": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Target entity type to find",
+            "example": "file"
+          },
+          "max_depth": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4,
+            "default": 4,
+            "description": "Maximum path depth (1-4)",
+            "example": 3
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "outgoing",
+              "incoming",
+              "both"
+            ],
+            "default": "both",
+            "description": "Relationship traversal direction",
+            "example": "both"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 100,
+            "description": "Maximum number of results to return",
+            "example": 50
+          }
+        },
+        "required": [
+          "source_pis",
+          "target_type"
+        ]
+      },
+      "RelationshipInfo": {
+        "type": "object",
+        "properties": {
+          "direction": {
+            "type": "string",
+            "enum": [
+              "outgoing",
+              "incoming"
+            ]
+          },
+          "predicate": {
+            "type": "string"
+          },
+          "peer_pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "peer_type": {
+            "type": "string"
+          },
+          "peer_label": {
+            "type": "string"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            }
+          }
+        },
+        "required": [
+          "direction",
+          "predicate",
+          "peer_pi",
+          "peer_type",
+          "peer_label",
+          "properties"
+        ]
+      },
+      "GraphEntityResponse": {
+        "type": "object",
+        "properties": {
+          "pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "type": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "collection_pi": {
+            "type": "string",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelationshipInfo"
+            }
+          }
+        },
+        "required": [
+          "pi",
+          "type",
+          "label",
+          "collection_pi",
+          "created_at",
+          "updated_at",
+          "relationships"
+        ]
+      },
+      "QueryEntity": {
+        "type": "object",
+        "properties": {
+          "pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "type": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "collection_pi": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "pi",
+          "type",
+          "label",
+          "collection_pi"
+        ]
+      },
+      "EntityStep": {
+        "type": "object",
+        "properties": {
+          "entity": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "entity"
+        ]
+      },
+      "EdgeStep": {
+        "type": "object",
+        "properties": {
+          "edge": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "outgoing",
+              "incoming"
+            ]
+          },
+          "score": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "edge",
+          "direction"
+        ]
+      },
+      "PathStep": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/EntityStep"
+          },
+          {
+            "$ref": "#/components/schemas/EdgeStep"
+          }
+        ]
+      },
+      "QueryResultItem": {
+        "type": "object",
+        "properties": {
+          "entity": {
+            "$ref": "#/components/schemas/QueryEntity"
+          },
+          "path": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathStep"
+            }
+          },
+          "score": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "entity",
+          "path",
+          "score"
+        ]
+      },
+      "QueryMetadata": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "hops": {
+            "type": "integer"
+          },
+          "k": {
+            "type": "integer"
+          },
+          "k_explore": {
+            "type": "integer"
+          },
+          "total_candidates_explored": {
+            "type": "integer"
+          },
+          "execution_time_ms": {
+            "type": "number"
+          },
+          "collection": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "partial_path": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathStep"
+            }
+          },
+          "stopped_at_hop": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query",
+          "hops",
+          "k",
+          "k_explore",
+          "total_candidates_explored",
+          "execution_time_ms"
+        ]
+      },
+      "QueryResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueryResultItem"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/QueryMetadata"
+          }
+        },
+        "required": [
+          "results",
+          "metadata"
+        ]
+      },
+      "QueryRequest": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Argo query string",
+            "example": "\"medical college\" -[*]{,4}-> type:file"
+          },
+          "k": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 10,
+            "description": "Maximum number of results to return",
+            "example": 10
+          },
+          "k_explore": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 300,
+            "description": "Beam width for exploration (default: k * 3)",
+            "example": 30
+          },
+          "collection": {
+            "type": "string",
+            "description": "Scope query to collection PI",
+            "example": "01JCOLL_MEDICAL"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "AttestationResponse": {
+        "type": "object",
+        "properties": {
+          "pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "ver": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Entity version number",
+            "example": 1
+          },
+          "cid": {
+            "type": "string",
+            "minLength": 1,
+            "description": "IPFS Content Identifier (CID)",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "arweave_tx": {
+            "type": "string",
+            "description": "Arweave transaction ID",
+            "example": "abc123xyz..."
+          },
+          "arweave_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Arweave gateway URL for direct access",
+            "example": "https://arweave.net/abc123xyz..."
+          },
+          "ts": {
+            "type": "number",
+            "description": "Unix timestamp (milliseconds) of the operation",
+            "example": 1704455200000
+          }
+        },
+        "required": [
+          "pi",
+          "ver",
+          "cid",
+          "arweave_tx",
+          "arweave_url",
+          "ts"
+        ]
+      },
+      "AttestationPendingResponse": {
+        "type": "object",
+        "properties": {
+          "pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "ver": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Entity version number",
+            "example": 1
+          },
+          "cid": {
+            "type": "string",
+            "minLength": 1,
+            "description": "IPFS Content Identifier (CID)",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "attestation_status": {
+            "type": "string",
+            "enum": [
+              "pending"
+            ],
+            "description": "Attestation upload status"
+          },
+          "message": {
+            "type": "string",
+            "description": "Status message",
+            "example": "Attestation upload in progress"
+          }
+        },
+        "required": [
+          "pi",
+          "ver",
+          "cid",
+          "attestation_status",
+          "message"
+        ]
+      },
+      "VerifyAttestationResponse": {
+        "type": "object",
+        "properties": {
+          "arweave_tx": {
+            "type": "string"
+          },
+          "attestation": {
+            "type": "object",
+            "properties": {
+              "pi": {
+                "type": "string",
+                "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+                "description": "Entity ID (ULID format)",
+                "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+              },
+              "ver": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "description": "Entity version number",
+                "example": 1
+              },
+              "cid": {
+                "type": "string",
+                "minLength": 1,
+                "description": "IPFS Content Identifier (CID)",
+                "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+              },
+              "op": {
+                "type": "string",
+                "enum": [
+                  "C",
+                  "U"
+                ],
+                "description": "Operation type: C=Create, U=Update"
+              },
+              "vis": {
+                "type": "string",
+                "enum": [
+                  "pub",
+                  "priv"
+                ],
+                "description": "Visibility at time of operation"
+              },
+              "prev_cid": {
+                "type": "string",
+                "nullable": true,
+                "minLength": 1,
+                "description": "Previous version CID (null for creates)",
+                "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+              },
+              "ts": {
+                "type": "number",
+                "description": "Unix timestamp (milliseconds)"
+              }
+            },
+            "required": [
+              "pi",
+              "ver",
+              "cid",
+              "op",
+              "vis",
+              "prev_cid",
+              "ts"
+            ]
+          },
+          "cid_valid": {
+            "type": "boolean",
+            "description": "True if hash(manifest) matches the attested CID"
+          },
+          "manifest_preview": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Entity type",
+                "example": "collection"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "description": "Truncated preview of the manifest content"
+          }
+        },
+        "required": [
+          "arweave_tx",
+          "attestation",
+          "cid_valid",
+          "manifest_preview"
+        ]
       }
     },
     "parameters": {}
@@ -4568,6 +5335,7 @@
         "description": "Creates a user entity from JWT claims. Idempotent - returns existing user if already registered.",
         "x-arke-action": "user:create",
         "x-arke-auth": "jwt-only",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -4632,6 +5400,7 @@
         "description": "Returns the authenticated user's entity.",
         "x-arke-action": "user:view",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -4676,6 +5445,7 @@
         "description": "Returns a user entity by ID. May require authentication depending on permissions.",
         "x-arke-action": "user:view",
         "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
         "parameters": [
           {
             "schema": {
@@ -4737,6 +5507,7 @@
         "description": "Updates a user's profile. Requires user:update permission (typically self-ownership).",
         "x-arke-action": "user:update",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -4869,6 +5640,7 @@
         "description": "Creates a new API key for the authenticated user. The full key is only returned once - store it securely.",
         "x-arke-action": "user:credentials",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -4918,6 +5690,7 @@
         "description": "Lists all active API keys for the authenticated user. Returns prefixes only, not full keys.",
         "x-arke-action": "user:credentials",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -4960,6 +5733,7 @@
         "description": "Revokes an API key by prefix. The key will be immediately invalid.",
         "x-arke-action": "user:credentials",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -5021,6 +5795,7 @@
         "description": "Creates a collection with the authenticated user as owner.",
         "x-arke-action": "collection:create",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -5108,6 +5883,7 @@
         "description": "Returns a collection entity by ID.",
         "x-arke-action": "collection:view",
         "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
         "parameters": [
           {
             "schema": {
@@ -5169,6 +5945,7 @@
         "description": "Updates collection properties. Requires collection:update permission.",
         "x-arke-action": "collection:update",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -5300,6 +6077,7 @@
         "description": "Adds a new role to the collection. Requires collection:manage permission.",
         "x-arke-action": "collection:manage",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -5414,6 +6192,7 @@
         "description": "Updates the actions for an existing role. Requires collection:manage permission.",
         "x-arke-action": "collection:manage",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -5538,6 +6317,7 @@
         "description": "Deletes a role from the collection. Requires collection:manage permission.",
         "x-arke-action": "collection:manage",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -5631,6 +6411,7 @@
         "description": "Returns all members of the collection grouped by type. By default, expired memberships are excluded.",
         "x-arke-action": "collection:view",
         "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
         "parameters": [
           {
             "schema": {
@@ -5706,6 +6487,7 @@
         "description": "Assigns a user to a role in the collection. Requires collection:manage permission.",
         "x-arke-action": "collection:manage",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -5820,6 +6602,7 @@
         "description": "Removes a user from a role in the collection. Requires collection:manage permission.",
         "x-arke-action": "collection:manage",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -5948,6 +6731,7 @@
         "description": "Links an entity as the root of this collection.\n\n**Prerequisites:** The entity must already have a 'collection' relationship\npointing to this collection (typically set during entity creation via the\n`collection` field).\n\n**Recommended flow:**\n1. Create entity with `collection` field set → entity is immediately protected\n2. Call this endpoint to establish the root link from collection to entity\n\nThis adds only the reverse relationship:\n- Collection → Entity (predicate: 'root')\n\nRequires collection:update permission on the collection.",
         "x-arke-action": "collection:update",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -6079,6 +6863,7 @@
         "description": "Returns entities belonging to this collection from the graph database.\n\nSupports pagination and optional type filtering. Results are ordered by creation date (newest first).",
         "x-arke-action": "collection:view",
         "x-arke-auth": "optional",
+        "x-arke-tier": "external",
         "parameters": [
           {
             "schema": {
@@ -6181,6 +6966,7 @@
         "description": "Creates a generic entity of any type. For type-specific validation, use type-specific endpoints.",
         "x-arke-action": "entity:create",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -6285,6 +7071,7 @@
         "description": "Returns any entity by ID. Permission check uses parent collection if entity belongs to one.",
         "x-arke-action": "entity:view",
         "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
         "parameters": [
           {
             "schema": {
@@ -6346,6 +7133,7 @@
         "description": "Updates any entity with merge semantics. Properties are deep merged, relationships use upsert semantics. Use properties_remove and relationships_remove for deletions. Note: entity:update on a collection requires collection:update permission.",
         "x-arke-action": "entity:update",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -6475,6 +7263,7 @@
         "description": "Soft-deletes an entity by creating a tombstone version. The entity can be restored later via POST /entities/:id/restore. Note: entity:delete on a collection requires collection:delete permission.",
         "x-arke-action": "entity:delete",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -6606,6 +7395,7 @@
         "description": "Restores a deleted entity by finding the last non-deleted version and creating a new version from it. Note: entity:restore on a collection requires collection:restore permission.",
         "x-arke-action": "entity:restore",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -6737,6 +7527,7 @@
         "description": "Returns the collection ID that this entity belongs to. Returns null if the entity is not in any collection. If the entity IS a collection, returns its own ID.",
         "x-arke-action": "entity:view",
         "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
         "parameters": [
           {
             "schema": {
@@ -6800,6 +7591,7 @@
         "description": "Creates a relationship from source to target entity.\n\nIf `target_predicate` is provided, creates a **bidirectional** relationship:\n- Adds `source_predicate` relationship on source pointing to target\n- Adds `target_predicate` relationship on target pointing to source\n- Requires `entity:update` permission on both entities\n\nIf `target_predicate` is omitted, creates a **unidirectional** relationship:\n- Adds `source_predicate` relationship on source pointing to target\n- Requires `entity:update` permission on source only",
         "x-arke-action": "entity:update",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -6915,6 +7707,7 @@
         "description": "Removes a relationship from source to target entity.\n\nIf `target_predicate` is provided, removes a **bidirectional** relationship:\n- Removes `source_predicate` relationship from source\n- Removes `target_predicate` relationship from target\n- Requires `entity:update` permission on both entities\n\nIf `target_predicate` is omitted, removes a **unidirectional** relationship:\n- Removes `source_predicate` relationship from source\n- Requires `entity:update` permission on source only",
         "x-arke-action": "entity:update",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -7032,6 +7825,7 @@
         "description": "Creates a new file entity.\n\n## Flow\n1. Call this endpoint with file metadata (key, filename, content_type, size)\n2. Receive entity data (uploaded: false)\n3. POST the file content to /{id}/content\n4. Entity will be updated with uploaded: true and verified CID\n\n## Key Best Practice\nUse a unique identifier as the key (e.g., version number, timestamp).\nThe actual CID is computed during upload.",
         "x-arke-action": "file:create",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -7136,6 +7930,7 @@
         "description": "Returns file entity metadata. Use /{id}/content to download the file content.",
         "x-arke-action": "file:view",
         "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
         "parameters": [
           {
             "schema": {
@@ -7197,6 +7992,7 @@
         "description": "Updates file metadata without changing the file content.\n\n## Key Changes\nThe key can be changed, but ONLY to a key that already exists in R2.\nThis allows \"regressing\" to a previous file version.\n\nTo upload a new file, use POST /{id}/reupload instead.",
         "x-arke-action": "file:update",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -7328,6 +8124,7 @@
         "description": "Uploads the binary content for a file entity.\n\n## Request\n- Content-Type: The MIME type of the file (must match entity's content_type)\n- Body: Binary file content (streaming supported)\n\n## Limits\n- Maximum file size: 500 MB\n\n## Behavior\n- Streams content directly to R2\n- Computes CID from file bytes\n- Updates entity with uploaded: true, verified size, and computed CID\n- Atomic operation - either fully succeeds or fails\n\n## Idempotency\nRe-uploading content for an already-uploaded file will fail with 409 Conflict.\nUse POST /{id}/reupload first to create a new version.",
         "x-arke-action": "file:upload",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -7471,6 +8268,7 @@
         "description": "Downloads the binary content of a file entity.\n\n## Response Headers\n- Content-Type: The MIME type of the file\n- Content-Length: File size in bytes\n- Content-Disposition: attachment; filename=\"original_filename\"\n\n## Streaming\nResponse is streamed directly from R2 storage.",
         "x-arke-action": "file:download",
         "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
         "parameters": [
           {
             "schema": {
@@ -7535,6 +8333,7 @@
         "description": "Prepares the entity for uploading a new file version.\n\n## Flow\n1. Call this endpoint with new key and file metadata\n2. Receive updated entity (uploaded: false)\n3. POST the new file content to /{id}/content\n4. Entity will be updated with uploaded: true and verified CID\n\n## Key Requirement\nThe new key must NOT already exist in R2 (no overwrites).\nPrevious file versions remain accessible via manifest history.",
         "x-arke-action": "file:reupload",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -7666,6 +8465,7 @@
         "description": "Creates a new folder entity. Optionally sets parent for immediate hierarchy.\n\nIf a parent folder is specified, a bidirectional relationship is created:\n- Parent folder contains this folder\n- This folder is in parent folder",
         "x-arke-action": "folder:create",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -7753,6 +8553,7 @@
         "description": "Returns folder metadata including children and parent relationships.",
         "x-arke-action": "folder:view",
         "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
         "parameters": [
           {
             "schema": {
@@ -7814,6 +8615,7 @@
         "description": "Updates folder properties (label, description, metadata). Properties are merged.",
         "x-arke-action": "folder:update",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -7945,6 +8747,7 @@
         "description": "Adds a child entity (file or folder) to this folder.\n\nCreates bidirectional relationship:\n- Folder contains child\n- Child is in folder\n\n**Idempotent**: if relationship already exists, returns current state without error.",
         "x-arke-action": "folder:update",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -8076,6 +8879,7 @@
         "description": "Removes a child entity from this folder (bidirectional).",
         "x-arke-action": "folder:update",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -8219,6 +9023,7 @@
         "description": "Efficiently adds multiple children to a folder.\n\n**Limit**: Maximum 50 children per request. For larger batches, make multiple\nrequests, refetching the folder's CID between each to satisfy the CAS guard.\n\n**Strategy**:\n1. Updates folder once with all 'contains' relationships\n2. Updates each child in parallel with 'in' back-link\n\n**Idempotent**: skips children that already have the relationship.\nReturns both added and skipped children in the response.",
         "x-arke-action": "folder:update",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -8350,6 +9155,7 @@
         "description": "Adds this folder to a parent folder.\n\nCreates bidirectional relationship:\n- Parent contains this folder\n- This folder is in parent\n\n**Idempotent**: if relationship already exists, returns current state without error.",
         "x-arke-action": "folder:update",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -8481,6 +9287,7 @@
         "description": "Removes this folder from a parent folder (bidirectional).",
         "x-arke-action": "folder:update",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -8624,6 +9431,7 @@
         "description": "Returns version metadata for an entity (newest first). Use pagination for entities with many versions.",
         "x-arke-action": "entity:view",
         "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
         "parameters": [
           {
             "schema": {
@@ -8736,6 +9544,7 @@
         "description": "Returns the full manifest for any version by its CID. Permission is checked against the entity ID in the manifest.",
         "x-arke-action": "entity:view",
         "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
         "parameters": [
           {
             "schema": {
@@ -8799,6 +9608,7 @@
         "description": "Returns all registered actions, verbs, types, verb implications, wildcard patterns, and default roles.\n\nThis endpoint is useful for:\n- Building dynamic role editors\n- Understanding available permissions\n- Validating actions client-side\n\nAll data is auto-generated from the actual permission system, so it's always in sync with the code.",
         "x-arke-action": "permissions:read",
         "x-arke-auth": "none",
+        "x-arke-tier": "standard",
         "responses": {
           "200": {
             "description": "Permission system metadata",
@@ -8822,6 +9632,7 @@
         "description": "Creates a new agent entity. Requires agent:create permission in the target collection.",
         "x-arke-action": "agent:create",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -8922,6 +9733,7 @@
         "description": "Returns an agent entity by ID.",
         "x-arke-action": "agent:view",
         "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
         "parameters": [
           {
             "schema": {
@@ -8983,6 +9795,7 @@
         "description": "Updates an agent. Requires agent:update permission.",
         "x-arke-action": "agent:update",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -9114,6 +9927,7 @@
         "description": "Invoke an agent to perform work on a target collection.\n\n**Two-phase interaction:**\n1. First call with `confirm: false` (default) returns a preview of permissions that will be granted\n2. After user reviews and confirms, call again with `confirm: true` to execute\n\nThe agent receives temporal (time-limited) permissions on the target collection.",
         "x-arke-action": "agent:invoke",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -9238,6 +10052,7 @@
         "description": "Creates an API key for the agent. The full key is only returned once.",
         "x-arke-action": "agent:manage",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -9350,6 +10165,7 @@
         "description": "Lists all active API keys for the agent (without the actual key values).",
         "x-arke-action": "agent:manage",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -9431,6 +10247,7 @@
         "description": "Revokes an API key for the agent.",
         "x-arke-action": "agent:manage",
         "x-arke-auth": "required",
+        "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
@@ -9517,6 +10334,7 @@
         "description": "Returns a cursor-based list of entity change events for client synchronization.\n\n**Usage:**\n- Call without cursor to get newest events\n- Use returned `cursor` as `?cursor=` to get older events\n- Poll without cursor periodically to check for new events\n\n**Sync flow:**\n1. Initial: `GET /events` → get newest, save highest `id` as high-water mark\n2. Paginate: `GET /events?cursor=X` → get older events until `has_more=false`\n3. Poll: `GET /events` → if newest `id` > high-water mark, process new events\n\n**Event data:**\n- `id`: Auto-increment ID\n- `pi`: Entity ID that changed\n- `cid`: New manifest CID\n- `ts`: ISO timestamp\n\nEvents are ephemeral (30-day rolling window) - for full sync, use snapshots.",
         "x-arke-action": "events:list",
         "x-arke-auth": "none",
+        "x-arke-tier": "standard",
         "parameters": [
           {
             "schema": {
@@ -9563,6 +10381,427 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EventsListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/graph/paths": {
+      "post": {
+        "tags": [
+          "Graph"
+        ],
+        "summary": "Find paths between entities",
+        "description": "Find shortest paths between source and target entity sets using graph traversal.",
+        "x-arke-action": "graph:query",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "external",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathsBetweenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Paths found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathsBetweenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/graph/reachable": {
+      "post": {
+        "tags": [
+          "Graph"
+        ],
+        "summary": "Find reachable entities",
+        "description": "Find all entities of a specific type reachable from source entities within N hops.",
+        "x-arke-action": "graph:query",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "external",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathsReachableRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reachable entities found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathsReachableResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/graph/entity/{id}": {
+      "get": {
+        "tags": [
+          "Graph"
+        ],
+        "summary": "Get entity from graph",
+        "description": "Get entity details with all relationships from the graph database.",
+        "x-arke-action": "graph:query",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "external",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entity found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GraphEntityResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/query": {
+      "post": {
+        "tags": [
+          "Query"
+        ],
+        "summary": "Execute Argo query",
+        "description": "Execute an Argo DSL query for path-based graph traversal.\n\n## Query Syntax\n\n```\nENTRY_POINT [ENTRY_FILTER] [-[RELATION]{DEPTH}-> TARGET_FILTER]...\n```\n\n### Entry Points\n\n| Syntax | Description | Example |\n|--------|-------------|---------|\n| `\"text\"` | Semantic search | `\"george washington\"` |\n| `@id` | Exact entity ID | `@01KE4ZY69F9R40E88PK9S0TQRQ` |\n| `type:X` | All entities of type | `type:person` |\n| `type:X ~ \"text\"` | Semantic search within type | `type:person ~ \"physician\"` |\n\n### Edges (Hops)\n\n| Syntax | Direction |\n|--------|-----------|\n| `-[*]->` | Outgoing |\n| `<-[*]-` | Incoming |\n| `<-[*]->` | Both |\n| `-[*]{,4}->` | Variable depth (1-4) |\n\n### Examples\n\n```\n\"george washington\"                           # Simple semantic search\n\"albert einstein\" type:person                 # With type filter\n\"medical college\" -[*]{,4}-> type:file        # Find files connected to concept\n@01KE4ZY... -[*]{,2}-> type:person            # Find people near entity\n```\n",
+        "x-arke-action": "query:execute",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "external",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Query executed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entities/{id}/attestation": {
+      "get": {
+        "tags": [
+          "Attestations"
+        ],
+        "summary": "Get latest attestation",
+        "description": "Returns the Arweave attestation for the current (latest) version of an entity.\n\nReturns 202 Accepted if the attestation upload is still pending.",
+        "x-arke-action": "entity:view",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attestation found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttestationResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Attestation pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttestationPendingResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/versions/{id}/{ver}/attestation": {
+      "get": {
+        "tags": [
+          "Attestations"
+        ],
+        "summary": "Get version attestation",
+        "description": "Returns the Arweave attestation for a specific version of an entity.",
+        "x-arke-action": "entity:view",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "example": 1
+            },
+            "required": true,
+            "description": "Version number",
+            "name": "ver",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attestation found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttestationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attestations/verify/{tx}": {
+      "get": {
+        "tags": [
+          "Attestations"
+        ],
+        "summary": "Verify attestation",
+        "description": "Fetches an attestation from Arweave and verifies the CID matches the manifest content.\n\nThis is a public endpoint - anyone can verify attestations.",
+        "x-arke-action": "attestation:verify",
+        "x-arke-auth": "none",
+        "x-arke-tier": "standard",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "abc123xyz..."
+            },
+            "required": true,
+            "description": "Arweave transaction ID",
+            "name": "tx",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verification result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyAttestationResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
                 }
               }
             }

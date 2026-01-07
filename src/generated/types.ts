@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-01-05T15:08:43.351Z
+ * Generated: 2026-01-07T14:39:40.652Z
  */
 
 export type paths = {
@@ -5072,6 +5072,510 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/graph/paths": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find paths between entities
+         * @description Find shortest paths between source and target entity sets using graph traversal.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["PathsBetweenRequest"];
+                };
+            };
+            responses: {
+                /** @description Paths found */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PathsBetweenResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/graph/reachable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find reachable entities
+         * @description Find all entities of a specific type reachable from source entities within N hops.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["PathsReachableRequest"];
+                };
+            };
+            responses: {
+                /** @description Reachable entities found */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PathsReachableResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/graph/entity/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get entity from graph
+         * @description Get entity details with all relationships from the graph database.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Entity found */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GraphEntityResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Execute Argo query
+         * @description Execute an Argo DSL query for path-based graph traversal.
+         *
+         *     ## Query Syntax
+         *
+         *     ```
+         *     ENTRY_POINT [ENTRY_FILTER] [-[RELATION]{DEPTH}-> TARGET_FILTER]...
+         *     ```
+         *
+         *     ### Entry Points
+         *
+         *     | Syntax | Description | Example |
+         *     |--------|-------------|---------|
+         *     | `"text"` | Semantic search | `"george washington"` |
+         *     | `@id` | Exact entity ID | `@01KE4ZY69F9R40E88PK9S0TQRQ` |
+         *     | `type:X` | All entities of type | `type:person` |
+         *     | `type:X ~ "text"` | Semantic search within type | `type:person ~ "physician"` |
+         *
+         *     ### Edges (Hops)
+         *
+         *     | Syntax | Direction |
+         *     |--------|-----------|
+         *     | `-[*]->` | Outgoing |
+         *     | `<-[*]-` | Incoming |
+         *     | `<-[*]->` | Both |
+         *     | `-[*]{,4}->` | Variable depth (1-4) |
+         *
+         *     ### Examples
+         *
+         *     ```
+         *     "george washington"                           # Simple semantic search
+         *     "albert einstein" type:person                 # With type filter
+         *     "medical college" -[*]{,4}-> type:file        # Find files connected to concept
+         *     @01KE4ZY... -[*]{,2}-> type:person            # Find people near entity
+         *     ```
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["QueryRequest"];
+                };
+            };
+            responses: {
+                /** @description Query executed successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["QueryResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entities/{id}/attestation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get latest attestation
+         * @description Returns the Arweave attestation for the current (latest) version of an entity.
+         *
+         *     Returns 202 Accepted if the attestation upload is still pending.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Attestation found */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AttestationResponse"];
+                    };
+                };
+                /** @description Attestation pending */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AttestationPendingResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/versions/{id}/{ver}/attestation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get version attestation
+         * @description Returns the Arweave attestation for a specific version of an entity.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                    /** @description Version number */
+                    ver: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Attestation found */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AttestationResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attestations/verify/{tx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Verify attestation
+         * @description Fetches an attestation from Arweave and verifies the CID matches the manifest content.
+         *
+         *     This is a public endpoint - anyone can verify attestations.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Arweave transaction ID */
+                    tx: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Verification result */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["VerifyAttestationResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 };
 export type webhooks = Record<string, never>;
 export type components = {
@@ -6693,6 +7197,17 @@ export type components = {
             };
             /** @description Optional note describing this version */
             note?: string;
+            /**
+             * @description Arweave transaction ID if this version has been attested
+             * @example abc123xyz...
+             */
+            arweave_tx?: string;
+            /**
+             * Format: uri
+             * @description Arweave gateway URL for the attestation
+             * @example https://arweave.net/abc123xyz...
+             */
+            arweave_url?: string;
         };
         VersionListResponse: {
             /**
@@ -7236,6 +7751,343 @@ export type components = {
              * @example 12340
              */
             cursor: number;
+        };
+        PathEdge: {
+            /**
+             * @description Source entity PI
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            subject_pi: string;
+            /** @description Source entity label */
+            subject_label: string;
+            /** @description Source entity type */
+            subject_type: string;
+            /** @description Relationship predicate */
+            predicate: string;
+            /**
+             * @description Target entity PI
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            object_pi: string;
+            /** @description Target entity label */
+            object_label: string;
+            /** @description Target entity type */
+            object_type: string;
+        };
+        PathResult: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            source_pi: string;
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            target_pi: string;
+            /** @description Path length (number of hops) */
+            length: number;
+            edges: components["schemas"]["PathEdge"][];
+        };
+        PathsBetweenResponse: {
+            paths: components["schemas"]["PathResult"][];
+            /** @description Whether results were truncated due to limit */
+            truncated: boolean;
+        };
+        PathsBetweenRequest: {
+            /**
+             * @description Starting entity PIs
+             * @example [
+             *       "01KE4ZY69F9R40E88PK9S0TQRQ"
+             *     ]
+             */
+            source_pis: string[];
+            /**
+             * @description Target entity PIs
+             * @example [
+             *       "01KE506KZGD8M2P1XK3VNQT4YR"
+             *     ]
+             */
+            target_pis: string[];
+            /**
+             * @description Maximum path depth (1-4)
+             * @default 4
+             * @example 3
+             */
+            max_depth: number;
+            /**
+             * @description Relationship traversal direction
+             * @default both
+             * @example both
+             * @enum {string}
+             */
+            direction: "outgoing" | "incoming" | "both";
+            /**
+             * @description Maximum number of paths to return
+             * @default 100
+             * @example 10
+             */
+            limit: number;
+        };
+        ReachableResult: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            source_pi: string;
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            target_pi: string;
+            target_label: string;
+            target_type: string;
+            /** @description Path length (number of hops) */
+            length: number;
+            edges: components["schemas"]["PathEdge"][];
+        };
+        PathsReachableResponse: {
+            results: components["schemas"]["ReachableResult"][];
+            /** @description Whether results were truncated due to limit */
+            truncated: boolean;
+        };
+        PathsReachableRequest: {
+            /**
+             * @description Starting entity PIs
+             * @example [
+             *       "01KE4ZY69F9R40E88PK9S0TQRQ"
+             *     ]
+             */
+            source_pis: string[];
+            /**
+             * @description Target entity type to find
+             * @example file
+             */
+            target_type: string;
+            /**
+             * @description Maximum path depth (1-4)
+             * @default 4
+             * @example 3
+             */
+            max_depth: number;
+            /**
+             * @description Relationship traversal direction
+             * @default both
+             * @example both
+             * @enum {string}
+             */
+            direction: "outgoing" | "incoming" | "both";
+            /**
+             * @description Maximum number of results to return
+             * @default 100
+             * @example 50
+             */
+            limit: number;
+        };
+        RelationshipInfo: {
+            /** @enum {string} */
+            direction: "outgoing" | "incoming";
+            predicate: string;
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            peer_pi: string;
+            peer_type: string;
+            peer_label: string;
+            properties: {
+                [key: string]: unknown;
+            };
+        };
+        GraphEntityResponse: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            pi: string;
+            type: string;
+            label: string;
+            collection_pi: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            relationships: components["schemas"]["RelationshipInfo"][];
+        };
+        QueryEntity: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            pi: string;
+            type: string;
+            label: string;
+            collection_pi: string | null;
+        };
+        EntityStep: {
+            entity: string;
+            label?: string;
+            type?: string;
+            score?: number;
+        };
+        EdgeStep: {
+            edge: string;
+            /** @enum {string} */
+            direction: "outgoing" | "incoming";
+            score?: number;
+        };
+        PathStep: components["schemas"]["EntityStep"] | components["schemas"]["EdgeStep"];
+        QueryResultItem: {
+            entity: components["schemas"]["QueryEntity"];
+            path: components["schemas"]["PathStep"][];
+            score: number;
+        };
+        QueryMetadata: {
+            query: string;
+            hops: number;
+            k: number;
+            k_explore: number;
+            total_candidates_explored: number;
+            execution_time_ms: number;
+            collection?: string;
+            error?: string;
+            reason?: string;
+            partial_path?: components["schemas"]["PathStep"][];
+            stopped_at_hop?: number;
+        };
+        QueryResponse: {
+            results: components["schemas"]["QueryResultItem"][];
+            metadata: components["schemas"]["QueryMetadata"];
+        };
+        QueryRequest: {
+            /**
+             * @description Argo query string
+             * @example "medical college" -[*]{,4}-> type:file
+             */
+            path: string;
+            /**
+             * @description Maximum number of results to return
+             * @default 10
+             * @example 10
+             */
+            k: number;
+            /**
+             * @description Beam width for exploration (default: k * 3)
+             * @example 30
+             */
+            k_explore?: number;
+            /**
+             * @description Scope query to collection PI
+             * @example 01JCOLL_MEDICAL
+             */
+            collection?: string;
+        };
+        AttestationResponse: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            pi: string;
+            /**
+             * @description Entity version number
+             * @example 1
+             */
+            ver: number;
+            /**
+             * @description IPFS Content Identifier (CID)
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            cid: string;
+            /**
+             * @description Arweave transaction ID
+             * @example abc123xyz...
+             */
+            arweave_tx: string;
+            /**
+             * Format: uri
+             * @description Arweave gateway URL for direct access
+             * @example https://arweave.net/abc123xyz...
+             */
+            arweave_url: string;
+            /**
+             * @description Unix timestamp (milliseconds) of the operation
+             * @example 1704455200000
+             */
+            ts: number;
+        };
+        AttestationPendingResponse: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            pi: string;
+            /**
+             * @description Entity version number
+             * @example 1
+             */
+            ver: number;
+            /**
+             * @description IPFS Content Identifier (CID)
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            cid: string;
+            /**
+             * @description Attestation upload status
+             * @enum {string}
+             */
+            attestation_status: "pending";
+            /**
+             * @description Status message
+             * @example Attestation upload in progress
+             */
+            message: string;
+        };
+        VerifyAttestationResponse: {
+            arweave_tx: string;
+            attestation: {
+                /**
+                 * @description Entity ID (ULID format)
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                pi: string;
+                /**
+                 * @description Entity version number
+                 * @example 1
+                 */
+                ver: number;
+                /**
+                 * @description IPFS Content Identifier (CID)
+                 * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+                 */
+                cid: string;
+                /**
+                 * @description Operation type: C=Create, U=Update
+                 * @enum {string}
+                 */
+                op: "C" | "U";
+                /**
+                 * @description Visibility at time of operation
+                 * @enum {string}
+                 */
+                vis: "pub" | "priv";
+                /**
+                 * @description Previous version CID (null for creates)
+                 * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+                 */
+                prev_cid: string | null;
+                /** @description Unix timestamp (milliseconds) */
+                ts: number;
+            };
+            /** @description True if hash(manifest) matches the attested CID */
+            cid_valid: boolean;
+            /** @description Truncated preview of the manifest content */
+            manifest_preview: {
+                /**
+                 * @description Entity type
+                 * @example collection
+                 */
+                type: string;
+            };
         };
     };
     responses: never;
