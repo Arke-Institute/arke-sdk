@@ -9,7 +9,6 @@ export {
   uploadTree,
   computeCid,
   verifyCid,
-  scanDirectory,
   scanFileSystemEntries,
   scanFileList,
   buildUploadTree,

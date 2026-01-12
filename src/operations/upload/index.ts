@@ -6,12 +6,15 @@
  * @example
  * ```typescript
  * import { ArkeClient } from '@arke-institute/sdk';
- * import { uploadTree, scanDirectory } from '@arke-institute/sdk/operations';
+ * import { uploadTree, buildUploadTree } from '@arke-institute/sdk/operations';
  *
  * const client = new ArkeClient({ authToken: 'your-token' });
  *
- * // Node.js: Scan a local directory
- * const tree = await scanDirectory('/path/to/folder');
+ * // Build upload tree from file data (works in browser and Node.js)
+ * const tree = buildUploadTree([
+ *   { path: 'docs/readme.md', data: readmeBuffer },
+ *   { path: 'images/logo.png', data: logoBlob },
+ * ]);
  *
  * // Upload to a new collection
  * const result = await uploadTree(client, tree, {
@@ -21,7 +24,7 @@
  *       description: 'Uploaded folder contents',
  *     },
  *   },
- *   onProgress: (p) => console.log(`${p.phase}: ${p.completedFiles}/${p.totalFiles}`),
+ *   onProgress: (p) => console.log(`${p.phase}: ${p.phasePercent}%`),
  * });
  *
  * console.log('Created collection:', result.collection.id);
@@ -47,9 +50,8 @@ export { uploadTree } from './engine.js';
 // CID utilities
 export { computeCid, verifyCid } from './cid.js';
 
-// Platform scanners
+// Scanners and utilities
 export {
-  scanDirectory,
   scanFileSystemEntries,
   scanFileList,
   buildUploadTree,

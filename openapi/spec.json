@@ -3,7 +3,7 @@
   "info": {
     "title": "Arke v1 API",
     "version": "1.0.0",
-    "description": "IPFS-backed entity management API with versioning and permissions."
+    "description": "Entity management API with content-addressed versioning and permissions."
   },
   "servers": [
     {
@@ -82,7 +82,7 @@
           "cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "properties": {
@@ -159,7 +159,7 @@
           "cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "type": {
@@ -615,6 +615,87 @@
           "keys"
         ]
       },
+      "UserCollectionItem": {
+        "type": "object",
+        "properties": {
+          "pi": {
+            "type": "string",
+            "description": "Collection persistent identifier",
+            "example": "01JCOLLECTION123456789AB"
+          },
+          "label": {
+            "type": "string",
+            "description": "Collection label/name",
+            "example": "My Research Collection"
+          },
+          "predicate": {
+            "type": "string",
+            "description": "Role predicate indicating user's relationship to collection",
+            "example": "owner"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "When the collection was created",
+            "example": "2026-01-12T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "pi",
+          "label",
+          "predicate",
+          "created_at"
+        ]
+      },
+      "UserCollectionsResponse": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "User persistent identifier",
+            "example": "01JUSER123456789ABCDEFGH"
+          },
+          "collections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserCollectionItem"
+            },
+            "description": "Collections the user has access to"
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "offset": {
+                "type": "number",
+                "description": "Current offset"
+              },
+              "limit": {
+                "type": "number",
+                "description": "Results per page"
+              },
+              "count": {
+                "type": "number",
+                "description": "Number of results returned"
+              },
+              "has_more": {
+                "type": "boolean",
+                "description": "Whether more results exist"
+              }
+            },
+            "required": [
+              "offset",
+              "limit",
+              "count",
+              "has_more"
+            ],
+            "description": "Pagination metadata"
+          }
+        },
+        "required": [
+          "user_id",
+          "collections",
+          "pagination"
+        ]
+      },
       "CollectionResponse": {
         "allOf": [
           {
@@ -931,13 +1012,13 @@
           "cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "prev_cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "ver": {
@@ -1154,13 +1235,13 @@
           "cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "prev_cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "ver": {
@@ -1255,13 +1336,13 @@
           "cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "prev_cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "ver": {
@@ -1436,7 +1517,7 @@
           "cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "type": {
@@ -1780,7 +1861,7 @@
           "cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "deleted_at": {
@@ -1798,7 +1879,7 @@
           "prev_cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           }
         },
@@ -2079,6 +2160,136 @@
           "expect_source_tip"
         ]
       },
+      "ConnectResponse": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityResponse"
+              },
+              {
+                "description": "Updated source entity with the new connection"
+              }
+            ]
+          }
+        },
+        "required": [
+          "source"
+        ]
+      },
+      "ConnectRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "description": "Optional note describing this change",
+            "example": "Added Chapter 42: The Whiteness of the Whale"
+          },
+          "source_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Source entity ID (the entity you're connecting FROM)",
+            "example": "01JFKY3XQWM0MJVKM8DK3AEXPY"
+          },
+          "target_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Target entity ID (the entity you're connecting TO)",
+            "example": "01JFKY3XQWM0MJVKM8DK3AEXQZ"
+          },
+          "expect_tip": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Expected current tip CID of source entity",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "predicate": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "description": "Relationship predicate. Defaults to \"connects_to\".",
+            "example": "connects_to"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Optional display label for this connection",
+            "example": "Related document"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Optional description explaining why this connection exists",
+            "example": "Links to the supporting research paper"
+          }
+        },
+        "required": [
+          "source_id",
+          "target_id",
+          "expect_tip"
+        ]
+      },
+      "DisconnectResponse": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityResponse"
+              },
+              {
+                "description": "Updated source entity with the connection removed"
+              }
+            ]
+          }
+        },
+        "required": [
+          "source"
+        ]
+      },
+      "DisconnectRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "description": "Optional note describing this change",
+            "example": "Added Chapter 42: The Whiteness of the Whale"
+          },
+          "source_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Source entity ID",
+            "example": "01JFKY3XQWM0MJVKM8DK3AEXPY"
+          },
+          "target_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Target entity ID (peer of the connection to remove)",
+            "example": "01JFKY3XQWM0MJVKM8DK3AEXQZ"
+          },
+          "expect_tip": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Expected current tip CID of source entity",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "predicate": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "description": "Relationship predicate to remove. Defaults to \"connects_to\".",
+            "example": "connects_to"
+          }
+        },
+        "required": [
+          "source_id",
+          "target_id",
+          "expect_tip"
+        ]
+      },
       "CreateFileResponse": {
         "type": "object",
         "properties": {
@@ -2091,7 +2302,7 @@
           "cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "type": {
@@ -2584,7 +2795,7 @@
           "cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "type": {
@@ -2985,7 +3196,7 @@
               "cid": {
                 "type": "string",
                 "minLength": 1,
-                "description": "IPFS Content Identifier (CID)",
+                "description": "Content Identifier (CID) - content-addressed hash",
                 "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
               }
             },
@@ -3058,7 +3269,7 @@
               "cid": {
                 "type": "string",
                 "minLength": 1,
-                "description": "IPFS Content Identifier (CID)",
+                "description": "Content Identifier (CID) - content-addressed hash",
                 "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
               }
             },
@@ -3127,7 +3338,7 @@
                 "cid": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "IPFS Content Identifier (CID)",
+                  "description": "Content Identifier (CID) - content-addressed hash",
                   "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
                 }
               },
@@ -3336,7 +3547,7 @@
           "cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "ts": {
@@ -3439,7 +3650,7 @@
           "cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "manifest": {
@@ -4174,6 +4385,9 @@
           "expired": {
             "type": "boolean"
           },
+          "missing_actions": {
+            "type": "boolean"
+          },
           "current_expires_at": {
             "type": "string",
             "format": "date-time"
@@ -4296,7 +4510,7 @@
           "target_cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "expires_at": {
@@ -4339,7 +4553,7 @@
           "target_cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "expires_at": {
@@ -5157,7 +5371,7 @@
           "cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "arweave_tx": {
@@ -5205,7 +5419,7 @@
           "cid": {
             "type": "string",
             "minLength": 1,
-            "description": "IPFS Content Identifier (CID)",
+            "description": "Content Identifier (CID) - content-addressed hash",
             "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
           },
           "attestation_status": {
@@ -5254,7 +5468,7 @@
               "cid": {
                 "type": "string",
                 "minLength": 1,
-                "description": "IPFS Content Identifier (CID)",
+                "description": "Content Identifier (CID) - content-addressed hash",
                 "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
               },
               "op": {
@@ -5782,6 +5996,116 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/users/{id}/collections": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "List collections user has access to",
+        "description": "Returns all collections where the user has a role relationship (owner, editor, viewer, etc.).\n\nQueries GraphDB for collections with relationships pointing to this user where peer_type is 'user'.\nResults include the role predicate so clients know what access the user has to each collection.\n\nSupports filtering by predicate (role name) and pagination.",
+        "x-arke-action": "user:view",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "external",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Filter by role predicate (e.g., owner, editor)",
+              "example": "owner"
+            },
+            "required": false,
+            "name": "predicate",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Maximum number of results (default: 100, max: 1000)",
+              "example": "100"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Pagination offset",
+              "example": "0"
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of collections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCollectionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GraphDB service unavailable"
           }
         }
       }
@@ -7816,6 +8140,242 @@
         }
       }
     },
+    "/connect": {
+      "post": {
+        "tags": [
+          "Connect"
+        ],
+        "summary": "Connect two entities",
+        "description": "Creates a unidirectional relationship from source to target entity.\n\nThis is a shorthand for adding a relationship with sensible defaults:\n- Default predicate: `connects_to` (customizable)\n- Optional label and description stored in relationship properties\n- Only requires `entity:update` permission on source entity\n\nUse this for simple entity linking. For bidirectional relationships or\nadvanced options, use the `/relationships` endpoint.",
+        "x-arke-action": "entity:update",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Connection created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - CAS validation failed (entity was modified)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CASErrorResponse"
+                },
+                "example": {
+                  "error": "Conflict: entity was modified",
+                  "details": {
+                    "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                    "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connect/disconnect": {
+      "post": {
+        "tags": [
+          "Connect"
+        ],
+        "summary": "Disconnect two entities",
+        "description": "Removes a unidirectional relationship from source to target entity.\n\nThis is a shorthand for removing a relationship:\n- Default predicate: `connects_to` (customizable)\n- Only requires `entity:update` permission on source entity\n\nFor bidirectional removal, use the `/relationships` endpoint.",
+        "x-arke-action": "entity:update",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisconnectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connection removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisconnectResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - CAS validation failed (entity was modified)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CASErrorResponse"
+                },
+                "example": {
+                  "error": "Conflict: entity was modified",
+                  "details": {
+                    "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                    "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/files": {
       "post": {
         "tags": [
@@ -9462,7 +10022,7 @@
             "schema": {
               "type": "string",
               "minLength": 1,
-              "description": "IPFS Content Identifier (CID)",
+              "description": "Content Identifier (CID) - content-addressed hash",
               "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
             },
             "required": false,
@@ -9550,7 +10110,7 @@
             "schema": {
               "type": "string",
               "minLength": 1,
-              "description": "IPFS Content Identifier (CID)",
+              "description": "Content Identifier (CID) - content-addressed hash",
               "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
             },
             "required": true,

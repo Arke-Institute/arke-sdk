@@ -3,9 +3,12 @@
  *
  * @deprecated Use the new upload module instead:
  * ```typescript
- * import { uploadTree, scanDirectory } from '@arke-institute/sdk/operations';
+ * import { uploadTree, buildUploadTree } from '@arke-institute/sdk/operations';
  *
- * const tree = await scanDirectory('/path/to/folder');
+ * const tree = buildUploadTree([
+ *   { path: 'docs/readme.md', data: readmeBuffer },
+ *   { path: 'images/logo.png', data: logoBlob },
+ * ]);
  * const result = await uploadTree(client, tree, {
  *   target: { collectionId: '...' },
  * });
@@ -13,7 +16,6 @@
  */
 
 import type { ArkeClient } from '../client/ArkeClient.js';
-import { uploadTree, scanDirectory, type UploadResult } from './upload/index.js';
 
 /**
  * @deprecated Use UploadProgress from upload module
@@ -56,66 +58,36 @@ export interface UploadDirectoryResult {
 /**
  * Folder operations helper
  *
- * @deprecated Use uploadTree and scanDirectory functions instead:
+ * @deprecated Use uploadTree and buildUploadTree functions instead:
  * ```typescript
- * import { uploadTree, scanDirectory } from '@arke-institute/sdk/operations';
+ * import { uploadTree, buildUploadTree } from '@arke-institute/sdk/operations';
  *
- * const tree = await scanDirectory('/path/to/folder');
+ * const tree = buildUploadTree([
+ *   { path: 'docs/readme.md', data: readmeBuffer },
+ * ]);
  * const result = await uploadTree(client, tree, {
  *   target: { collectionId: '...' },
- *   onProgress: (p) => console.log(`${p.completedFiles}/${p.totalFiles} files`),
  * });
  * ```
  */
 export class FolderOperations {
-  constructor(private client: ArkeClient) {}
+  constructor(private client: ArkeClient) {
+    void client; // Suppress unused warning
+  }
 
   /**
    * Upload a local directory to Arke
    *
-   * @deprecated Use uploadTree and scanDirectory instead
+   * @deprecated This method has been removed. Use uploadTree and buildUploadTree instead.
    */
   async uploadDirectory(
-    localPath: string,
-    options: UploadDirectoryOptions
+    _localPath: string,
+    _options: UploadDirectoryOptions
   ): Promise<UploadDirectoryResult> {
-    // Use the new implementation
-    const tree = await scanDirectory(localPath);
-
-    const result: UploadResult = await uploadTree(this.client, tree, {
-      target: {
-        collectionId: options.collectionId,
-        parentId: options.parentFolderId,
-      },
-      concurrency: options.concurrency,
-      onProgress: options.onProgress
-        ? (p) => {
-            // Map new progress to old format
-            options.onProgress!({
-              phase:
-                p.phase === 'creating'
-                  ? 'creating-folders'
-                  : p.phase === 'uploading'
-                    ? 'uploading-files'
-                    : p.phase === 'backlinking'
-                      ? 'linking'
-                      : p.phase === 'complete'
-                        ? 'complete'
-                        : 'scanning',
-              totalFiles: p.totalEntities,
-              completedFiles: p.completedEntities,
-              totalFolders: p.totalParents,
-              completedFolders: p.completedParents,
-              currentFile: p.currentItem,
-            });
-          }
-        : undefined,
-    });
-
-    return {
-      rootFolder: result.folders[0] || null,
-      folders: result.folders,
-      files: result.files,
-    };
+    throw new Error(
+      'FolderOperations.uploadDirectory has been removed. ' +
+        'Use uploadTree() with buildUploadTree() instead. ' +
+        'See: https://github.com/arke-institute/arke-sdk#upload-module'
+    );
   }
 }

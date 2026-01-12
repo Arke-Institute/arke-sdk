@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-01-07T14:39:40.652Z
+ * Generated: 2026-01-12T16:14:47.577Z
  */
 
 export type paths = {
@@ -487,6 +487,106 @@ export type paths = {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{id}/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List collections user has access to
+         * @description Returns all collections where the user has a role relationship (owner, editor, viewer, etc.).
+         *
+         *     Queries GraphDB for collections with relationships pointing to this user where peer_type is 'user'.
+         *     Results include the role predicate so clients know what access the user has to each collection.
+         *
+         *     Supports filtering by predicate (role name) and pagination.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    predicate?: string;
+                    limit?: string;
+                    offset?: string;
+                };
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description List of collections */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["UserCollectionsResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description GraphDB service unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2449,6 +2549,276 @@ export type paths = {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Connect two entities
+         * @description Creates a unidirectional relationship from source to target entity.
+         *
+         *     This is a shorthand for adding a relationship with sensible defaults:
+         *     - Default predicate: `connects_to` (customizable)
+         *     - Optional label and description stored in relationship properties
+         *     - Only requires `entity:update` permission on source entity
+         *
+         *     Use this for simple entity linking. For bidirectional relationships or
+         *     advanced options, use the `/relationships` endpoint.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ConnectRequest"];
+                };
+            };
+            responses: {
+                /** @description Connection created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConnectResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict - CAS validation failed (entity was modified) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Conflict: entity was modified",
+                         *       "details": {
+                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["CASErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/connect/disconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disconnect two entities
+         * @description Removes a unidirectional relationship from source to target entity.
+         *
+         *     This is a shorthand for removing a relationship:
+         *     - Default predicate: `connects_to` (customizable)
+         *     - Only requires `entity:update` permission on source entity
+         *
+         *     For bidirectional removal, use the `/relationships` endpoint.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DisconnectRequest"];
+                };
+            };
+            responses: {
+                /** @description Connection removed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DisconnectResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict - CAS validation failed (entity was modified) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Conflict: entity was modified",
+                         *       "details": {
+                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["CASErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -5584,7 +5954,7 @@ export type components = {
             /** @example 01J1SHMAE10000000000000000 */
             id: string;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             cid: string;
@@ -5629,7 +5999,7 @@ export type components = {
              */
             id: string;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             cid: string;
@@ -5844,6 +6214,48 @@ export type components = {
             /** @description List of API keys */
             keys: components["schemas"]["ApiKeyInfo"][];
         };
+        UserCollectionItem: {
+            /**
+             * @description Collection persistent identifier
+             * @example 01JCOLLECTION123456789AB
+             */
+            pi: string;
+            /**
+             * @description Collection label/name
+             * @example My Research Collection
+             */
+            label: string;
+            /**
+             * @description Role predicate indicating user's relationship to collection
+             * @example owner
+             */
+            predicate: string;
+            /**
+             * @description When the collection was created
+             * @example 2026-01-12T00:00:00.000Z
+             */
+            created_at: string;
+        };
+        UserCollectionsResponse: {
+            /**
+             * @description User persistent identifier
+             * @example 01JUSER123456789ABCDEFGH
+             */
+            user_id: string;
+            /** @description Collections the user has access to */
+            collections: components["schemas"]["UserCollectionItem"][];
+            /** @description Pagination metadata */
+            pagination: {
+                /** @description Current offset */
+                offset: number;
+                /** @description Results per page */
+                limit: number;
+                /** @description Number of results returned */
+                count: number;
+                /** @description Whether more results exist */
+                has_more: boolean;
+            };
+        };
         CollectionResponse: components["schemas"]["EntityResponse"] & {
             /** @enum {string} */
             type?: "collection";
@@ -6005,12 +6417,12 @@ export type components = {
              */
             id: string;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             cid: string;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             prev_cid: string;
@@ -6115,12 +6527,12 @@ export type components = {
              */
             id: string;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             cid: string;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             prev_cid: string;
@@ -6172,12 +6584,12 @@ export type components = {
              */
             id: string;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             cid: string;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             prev_cid: string;
@@ -6255,7 +6667,7 @@ export type components = {
              */
             id: string;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             cid: string;
@@ -6426,7 +6838,7 @@ export type components = {
              */
             id: string;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             cid: string;
@@ -6441,7 +6853,7 @@ export type components = {
              */
             ver: number;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             prev_cid: string;
@@ -6578,6 +6990,76 @@ export type components = {
              */
             expect_target_tip?: string;
         };
+        ConnectResponse: {
+            source: components["schemas"]["EntityResponse"] & unknown;
+        };
+        ConnectRequest: {
+            /**
+             * @description Optional note describing this change
+             * @example Added Chapter 42: The Whiteness of the Whale
+             */
+            note?: string;
+            /**
+             * @description Source entity ID (the entity you're connecting FROM)
+             * @example 01JFKY3XQWM0MJVKM8DK3AEXPY
+             */
+            source_id: string;
+            /**
+             * @description Target entity ID (the entity you're connecting TO)
+             * @example 01JFKY3XQWM0MJVKM8DK3AEXQZ
+             */
+            target_id: string;
+            /**
+             * @description Expected current tip CID of source entity
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            expect_tip: string;
+            /**
+             * @description Relationship predicate. Defaults to "connects_to".
+             * @example connects_to
+             */
+            predicate?: string;
+            /**
+             * @description Optional display label for this connection
+             * @example Related document
+             */
+            label?: string;
+            /**
+             * @description Optional description explaining why this connection exists
+             * @example Links to the supporting research paper
+             */
+            description?: string;
+        };
+        DisconnectResponse: {
+            source: components["schemas"]["EntityResponse"] & unknown;
+        };
+        DisconnectRequest: {
+            /**
+             * @description Optional note describing this change
+             * @example Added Chapter 42: The Whiteness of the Whale
+             */
+            note?: string;
+            /**
+             * @description Source entity ID
+             * @example 01JFKY3XQWM0MJVKM8DK3AEXPY
+             */
+            source_id: string;
+            /**
+             * @description Target entity ID (peer of the connection to remove)
+             * @example 01JFKY3XQWM0MJVKM8DK3AEXQZ
+             */
+            target_id: string;
+            /**
+             * @description Expected current tip CID of source entity
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            expect_tip: string;
+            /**
+             * @description Relationship predicate to remove. Defaults to "connects_to".
+             * @example connects_to
+             */
+            predicate?: string;
+        };
         CreateFileResponse: {
             /**
              * @description Entity ID (ULID format)
@@ -6585,7 +7067,7 @@ export type components = {
              */
             id: string;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             cid: string;
@@ -6822,7 +7304,7 @@ export type components = {
              */
             id: string;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             cid: string;
@@ -7007,7 +7489,7 @@ export type components = {
                  */
                 id: string;
                 /**
-                 * @description IPFS Content Identifier (CID)
+                 * @description Content Identifier (CID) - content-addressed hash
                  * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
                  */
                 cid: string;
@@ -7045,7 +7527,7 @@ export type components = {
                  */
                 id: string;
                 /**
-                 * @description IPFS Content Identifier (CID)
+                 * @description Content Identifier (CID) - content-addressed hash
                  * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
                  */
                 cid: string;
@@ -7078,7 +7560,7 @@ export type components = {
                  */
                 id: string;
                 /**
-                 * @description IPFS Content Identifier (CID)
+                 * @description Content Identifier (CID) - content-addressed hash
                  * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
                  */
                 cid: string;
@@ -7172,7 +7654,7 @@ export type components = {
              */
             ver: number;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             cid: string;
@@ -7227,7 +7709,7 @@ export type components = {
         };
         ManifestResponse: {
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             cid: string;
@@ -7585,6 +8067,7 @@ export type components = {
             role: string;
             already_granted: boolean;
             expired?: boolean;
+            missing_actions?: boolean;
             /** Format: date-time */
             current_expires_at?: string;
         };
@@ -7623,7 +8106,7 @@ export type components = {
             job_collection: string;
             grants: components["schemas"]["InvokeGrantResult"][];
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             target_cid: string;
@@ -7639,7 +8122,7 @@ export type components = {
             retry_after?: number;
             grants: components["schemas"]["InvokeGrantResult"][];
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             target_cid: string;
@@ -7994,7 +8477,7 @@ export type components = {
              */
             ver: number;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             cid: string;
@@ -8027,7 +8510,7 @@ export type components = {
              */
             ver: number;
             /**
-             * @description IPFS Content Identifier (CID)
+             * @description Content Identifier (CID) - content-addressed hash
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             cid: string;
@@ -8056,7 +8539,7 @@ export type components = {
                  */
                 ver: number;
                 /**
-                 * @description IPFS Content Identifier (CID)
+                 * @description Content Identifier (CID) - content-addressed hash
                  * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
                  */
                 cid: string;
