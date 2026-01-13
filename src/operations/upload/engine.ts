@@ -171,8 +171,8 @@ export async function uploadTree(
   const createdFolders: CreatedFolder[] = [];
   const createdFiles: CreatedFile[] = [];
 
-  // Maps for tracking
-  const foldersByPath = new Map<string, { id: string; cid: string }>();
+  // Maps for tracking (include label for peer_label in relationships)
+  const foldersByPath = new Map<string, { id: string; cid: string; label: string }>();
 
   // Calculate totals
   const totalEntities = tree.files.length + tree.folders.length;
@@ -227,6 +227,7 @@ export async function uploadTree(
     // ─────────────────────────────────────────────────────────────────────────
     let collectionId: string;
     let collectionCid: string;
+    let collectionLabel: string;
     let collectionCreated = false;
 
     if (target.createCollection) {
@@ -247,6 +248,7 @@ export async function uploadTree(
 
       collectionId = data.id;
       collectionCid = data.cid;
+      collectionLabel = target.createCollection.label;
       collectionCreated = true;
     } else if (target.collectionId) {
       collectionId = target.collectionId;
@@ -260,12 +262,27 @@ export async function uploadTree(
       }
 
       collectionCid = data.cid;
+      collectionLabel = (data.properties?.label as string) ?? collectionId;
     } else {
       throw new Error('Must provide either collectionId or createCollection in target');
     }
 
     // Determine the parent for root-level items
     const rootParentId = target.parentId ?? collectionId;
+    let rootParentLabel = collectionLabel;
+    let rootParentType: 'collection' | 'folder' = 'collection';
+
+    // If a specific parent folder is provided, fetch its label
+    if (target.parentId && target.parentId !== collectionId) {
+      const { data: parentData, error: parentError } = await client.api.GET('/folders/{id}', {
+        params: { path: { id: target.parentId } },
+      });
+      if (parentError || !parentData) {
+        throw new Error(`Failed to fetch parent folder: ${JSON.stringify(parentError)}`);
+      }
+      rootParentLabel = (parentData.properties?.label as string) ?? target.parentId;
+      rootParentType = 'folder';
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // PHASE 1: Create entities (folders by depth, then files)
@@ -284,14 +301,16 @@ export async function uploadTree(
         foldersAtDepth.map(async (folder) => {
           try {
             const parentPath = getParentPath(folder.relativePath);
-            const parentId = parentPath ? foldersByPath.get(parentPath)!.id : rootParentId;
-            const parentType = parentPath ? 'folder' : parentId === collectionId ? 'collection' : 'folder';
+            const parentInfo = parentPath ? foldersByPath.get(parentPath)! : null;
+            const parentId = parentInfo ? parentInfo.id : rootParentId;
+            const parentType = parentInfo ? 'folder' : rootParentType;
+            const parentLabel = parentInfo ? parentInfo.label : rootParentLabel;
 
             const folderBody: CreateFolderRequest = {
               label: folder.name,
               collection: collectionId,
               note,
-              relationships: [{ predicate: 'in', peer: parentId, peer_type: parentType }],
+              relationships: [{ predicate: 'in', peer: parentId, peer_type: parentType, peer_label: parentLabel }],
             };
 
             const { data, error } = await client.api.POST('/folders', {
@@ -302,8 +321,8 @@ export async function uploadTree(
               throw new Error(JSON.stringify(error));
             }
 
-            // Track folder
-            foldersByPath.set(folder.relativePath, { id: data.id, cid: data.cid });
+            // Track folder (include label for peer_label in child relationships)
+            foldersByPath.set(folder.relativePath, { id: data.id, cid: data.cid, label: folder.name });
             createdFolders.push({
               name: folder.name,
               relativePath: folder.relativePath,
@@ -337,18 +356,21 @@ export async function uploadTree(
     await parallelLimit(tree.files, FILE_CREATION_CONCURRENCY, async (file) => {
       try {
         const parentPath = getParentPath(file.relativePath);
-        const parentId = parentPath ? foldersByPath.get(parentPath)!.id : rootParentId;
-        const parentType = parentPath ? 'folder' : parentId === collectionId ? 'collection' : 'folder';
+        const parentInfo = parentPath ? foldersByPath.get(parentPath)! : null;
+        const parentId = parentInfo ? parentInfo.id : rootParentId;
+        const parentType = parentInfo ? 'folder' : rootParentType;
+        const parentLabel = parentInfo ? parentInfo.label : rootParentLabel;
 
-        // Create file entity with 'in' relationship
+        // Create file entity with 'in' relationship (include peer_label for display)
         // Server computes CID when content is uploaded
         const fileBody: CreateFileRequest = {
           key: crypto.randomUUID(), // Generate unique storage key
           filename: file.name,
+          label: file.name, // Display label for the file
           content_type: file.mimeType,
           size: file.size,
           collection: collectionId,
-          relationships: [{ predicate: 'in', peer: parentId, peer_type: parentType }],
+          relationships: [{ predicate: 'in', peer: parentId, peer_type: parentType, peer_label: parentLabel }],
         };
 
         const { data, error } = await client.api.POST('/files', {
@@ -387,8 +409,8 @@ export async function uploadTree(
     // PHASE 2: Backlink - Update each parent with 'contains' relationships
     // ─────────────────────────────────────────────────────────────────────────
 
-    // Build parent -> children map
-    const childrenByParent = new Map<string, Array<{ id: string; type: 'file' | 'folder' }>>();
+    // Build parent -> children map (include label for peer_label)
+    const childrenByParent = new Map<string, Array<{ id: string; type: 'file' | 'folder'; label: string }>>();
 
     // Add folders as children of their parents
     for (const folder of createdFolders) {
@@ -396,7 +418,7 @@ export async function uploadTree(
       const parentId = parentPath ? foldersByPath.get(parentPath)!.id : rootParentId;
 
       if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
-      childrenByParent.get(parentId)!.push({ id: folder.id, type: 'folder' });
+      childrenByParent.get(parentId)!.push({ id: folder.id, type: 'folder', label: folder.name });
     }
 
     // Add files as children of their parents
@@ -405,7 +427,7 @@ export async function uploadTree(
       const parentId = parentPath ? foldersByPath.get(parentPath)!.id : rootParentId;
 
       if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
-      childrenByParent.get(parentId)!.push({ id: file.id, type: 'file' });
+      childrenByParent.get(parentId)!.push({ id: file.id, type: 'file', label: file.name });
     }
 
     const totalParents = childrenByParent.size;
@@ -420,11 +442,12 @@ export async function uploadTree(
       try {
         const isCollection = parentId === collectionId;
 
-        // Build relationships_add array with all children
+        // Build relationships_add array with all children (include peer_label for display)
         const relationshipsAdd = children.map((child) => ({
           predicate: 'contains' as const,
           peer: child.id,
           peer_type: child.type,
+          peer_label: child.label,
         }));
 
         if (isCollection) {

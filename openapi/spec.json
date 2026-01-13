@@ -59,6 +59,10 @@
     {
       "name": "Query",
       "description": "Argo DSL query engine"
+    },
+    {
+      "name": "Search",
+      "description": "Cross-collection semantic search"
     }
   ],
   "components": {
@@ -694,6 +698,156 @@
           "user_id",
           "collections",
           "pagination"
+        ]
+      },
+      "SearchResultItem": {
+        "type": "object",
+        "properties": {
+          "pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity persistent identifier",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "type": {
+            "type": "string",
+            "description": "Entity type",
+            "example": "file"
+          },
+          "label": {
+            "type": "string",
+            "description": "Entity label/name",
+            "example": "Research Paper.pdf"
+          },
+          "collection_pi": {
+            "type": "string",
+            "nullable": true,
+            "description": "Collection this entity belongs to (null for public-domain)",
+            "example": "01JCOLLECTION123456789AB"
+          },
+          "score": {
+            "type": "number",
+            "description": "Relevance score (0-1, higher is better)",
+            "example": 0.87
+          },
+          "created_at": {
+            "type": "string",
+            "description": "When the entity was created",
+            "example": "2026-01-12T00:00:00.000Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "When the entity was last updated",
+            "example": "2026-01-12T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "pi",
+          "type",
+          "label",
+          "collection_pi",
+          "score"
+        ]
+      },
+      "SearchMetadata": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Original search query"
+          },
+          "collections_queried": {
+            "type": "integer",
+            "description": "Number of collections searched"
+          },
+          "collections_total": {
+            "type": "integer",
+            "description": "Total collections user has access to"
+          },
+          "include_public": {
+            "type": "boolean",
+            "description": "Whether public-domain was included"
+          },
+          "execution_time_ms": {
+            "type": "number",
+            "description": "Total execution time in milliseconds"
+          },
+          "result_count": {
+            "type": "integer",
+            "description": "Number of results returned"
+          }
+        },
+        "required": [
+          "query",
+          "collections_queried",
+          "collections_total",
+          "include_public",
+          "execution_time_ms",
+          "result_count"
+        ],
+        "description": "Search metadata and statistics"
+      },
+      "CrossCollectionSearchResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchResultItem"
+            },
+            "description": "Search results ranked by relevance"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/SearchMetadata"
+          }
+        },
+        "required": [
+          "results",
+          "metadata"
+        ]
+      },
+      "CrossCollectionSearchRequest": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "Search query text for semantic matching",
+            "example": "medical research"
+          },
+          "type": {
+            "type": "string",
+            "description": "Filter results to specific entity type",
+            "example": "file"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "editor",
+              "viewer"
+            ],
+            "description": "Filter collections by user role (only search collections where user has this role)",
+            "example": "owner"
+          },
+          "include_public": {
+            "type": "boolean",
+            "default": false,
+            "description": "Include results from public-domain namespace (default: false)",
+            "example": false
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20,
+            "description": "Maximum number of results to return (default: 20, max: 100)",
+            "example": 50
+          }
+        },
+        "required": [
+          "query"
         ]
       },
       "CollectionResponse": {
@@ -1992,6 +2146,65 @@
           "collection_id"
         ]
       },
+      "TreeNode": {
+        "type": "object",
+        "properties": {
+          "pi": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "label": {
+            "type": "string",
+            "description": "Entity label"
+          },
+          "type": {
+            "type": "string",
+            "description": "Entity type"
+          },
+          "depth": {
+            "type": "integer",
+            "description": "Depth in tree (0 = root)"
+          },
+          "children": {
+            "type": "array",
+            "description": "Child nodes (recursive TreeNode array)",
+            "items": {
+              "$ref": "#/components/schemas/TreeNode"
+            }
+          }
+        },
+        "required": [
+          "pi",
+          "label",
+          "type",
+          "depth",
+          "children"
+        ],
+        "description": "Root node with nested children"
+      },
+      "TreeResponse": {
+        "type": "object",
+        "properties": {
+          "root": {
+            "$ref": "#/components/schemas/TreeNode"
+          },
+          "total_nodes": {
+            "type": "integer",
+            "description": "Total number of nodes in the tree"
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Whether results were truncated due to limit"
+          }
+        },
+        "required": [
+          "root",
+          "total_nodes",
+          "truncated"
+        ]
+      },
       "AddRelationshipResponse": {
         "type": "object",
         "properties": {
@@ -2418,10 +2631,15 @@
             "description": "Expected file size in bytes (verified on upload)",
             "example": 1048576
           },
+          "label": {
+            "type": "string",
+            "description": "Display label for the file. Defaults to filename if not provided.",
+            "example": "Q4 Financial Report"
+          },
           "description": {
             "type": "string",
             "description": "Description of the file",
-            "example": "Q4 Financial Report"
+            "example": "Quarterly financial report for Q4 2024"
           },
           "properties": {
             "type": "object",
@@ -2704,6 +2922,10 @@
             "minimum": 0,
             "description": "New file size in bytes"
           },
+          "label": {
+            "type": "string",
+            "description": "New display label"
+          },
           "description": {
             "type": "string",
             "description": "New description"
@@ -2770,6 +2992,10 @@
             "type": "string",
             "minLength": 1,
             "description": "New filename (optional, keeps current if not provided)"
+          },
+          "label": {
+            "type": "string",
+            "description": "New display label (optional, keeps current if not provided)"
           },
           "description": {
             "type": "string",
@@ -6110,6 +6336,85 @@
         }
       }
     },
+    "/users/me/search": {
+      "post": {
+        "tags": [
+          "Users",
+          "Search"
+        ],
+        "summary": "Search across user collections",
+        "description": "Performs semantic search across all collections the authenticated user has access to.\n\n## Features\n- Searches all user's collections in parallel (up to 25)\n- Optionally includes public-domain entities\n- Filter by entity type or collection role\n- Results ranked by semantic relevance\n\n## Performance\n- Collections are queried in parallel for speed\n- If user has more than 25 collections, queries first 25 (by created_at). Use role filter to narrow down.\n- Response includes metadata showing collections_queried vs collections_total\n\n## Scoring\n- Results use cosine similarity scores (0-1)\n- Scores are comparable across collections\n",
+        "x-arke-action": "search:execute",
+        "x-arke-auth": "required",
+        "x-arke-tier": "external",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrossCollectionSearchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrossCollectionSearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Search service unavailable"
+          }
+        }
+      }
+    },
     "/collections": {
       "post": {
         "tags": [
@@ -7873,6 +8178,117 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EntityCollectionResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entities/{id}/tree": {
+      "get": {
+        "tags": [
+          "Entities"
+        ],
+        "summary": "Get entity tree",
+        "description": "Returns a hierarchical tree of entities reachable from the source entity.\n\nUse this to browse collections and folders without making multiple API calls.\nThe tree follows relationship edges (optionally filtered by predicate) and\nreturns a nested structure suitable for tree UI rendering.\n\nQuery parameters:\n- `depth`: Max tree depth (1-4, default 2)\n- `collection`: Constrain to entities in this collection\n- `predicates`: Comma-separated predicates to follow (e.g., \"contains\")\n- `limit`: Max nodes to return (default 100)",
+        "x-arke-action": "entity:view",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4,
+              "default": 2,
+              "description": "Maximum tree depth (1-4)",
+              "example": 2
+            },
+            "required": false,
+            "name": "depth",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Constrain results to entities in this collection",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": false,
+            "name": "collection",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated predicates to follow (e.g., \"contains,references\")",
+              "example": "contains"
+            },
+            "required": false,
+            "name": "predicates",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 100,
+              "description": "Maximum number of nodes to return",
+              "example": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tree retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TreeResponse"
                 }
               }
             }
@@ -11162,6 +11578,367 @@
                         "message": "Required"
                       }
                     ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/similar/collections": {
+      "post": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "Find similar collections",
+        "description": "Find collections that are semantically similar to a given collection.\n\nUses the collection's weighted centroid vector (combination of description and entity embeddings) to find related collections.",
+        "x-arke-action": "search:similar",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "external",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pi": {
+                    "type": "string",
+                    "description": "Collection PI to find similar collections for"
+                  },
+                  "limit": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 10,
+                    "description": "Maximum results to return"
+                  },
+                  "refresh": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Force fresh query, bypassing cache"
+                  }
+                },
+                "required": [
+                  "pi"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Similar collections found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "pi": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "score": {
+                            "type": "number"
+                          },
+                          "created_at": {
+                            "type": "string"
+                          },
+                          "updated_at": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "pi",
+                          "label",
+                          "score"
+                        ]
+                      }
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "source_pi": {
+                          "type": "string"
+                        },
+                        "result_count": {
+                          "type": "number"
+                        },
+                        "cached": {
+                          "type": "boolean"
+                        },
+                        "cached_at": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_pi",
+                        "result_count"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "results",
+                    "metadata"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable - External service not available",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Service unavailable",
+                  "details": {
+                    "service": "pinecone"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/similar/items": {
+      "post": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "Find similar items across collections",
+        "description": "Find entities that are semantically similar to a given entity, searching across multiple collections.\n\nThis performs a two-tier search:\n1. First finds collections similar to the entity's collection\n2. Then searches within each collection for similar items\n3. Aggregates and ranks results with diversity weighting",
+        "x-arke-action": "search:similar",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "external",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pi": {
+                    "type": "string",
+                    "description": "Entity PI to find similar items for"
+                  },
+                  "collection_pi": {
+                    "type": "string",
+                    "description": "Entity's collection PI"
+                  },
+                  "limit": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 20,
+                    "description": "Maximum results to return"
+                  },
+                  "tier1_limit": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 50,
+                    "default": 10,
+                    "description": "Number of similar collections to search"
+                  },
+                  "tier2_limit": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 20,
+                    "default": 5,
+                    "description": "Items to fetch per collection"
+                  },
+                  "include_same_collection": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Include results from the same collection"
+                  },
+                  "refresh": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Force fresh query, bypassing cache"
+                  }
+                },
+                "required": [
+                  "pi",
+                  "collection_pi"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Similar items found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "pi": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "collection_pi": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "score": {
+                            "type": "number"
+                          },
+                          "created_at": {
+                            "type": "string"
+                          },
+                          "updated_at": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "pi",
+                          "type",
+                          "label",
+                          "collection_pi",
+                          "score"
+                        ]
+                      }
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "source_pi": {
+                          "type": "string"
+                        },
+                        "collections_searched": {
+                          "type": "number"
+                        },
+                        "result_count": {
+                          "type": "number"
+                        },
+                        "cached": {
+                          "type": "boolean"
+                        },
+                        "cached_at": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_pi",
+                        "collections_searched",
+                        "result_count"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "results",
+                    "metadata"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable - External service not available",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Service unavailable",
+                  "details": {
+                    "service": "pinecone"
                   }
                 }
               }

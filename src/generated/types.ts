@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-01-12T16:14:47.577Z
+ * Generated: 2026-01-12T23:27:06.100Z
  */
 
 export type paths = {
@@ -586,6 +586,110 @@ export type paths = {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search across user collections
+         * @description Performs semantic search across all collections the authenticated user has access to.
+         *
+         *     ## Features
+         *     - Searches all user's collections in parallel (up to 25)
+         *     - Optionally includes public-domain entities
+         *     - Filter by entity type or collection role
+         *     - Results ranked by semantic relevance
+         *
+         *     ## Performance
+         *     - Collections are queried in parallel for speed
+         *     - If user has more than 25 collections, queries first 25 (by created_at). Use role filter to narrow down.
+         *     - Response includes metadata showing collections_queried vs collections_total
+         *
+         *     ## Scoring
+         *     - Results use cosine similarity scores (0-1)
+         *     - Scores are comparable across collections
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CrossCollectionSearchRequest"];
+                };
+            };
+            responses: {
+                /** @description Search results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CrossCollectionSearchResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Search service unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -2256,6 +2360,91 @@ export type paths = {
                     };
                     content: {
                         "application/json": components["schemas"]["EntityCollectionResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entities/{id}/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get entity tree
+         * @description Returns a hierarchical tree of entities reachable from the source entity.
+         *
+         *     Use this to browse collections and folders without making multiple API calls.
+         *     The tree follows relationship edges (optionally filtered by predicate) and
+         *     returns a nested structure suitable for tree UI rendering.
+         *
+         *     Query parameters:
+         *     - `depth`: Max tree depth (1-4, default 2)
+         *     - `collection`: Constrain to entities in this collection
+         *     - `predicates`: Comma-separated predicates to follow (e.g., "contains")
+         *     - `limit`: Max nodes to return (default 100)
+         */
+        get: {
+            parameters: {
+                query?: {
+                    depth?: number;
+                    collection?: string;
+                    predicates?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Tree retrieved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TreeResponse"];
                     };
                 };
                 /** @description Forbidden - Insufficient permissions */
@@ -5735,6 +5924,285 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/search/similar/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find similar collections
+         * @description Find collections that are semantically similar to a given collection.
+         *
+         *     Uses the collection's weighted centroid vector (combination of description and entity embeddings) to find related collections.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Collection PI to find similar collections for */
+                        pi: string;
+                        /**
+                         * @description Maximum results to return
+                         * @default 10
+                         */
+                        limit?: number;
+                        /**
+                         * @description Force fresh query, bypassing cache
+                         * @default false
+                         */
+                        refresh?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Similar collections found */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            results: {
+                                pi: string;
+                                label: string;
+                                score: number;
+                                created_at?: string;
+                                updated_at?: string;
+                            }[];
+                            metadata: {
+                                source_pi: string;
+                                result_count: number;
+                                cached?: boolean;
+                                cached_at?: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Service Unavailable - External service not available */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Service unavailable",
+                         *       "details": {
+                         *         "service": "pinecone"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/search/similar/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find similar items across collections
+         * @description Find entities that are semantically similar to a given entity, searching across multiple collections.
+         *
+         *     This performs a two-tier search:
+         *     1. First finds collections similar to the entity's collection
+         *     2. Then searches within each collection for similar items
+         *     3. Aggregates and ranks results with diversity weighting
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Entity PI to find similar items for */
+                        pi: string;
+                        /** @description Entity's collection PI */
+                        collection_pi: string;
+                        /**
+                         * @description Maximum results to return
+                         * @default 20
+                         */
+                        limit?: number;
+                        /**
+                         * @description Number of similar collections to search
+                         * @default 10
+                         */
+                        tier1_limit?: number;
+                        /**
+                         * @description Items to fetch per collection
+                         * @default 5
+                         */
+                        tier2_limit?: number;
+                        /**
+                         * @description Include results from the same collection
+                         * @default true
+                         */
+                        include_same_collection?: boolean;
+                        /**
+                         * @description Force fresh query, bypassing cache
+                         * @default false
+                         */
+                        refresh?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Similar items found */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            results: {
+                                pi: string;
+                                type: string;
+                                label: string;
+                                collection_pi: string | null;
+                                score: number;
+                                created_at?: string;
+                                updated_at?: string;
+                            }[];
+                            metadata: {
+                                source_pi: string;
+                                collections_searched: number;
+                                result_count: number;
+                                cached?: boolean;
+                                cached_at?: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Service Unavailable - External service not available */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Service unavailable",
+                         *       "details": {
+                         *         "service": "pinecone"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/entities/{id}/attestation": {
         parameters: {
             query?: never;
@@ -6255,6 +6723,93 @@ export type components = {
                 /** @description Whether more results exist */
                 has_more: boolean;
             };
+        };
+        SearchResultItem: {
+            /**
+             * @description Entity persistent identifier
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            pi: string;
+            /**
+             * @description Entity type
+             * @example file
+             */
+            type: string;
+            /**
+             * @description Entity label/name
+             * @example Research Paper.pdf
+             */
+            label: string;
+            /**
+             * @description Collection this entity belongs to (null for public-domain)
+             * @example 01JCOLLECTION123456789AB
+             */
+            collection_pi: string | null;
+            /**
+             * @description Relevance score (0-1, higher is better)
+             * @example 0.87
+             */
+            score: number;
+            /**
+             * @description When the entity was created
+             * @example 2026-01-12T00:00:00.000Z
+             */
+            created_at?: string;
+            /**
+             * @description When the entity was last updated
+             * @example 2026-01-12T10:30:00.000Z
+             */
+            updated_at?: string;
+        };
+        /** @description Search metadata and statistics */
+        SearchMetadata: {
+            /** @description Original search query */
+            query: string;
+            /** @description Number of collections searched */
+            collections_queried: number;
+            /** @description Total collections user has access to */
+            collections_total: number;
+            /** @description Whether public-domain was included */
+            include_public: boolean;
+            /** @description Total execution time in milliseconds */
+            execution_time_ms: number;
+            /** @description Number of results returned */
+            result_count: number;
+        };
+        CrossCollectionSearchResponse: {
+            /** @description Search results ranked by relevance */
+            results: components["schemas"]["SearchResultItem"][];
+            metadata: components["schemas"]["SearchMetadata"];
+        };
+        CrossCollectionSearchRequest: {
+            /**
+             * @description Search query text for semantic matching
+             * @example medical research
+             */
+            query: string;
+            /**
+             * @description Filter results to specific entity type
+             * @example file
+             */
+            type?: string;
+            /**
+             * @description Filter collections by user role (only search collections where user has this role)
+             * @example owner
+             * @enum {string}
+             */
+            role?: "owner" | "editor" | "viewer";
+            /**
+             * @description Include results from public-domain namespace (default: false)
+             * @default false
+             * @example false
+             */
+            include_public: boolean;
+            /**
+             * @description Maximum number of results to return (default: 20, max: 100)
+             * @default 20
+             * @example 50
+             */
+            limit: number;
         };
         CollectionResponse: components["schemas"]["EntityResponse"] & {
             /** @enum {string} */
@@ -6908,6 +7463,29 @@ export type components = {
              */
             collection_id: string | null;
         };
+        /** @description Root node with nested children */
+        TreeNode: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            pi: string;
+            /** @description Entity label */
+            label: string;
+            /** @description Entity type */
+            type: string;
+            /** @description Depth in tree (0 = root) */
+            depth: number;
+            /** @description Child nodes (recursive TreeNode array) */
+            children: components["schemas"]["TreeNode"][];
+        };
+        TreeResponse: {
+            root: components["schemas"]["TreeNode"];
+            /** @description Total number of nodes in the tree */
+            total_nodes: number;
+            /** @description Whether results were truncated due to limit */
+            truncated: boolean;
+        };
         AddRelationshipResponse: {
             source: components["schemas"]["EntityResponse"] & unknown;
             target?: components["schemas"]["EntityResponse"] & unknown;
@@ -7130,8 +7708,13 @@ export type components = {
              */
             size: number;
             /**
-             * @description Description of the file
+             * @description Display label for the file. Defaults to filename if not provided.
              * @example Q4 Financial Report
+             */
+            label?: string;
+            /**
+             * @description Description of the file
+             * @example Quarterly financial report for Q4 2024
              */
             description?: string;
             /**
@@ -7256,6 +7839,8 @@ export type components = {
             content_type?: string;
             /** @description New file size in bytes */
             size?: number;
+            /** @description New display label */
+            label?: string;
             /** @description New description */
             description?: string;
         };
@@ -7294,6 +7879,8 @@ export type components = {
             size: number;
             /** @description New filename (optional, keeps current if not provided) */
             filename?: string;
+            /** @description New display label (optional, keeps current if not provided) */
+            label?: string;
             /** @description New description */
             description?: string;
         };
