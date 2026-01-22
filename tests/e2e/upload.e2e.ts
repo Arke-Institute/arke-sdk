@@ -130,11 +130,10 @@ describe('Upload E2E', () => {
       console.log(`  Folders: ${result.folders.map((f) => f.relativePath).join(', ')}`);
       console.log(`  Files: ${result.files.length}`);
 
-      // Verify progress phases occurred in order
-      expect(progressLog).toContain('computing-cids');
+      // Verify progress phases occurred (creating, backlinking, uploading, complete)
       expect(progressLog).toContain('creating'); // Folders + file entities
       expect(progressLog).toContain('backlinking'); // Parent contains updates (tree now browsable!)
-      expect(progressLog).toContain('uploading'); // S3 content upload
+      expect(progressLog).toContain('uploading'); // R2 content upload
       expect(progressLog).toContain('complete');
 
       // Verify folder structure via API
@@ -262,23 +261,60 @@ describe('Upload E2E', () => {
       expect(result.success).toBe(true);
       expect(result.files).toHaveLength(1);
 
-      // Get download URL
+      // Download content directly using getFileContent helper
       const fileId = result.files[0]!.id;
-      const { data: downloadData, error } = await client.api.GET('/files/{id}/download', {
-        params: { path: { id: fileId } },
-      });
+      const { data, error } = await client.getFileContent(fileId);
 
       expect(error).toBeUndefined();
-      expect(downloadData?.download_url).toBeDefined();
+      expect(data).toBeInstanceOf(Blob);
 
-      // Download and verify content
-      const downloadRes = await fetch(downloadData!.download_url);
-      expect(downloadRes.ok).toBe(true);
-
-      const downloadedContent = await downloadRes.text();
+      const downloadedContent = await data!.text();
       expect(downloadedContent).toBe(testContent);
 
       console.log(`\nContent verification passed for file ${fileId}`);
+    });
+
+    it('should download file content using getFileContent helper', async () => {
+      const testContent = `Direct download test ${Date.now()}`;
+      const tree = buildUploadTree([
+        {
+          path: 'direct-download.txt',
+          data: new Blob([testContent]),
+          mimeType: 'text/plain',
+        },
+      ]);
+
+      const result = await uploadTree(client, tree, {
+        target: {
+          createCollection: {
+            label: `SDK Test - Direct Download ${Date.now()}`,
+          },
+        },
+      });
+
+      createdCollections.push(result.collection.id);
+
+      expect(result.success).toBe(true);
+      expect(result.files).toHaveLength(1);
+
+      const fileId = result.files[0]!.id;
+
+      // Test getFileContent (returns Blob)
+      const { data: blobData, error: blobError } = await client.getFileContent(fileId);
+      expect(blobError).toBeUndefined();
+      expect(blobData).toBeInstanceOf(Blob);
+      const blobText = await blobData!.text();
+      expect(blobText).toBe(testContent);
+
+      // Test getFileContentAsArrayBuffer
+      const { data: bufferData, error: bufferError } = await client.getFileContentAsArrayBuffer(fileId);
+      expect(bufferError).toBeUndefined();
+      expect(bufferData).toBeInstanceOf(ArrayBuffer);
+      const decoder = new TextDecoder();
+      const bufferText = decoder.decode(bufferData!);
+      expect(bufferText).toBe(testContent);
+
+      console.log(`\nDirect download verification passed for file ${fileId}`);
     });
   });
 

@@ -131,6 +131,80 @@ export class ArkeClient {
   get isAuthenticated(): boolean {
     return !!this.config.authToken;
   }
+
+  /**
+   * Get file content as a Blob
+   *
+   * This is a convenience method that handles the binary response parsing
+   * that openapi-fetch doesn't handle automatically.
+   *
+   * @example
+   * ```typescript
+   * const { data, error } = await arke.getFileContent('01ABC...');
+   * if (data) {
+   *   const text = await data.text();
+   *   // or
+   *   const arrayBuffer = await data.arrayBuffer();
+   * }
+   * ```
+   */
+  async getFileContent(
+    fileId: string
+  ): Promise<{ data: Blob | undefined; error: unknown }> {
+    const { data, error } = await this.api.GET('/files/{id}/content', {
+      params: { path: { id: fileId } },
+      parseAs: 'blob',
+    });
+    return { data: data as Blob | undefined, error };
+  }
+
+  /**
+   * Get file content as an ArrayBuffer
+   *
+   * This is a convenience method that handles the binary response parsing
+   * that openapi-fetch doesn't handle automatically.
+   *
+   * @example
+   * ```typescript
+   * const { data, error } = await arke.getFileContentAsArrayBuffer('01ABC...');
+   * if (data) {
+   *   const bytes = new Uint8Array(data);
+   * }
+   * ```
+   */
+  async getFileContentAsArrayBuffer(
+    fileId: string
+  ): Promise<{ data: ArrayBuffer | undefined; error: unknown }> {
+    const { data, error } = await this.api.GET('/files/{id}/content', {
+      params: { path: { id: fileId } },
+      parseAs: 'arrayBuffer',
+    });
+    return { data: data as ArrayBuffer | undefined, error };
+  }
+
+  /**
+   * Get file content as a ReadableStream
+   *
+   * This is a convenience method for streaming large files.
+   *
+   * @example
+   * ```typescript
+   * const { data, error } = await arke.getFileContentAsStream('01ABC...');
+   * if (data) {
+   *   const reader = data.getReader();
+   *   // Process chunks...
+   * }
+   * ```
+   */
+  async getFileContentAsStream(
+    fileId: string
+  ): Promise<{ data: ReadableStream<Uint8Array> | null | undefined; error: unknown }> {
+    const { data, error } = await this.api.GET('/files/{id}/content', {
+      params: { path: { id: fileId } },
+      parseAs: 'stream',
+    });
+    return { data: data as ReadableStream<Uint8Array> | null | undefined, error };
+  }
 }
 
 /**

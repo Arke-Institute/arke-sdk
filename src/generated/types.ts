@@ -6,10 +6,67 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-01-12T23:27:06.100Z
+ * Generated: 2026-01-22T16:50:20.274Z
  */
 
 export type paths = {
+    "/ops-reference": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get LLM-friendly API reference
+         * @description Returns a condensed, plain-text API operations reference optimized for LLM consumption.
+         *
+         *     This endpoint provides the same information as the OpenAPI spec but in a format that:
+         *     - Uses ~80% fewer tokens than the full OpenAPI JSON
+         *     - Preserves full endpoint descriptions
+         *     - Organizes operations by category
+         *     - Marks required fields with `*` suffix
+         *     - Includes auth requirements inline
+         *
+         *     **Format example:**
+         *     ```
+         *     ## Collections
+         *     POST /collections [required] - Create a new collection
+         *       body: {label*:string, description:string}
+         *
+         *       Creates a collection with the authenticated user as owner.
+         *     ```
+         *
+         *     Use this for injecting API knowledge into LLM system prompts.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Condensed API operations reference */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": string;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/register": {
         parameters: {
             query?: never;
@@ -22,6 +79,10 @@ export type paths = {
         /**
          * Register new user
          * @description Creates a user entity from JWT claims. Idempotent - returns existing user if already registered.
+         *
+         *     ---
+         *     **Permission:** `user:create`
+         *     **Auth:** jwt-only
          */
         post: {
             parameters: {
@@ -96,6 +157,10 @@ export type paths = {
         /**
          * Get current user
          * @description Returns the authenticated user's entity.
+         *
+         *     ---
+         *     **Permission:** `user:view`
+         *     **Auth:** required
          */
         get: {
             parameters: {
@@ -156,6 +221,10 @@ export type paths = {
         /**
          * Get user by ID
          * @description Returns a user entity by ID. May require authentication depending on permissions.
+         *
+         *     ---
+         *     **Permission:** `user:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -211,6 +280,10 @@ export type paths = {
         /**
          * Update user profile
          * @description Updates a user's profile. Requires user:update permission (typically self-ownership).
+         *
+         *     ---
+         *     **Permission:** `user:update`
+         *     **Auth:** required
          */
         put: {
             parameters: {
@@ -341,6 +414,10 @@ export type paths = {
         /**
          * List API keys
          * @description Lists all active API keys for the authenticated user. Returns prefixes only, not full keys.
+         *
+         *     ---
+         *     **Permission:** `user:credentials`
+         *     **Auth:** required
          */
         get: {
             parameters: {
@@ -380,6 +457,10 @@ export type paths = {
         /**
          * Create API key
          * @description Creates a new API key for the authenticated user. The full key is only returned once - store it securely.
+         *
+         *     ---
+         *     **Permission:** `user:credentials`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -438,6 +519,10 @@ export type paths = {
         /**
          * Revoke API key
          * @description Revokes an API key by prefix. The key will be immediately invalid.
+         *
+         *     ---
+         *     **Permission:** `user:credentials`
+         *     **Auth:** required
          */
         delete: {
             parameters: {
@@ -507,6 +592,10 @@ export type paths = {
          *     Results include the role predicate so clients know what access the user has to each collection.
          *
          *     Supports filtering by predicate (role name) and pagination.
+         *
+         *     ---
+         *     **Permission:** `user:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -619,6 +708,11 @@ export type paths = {
          *     ## Scoring
          *     - Results use cosine similarity scores (0-1)
          *     - Scores are comparable across collections
+         *
+         *
+         *     ---
+         *     **Permission:** `search:execute`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -708,6 +802,10 @@ export type paths = {
         /**
          * Create a new collection
          * @description Creates a collection with the authenticated user as owner.
+         *
+         *     ---
+         *     **Permission:** `collection:create`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -802,6 +900,10 @@ export type paths = {
         /**
          * Get collection by ID
          * @description Returns a collection entity by ID.
+         *
+         *     ---
+         *     **Permission:** `collection:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -857,6 +959,10 @@ export type paths = {
         /**
          * Update collection properties
          * @description Updates collection properties. Requires collection:update permission.
+         *
+         *     ---
+         *     **Permission:** `collection:update`
+         *     **Auth:** required
          */
         put: {
             parameters: {
@@ -989,6 +1095,10 @@ export type paths = {
         /**
          * Add a new role
          * @description Adds a new role to the collection. Requires collection:manage permission.
+         *
+         *     ---
+         *     **Permission:** `collection:manage`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -1101,6 +1211,10 @@ export type paths = {
         /**
          * Update role actions
          * @description Updates the actions for an existing role. Requires collection:manage permission.
+         *
+         *     ---
+         *     **Permission:** `collection:manage`
+         *     **Auth:** required
          */
         put: {
             parameters: {
@@ -1202,6 +1316,10 @@ export type paths = {
         /**
          * Delete a role
          * @description Deletes a role from the collection. Requires collection:manage permission.
+         *
+         *     ---
+         *     **Permission:** `collection:manage`
+         *     **Auth:** required
          */
         delete: {
             parameters: {
@@ -1285,6 +1403,10 @@ export type paths = {
         /**
          * List collection members
          * @description Returns all members of the collection grouped by type. By default, expired memberships are excluded.
+         *
+         *     ---
+         *     **Permission:** `collection:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -1343,6 +1465,10 @@ export type paths = {
         /**
          * Assign user to role
          * @description Assigns a user to a role in the collection. Requires collection:manage permission.
+         *
+         *     ---
+         *     **Permission:** `collection:manage`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -1457,6 +1583,10 @@ export type paths = {
         /**
          * Remove user from role
          * @description Removes a user from a role in the collection. Requires collection:manage permission.
+         *
+         *     ---
+         *     **Permission:** `collection:manage`
+         *     **Auth:** required
          */
         delete: {
             parameters: {
@@ -1582,6 +1712,10 @@ export type paths = {
          *     - Collection → Entity (predicate: 'root')
          *
          *     Requires collection:update permission on the collection.
+         *
+         *     ---
+         *     **Permission:** `collection:update`
+         *     **Auth:** required
          */
         put: {
             parameters: {
@@ -1714,6 +1848,10 @@ export type paths = {
          * @description Returns entities belonging to this collection from the graph database.
          *
          *     Supports pagination and optional type filtering. Results are ordered by creation date (newest first).
+         *
+         *     ---
+         *     **Permission:** `collection:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -1797,6 +1935,10 @@ export type paths = {
         /**
          * Create a new entity
          * @description Creates a generic entity of any type. For type-specific validation, use type-specific endpoints.
+         *
+         *     ---
+         *     **Permission:** `entity:create`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -1909,6 +2051,10 @@ export type paths = {
         /**
          * Get entity by ID
          * @description Returns any entity by ID. Permission check uses parent collection if entity belongs to one.
+         *
+         *     ---
+         *     **Permission:** `entity:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -1963,7 +2109,30 @@ export type paths = {
         };
         /**
          * Update entity
-         * @description Updates any entity with merge semantics. Properties are deep merged, relationships use upsert semantics. Use properties_remove and relationships_remove for deletions. Note: entity:update on a collection requires collection:update permission.
+         * @description Updates an entity with merge semantics. **This is the recommended way to manage relationships.**
+         *
+         *     - `relationships_add`: Upsert relationships (properties are merged if relationship exists)
+         *     - `relationships_remove`: Remove by predicate/peer
+         *     - `properties`: Deep merged with existing
+         *     - `properties_remove`: Remove nested properties using nested object structure
+         *
+         *     **properties_remove syntax:**
+         *     - Top-level keys: `["field1", "field2"]`
+         *     - Nested keys: `{ parent: { child: ["key_to_remove"] } }`
+         *     - **Dot notation is NOT supported** - `["parent.child.key"]` will NOT work
+         *
+         *     Example to remove `config.options.debug`:
+         *     ```json
+         *     { "properties_remove": { "config": { "options": ["debug"] } } }
+         *     ```
+         *
+         *     Use `/relationships` only for bidirectional links updating two entities atomically.
+         *
+         *     Note: entity:update on a collection requires collection:update permission.
+         *
+         *     ---
+         *     **Permission:** `entity:update`
+         *     **Auth:** required
          */
         put: {
             parameters: {
@@ -2081,6 +2250,10 @@ export type paths = {
         /**
          * Delete entity
          * @description Soft-deletes an entity by creating a tombstone version. The entity can be restored later via POST /entities/:id/restore. Note: entity:delete on a collection requires collection:delete permission.
+         *
+         *     ---
+         *     **Permission:** `entity:delete`
+         *     **Auth:** required
          */
         delete: {
             parameters: {
@@ -2199,6 +2372,66 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/entities/{id}/tip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get entity tip CID
+         * @description Returns only the current manifest CID (tip) for an entity. Lightweight endpoint for CAS operations - single Durable Object lookup, no manifest fetch, no permission check.
+         *
+         *     ---
+         *     **Permission:** `entity:tip`
+         *     **Auth:** none
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Tip found */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TipResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/entities/{id}/restore": {
         parameters: {
             query?: never;
@@ -2211,6 +2444,10 @@ export type paths = {
         /**
          * Restore deleted entity
          * @description Restores a deleted entity by finding the last non-deleted version and creating a new version from it. Note: entity:restore on a collection requires collection:restore permission.
+         *
+         *     ---
+         *     **Permission:** `entity:restore`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -2340,6 +2577,10 @@ export type paths = {
         /**
          * Get entity collection
          * @description Returns the collection ID that this entity belongs to. Returns null if the entity is not in any collection. If the entity IS a collection, returns its own ID.
+         *
+         *     ---
+         *     **Permission:** `entity:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -2420,6 +2661,10 @@ export type paths = {
          *     - `collection`: Constrain to entities in this collection
          *     - `predicates`: Comma-separated predicates to follow (e.g., "contains")
          *     - `limit`: Max nodes to return (default 100)
+         *
+         *     ---
+         *     **Permission:** `entity:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -2485,6 +2730,227 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/entities/{id}/diff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get diff between entity versions
+         * @description Computes the difference between two versions of an entity.
+         *
+         *     Query parameters:
+         *     - `from`: CID of the "from" version (defaults to prev of "to" version)
+         *     - `to`: CID of the "to" version (defaults to current tip)
+         *     - `format`: Output format - "semantic" (default) or "patch" (RFC 6902)
+         *
+         *     Modes:
+         *     - No params: Compare current tip with its previous version
+         *     - `to` only: Compare that version with its prev
+         *     - `from` only: Compare from that version to current tip
+         *     - Both: Compare any two versions
+         *
+         *     For version 1 entities (no previous version), "from" is null and all content appears as added.
+         *
+         *     ---
+         *     **Permission:** `entity:view`
+         *     **Auth:** optional
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description CID of the "from" version. Defaults to prev of "to" version. */
+                    from?: string;
+                    /** @description CID of the "to" version. Defaults to current tip. */
+                    to?: string;
+                    /** @description Output format: "semantic" (default) or "patch" (RFC 6902) */
+                    format?: "semantic" | "patch";
+                };
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Diff computed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DiffResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entities/{id}/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get your permissions for an entity
+         * @description Returns the list of actions you can perform on this entity.
+         *
+         *     The response includes:
+         *     - `allowed_actions`: Concrete actions you can perform (no wildcards)
+         *     - `resolution`: How permissions were determined
+         *
+         *     Resolution methods:
+         *     - `collection`: Permissions from your role in the parent collection
+         *     - `self`: You are checking your own user entity (self-ownership)
+         *     - `open_season`: Entity is not in any collection (publicly accessible)
+         *
+         *     Actions are filtered to only those relevant to the entity type:
+         *     - For files: entity:* and file:* actions
+         *     - For collections: entity:* and collection:* actions
+         *     - etc.
+         *
+         *     ---
+         *     **Permission:** `entity:view`
+         *     **Auth:** required
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Permissions retrieved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EntityPermissionsResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/relationships": {
         parameters: {
             query?: never;
@@ -2498,14 +2964,20 @@ export type paths = {
          * Add relationship between entities
          * @description Creates a relationship from source to target entity.
          *
-         *     If `target_predicate` is provided, creates a **bidirectional** relationship:
-         *     - Adds `source_predicate` relationship on source pointing to target
-         *     - Adds `target_predicate` relationship on target pointing to source
-         *     - Requires `entity:update` permission on both entities
+         *     **⚠️ For single-entity updates, prefer `PUT /entities/:id` with `relationships_add` - simpler API, one CAS guard, can update properties too.**
          *
-         *     If `target_predicate` is omitted, creates a **unidirectional** relationship:
-         *     - Adds `source_predicate` relationship on source pointing to target
-         *     - Requires `entity:update` permission on source only
+         *     Use this endpoint only for **bidirectional** relationships requiring atomic updates to TWO entities.
+         *
+         *     If `target_predicate` is provided (bidirectional):
+         *     - Updates both source and target entities
+         *     - Requires `entity:update` on both, plus two CAS guards
+         *
+         *     If `target_predicate` is omitted (unidirectional):
+         *     - Use `PUT /entities/:id` instead
+         *
+         *     ---
+         *     **Permission:** `entity:update`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -2620,14 +3092,20 @@ export type paths = {
          * Remove relationship between entities
          * @description Removes a relationship from source to target entity.
          *
-         *     If `target_predicate` is provided, removes a **bidirectional** relationship:
-         *     - Removes `source_predicate` relationship from source
-         *     - Removes `target_predicate` relationship from target
-         *     - Requires `entity:update` permission on both entities
+         *     **⚠️ For single-entity updates, prefer `PUT /entities/:id` with `relationships_remove` - simpler API, one CAS guard, can update properties too.**
          *
-         *     If `target_predicate` is omitted, removes a **unidirectional** relationship:
-         *     - Removes `source_predicate` relationship from source
-         *     - Requires `entity:update` permission on source only
+         *     Use this endpoint only for **bidirectional** relationships requiring atomic updates to TWO entities.
+         *
+         *     If `target_predicate` is provided (bidirectional):
+         *     - Updates both source and target entities
+         *     - Requires `entity:update` on both, plus two CAS guards
+         *
+         *     If `target_predicate` is omitted (unidirectional):
+         *     - Use `PUT /entities/:id` instead
+         *
+         *     ---
+         *     **Permission:** `entity:update`
+         *     **Auth:** required
          */
         delete: {
             parameters: {
@@ -2763,6 +3241,10 @@ export type paths = {
          *
          *     Use this for simple entity linking. For bidirectional relationships or
          *     advanced options, use the `/relationships` endpoint.
+         *
+         *     ---
+         *     **Permission:** `entity:update`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -2897,6 +3379,10 @@ export type paths = {
          *     - Only requires `entity:update` permission on source entity
          *
          *     For bidirectional removal, use the `/relationships` endpoint.
+         *
+         *     ---
+         *     **Permission:** `entity:update`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -3035,6 +3521,10 @@ export type paths = {
          *     ## Key Best Practice
          *     Use a unique identifier as the key (e.g., version number, timestamp).
          *     The actual CID is computed during upload.
+         *
+         *     ---
+         *     **Permission:** `file:create`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -3147,6 +3637,10 @@ export type paths = {
         /**
          * Get file metadata
          * @description Returns file entity metadata. Use /{id}/content to download the file content.
+         *
+         *     ---
+         *     **Permission:** `file:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -3208,6 +3702,10 @@ export type paths = {
          *     This allows "regressing" to a previous file version.
          *
          *     To upload a new file, use POST /{id}/reupload instead.
+         *
+         *     ---
+         *     **Permission:** `file:update`
+         *     **Auth:** required
          */
         put: {
             parameters: {
@@ -3346,6 +3844,10 @@ export type paths = {
          *
          *     ## Streaming
          *     Response is streamed directly from R2 storage.
+         *
+         *     ---
+         *     **Permission:** `file:download`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -3419,6 +3921,10 @@ export type paths = {
          *     ## Idempotency
          *     Re-uploading content for an already-uploaded file will fail with 409 Conflict.
          *     Use POST /{id}/reupload first to create a new version.
+         *
+         *     ---
+         *     **Permission:** `file:upload`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -3579,6 +4085,10 @@ export type paths = {
          *     ## Key Requirement
          *     The new key must NOT already exist in R2 (no overwrites).
          *     Previous file versions remain accessible via manifest history.
+         *
+         *     ---
+         *     **Permission:** `file:reupload`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -3714,6 +4224,10 @@ export type paths = {
          *     If a parent folder is specified, a bidirectional relationship is created:
          *     - Parent folder contains this folder
          *     - This folder is in parent folder
+         *
+         *     ---
+         *     **Permission:** `folder:create`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -3808,6 +4322,10 @@ export type paths = {
         /**
          * Get folder
          * @description Returns folder metadata including children and parent relationships.
+         *
+         *     ---
+         *     **Permission:** `folder:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -3863,6 +4381,10 @@ export type paths = {
         /**
          * Update folder
          * @description Updates folder properties (label, description, metadata). Properties are merged.
+         *
+         *     ---
+         *     **Permission:** `folder:update`
+         *     **Auth:** required
          */
         put: {
             parameters: {
@@ -4001,6 +4523,10 @@ export type paths = {
          *     - Child is in folder
          *
          *     **Idempotent**: if relationship already exists, returns current state without error.
+         *
+         *     ---
+         *     **Permission:** `folder:update`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -4133,6 +4659,10 @@ export type paths = {
         /**
          * Remove child from folder
          * @description Removes a child entity from this folder (bidirectional).
+         *
+         *     ---
+         *     **Permission:** `folder:update`
+         *     **Auth:** required
          */
         delete: {
             parameters: {
@@ -4275,6 +4805,10 @@ export type paths = {
          *
          *     **Idempotent**: skips children that already have the relationship.
          *     Returns both added and skipped children in the response.
+         *
+         *     ---
+         *     **Permission:** `folder:update`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -4412,6 +4946,10 @@ export type paths = {
          *     - This folder is in parent
          *
          *     **Idempotent**: if relationship already exists, returns current state without error.
+         *
+         *     ---
+         *     **Permission:** `folder:update`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -4544,6 +5082,10 @@ export type paths = {
         /**
          * Remove parent from folder
          * @description Removes this folder from a parent folder (bidirectional).
+         *
+         *     ---
+         *     **Permission:** `folder:update`
+         *     **Auth:** required
          */
         delete: {
             parameters: {
@@ -4674,6 +5216,10 @@ export type paths = {
         /**
          * List version history
          * @description Returns version metadata for an entity (newest first). Use pagination for entities with many versions.
+         *
+         *     ---
+         *     **Permission:** `entity:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -4774,6 +5320,10 @@ export type paths = {
         /**
          * Get manifest by CID
          * @description Returns the full manifest for any version by its CID. Permission is checked against the entity ID in the manifest.
+         *
+         *     ---
+         *     **Permission:** `entity:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -4851,6 +5401,10 @@ export type paths = {
          *     - Validating actions client-side
          *
          *     All data is auto-generated from the actual permission system, so it's always in sync with the code.
+         *
+         *     ---
+         *     **Permission:** `permissions:read`
+         *     **Auth:** none
          */
         get: {
             parameters: {
@@ -4892,6 +5446,10 @@ export type paths = {
         /**
          * Create an agent
          * @description Creates a new agent entity. Requires agent:create permission in the target collection.
+         *
+         *     ---
+         *     **Permission:** `agent:create`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -5000,6 +5558,10 @@ export type paths = {
         /**
          * Get agent by ID
          * @description Returns an agent entity by ID.
+         *
+         *     ---
+         *     **Permission:** `agent:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -5055,6 +5617,16 @@ export type paths = {
         /**
          * Update agent
          * @description Updates an agent. Requires agent:update permission.
+         *
+         *     **Field placement:** Agent-specific fields (`label`, `endpoint`, `actions_required`, `input_schema`, etc.) must be at the root level, NOT inside `properties`. The `properties` bag is for additional custom data only.
+         *
+         *     **properties_remove syntax:** Use nested objects, not dot notation.
+         *     - Correct: `{ "input_schema": { "properties": ["field_to_remove"] } }`
+         *     - Wrong: `["input_schema.properties.field_to_remove"]`
+         *
+         *     ---
+         *     **Permission:** `agent:update`
+         *     **Auth:** required
          */
         put: {
             parameters: {
@@ -5188,11 +5760,17 @@ export type paths = {
          * Invoke an agent
          * @description Invoke an agent to perform work on a target collection.
          *
+         *     **Note:** The `target` parameter must be a collection ID. Agents receive permissions scoped to collections, not individual entities. To process a specific entity, pass the collection it belongs to.
+         *
          *     **Two-phase interaction:**
-         *     1. First call with `confirm: false` (default) returns a preview of permissions that will be granted
-         *     2. After user reviews and confirms, call again with `confirm: true` to execute
+         *     1. `confirm: false` (default) - preview permissions that will be granted
+         *     2. `confirm: true` - execute the agent
          *
          *     The agent receives temporal (time-limited) permissions on the target collection.
+         *
+         *     ---
+         *     **Permission:** `agent:invoke`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -5313,6 +5891,10 @@ export type paths = {
         /**
          * List API keys for agent
          * @description Lists all active API keys for the agent (without the actual key values).
+         *
+         *     ---
+         *     **Permission:** `agent:manage`
+         *     **Auth:** required
          */
         get: {
             parameters: {
@@ -5383,6 +5965,10 @@ export type paths = {
         /**
          * Create API key for agent
          * @description Creates an API key for the agent. The full key is only returned once.
+         *
+         *     ---
+         *     **Permission:** `agent:manage`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -5497,6 +6083,10 @@ export type paths = {
         /**
          * Revoke API key
          * @description Revokes an API key for the agent.
+         *
+         *     ---
+         *     **Permission:** `agent:manage`
+         *     **Auth:** required
          */
         delete: {
             parameters: {
@@ -5567,6 +6157,219 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/agents/{id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify agent endpoint ownership
+         * @description Verify that you control the agent's endpoint URL. This is required before activating an agent.
+         *
+         *     **Two-phase flow:**
+         *     1. Call without `confirm` to get a verification token
+         *     2. Deploy `/.well-known/arke-verification` endpoint returning the token
+         *     3. Call with `confirm: true` to complete verification
+         *
+         *     **Verification endpoint format:**
+         *     Your endpoint must return JSON:
+         *     ```json
+         *     {
+         *       "verification_token": "vt_xxx...",
+         *       "agent_id": "IIxxx..."
+         *     }
+         *     ```
+         *
+         *     ---
+         *     **Permission:** `agent:manage`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["VerifyAgentRequest"];
+                };
+            };
+            responses: {
+                /** @description Verification token (when confirm is false) or verification result (when confirm is true) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["VerifyAgentTokenResponse"] | components["schemas"]["VerifyAgentSuccessResponse"] | components["schemas"]["VerifyAgentFailureResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get job status
+         * @description Returns focused job status and summary. Use this endpoint for quick status polling.
+         *
+         *     Returns 404 if the entity is not a job collection.
+         *
+         *     **Response includes:**
+         *     - Current status (running/done/error)
+         *     - Timestamps (started_at, completed_at)
+         *     - Agent references (agent, main_agent, target)
+         *     - Counts (files_count, sub_jobs_count)
+         *
+         *     ---
+         *     **Permission:** `collection:view`
+         *     **Auth:** optional
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Job status */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["JobStatusResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events": {
         parameters: {
             query?: never;
@@ -5595,6 +6398,10 @@ export type paths = {
          *     - `ts`: ISO timestamp
          *
          *     Events are ephemeral (30-day rolling window) - for full sync, use snapshots.
+         *
+         *     ---
+         *     **Permission:** `events:list`
+         *     **Auth:** none
          */
         get: {
             parameters: {
@@ -5642,7 +6449,13 @@ export type paths = {
         put?: never;
         /**
          * Find paths between entities
-         * @description Find shortest paths between source and target entity sets using graph traversal.
+         * @description Find shortest paths between source and target entity sets. Returns all paths up to the limit (default 100).
+         *
+         *     Use this when you know both endpoints and want to discover how they connect - for example, finding the chain of relationships between a person and a document.
+         *
+         *     ---
+         *     **Permission:** `graph:query`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -5709,8 +6522,14 @@ export type paths = {
         get?: never;
         put?: never;
         /**
-         * Find reachable entities
-         * @description Find all entities of a specific type reachable from source entities within N hops.
+         * Find reachable entities (exhaustive)
+         * @description Find all entities of a specific type reachable from source entities within N hops. Returns up to 100 results by default.
+         *
+         *     **When to use this vs POST /query:** This endpoint returns exhaustive, unranked results - all reachable entities up to the limit. Use `POST /query` when you want relevance-ranked results combining semantic similarity with graph structure. Use this endpoint when you need comprehensive graph exploration from known entity IDs.
+         *
+         *     ---
+         *     **Permission:** `graph:query`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -5776,7 +6595,11 @@ export type paths = {
         };
         /**
          * Get entity from graph
-         * @description Get entity details with all relationships from the graph database.
+         * @description Get entity details with all relationships from the graph database. Unlike the entity manifest, this includes both outgoing and incoming relationships - showing not just what this entity links to, but also what links to it.
+         *
+         *     ---
+         *     **Permission:** `graph:query`
+         *     **Auth:** required
          */
         get: {
             parameters: {
@@ -5834,13 +6657,37 @@ export type paths = {
         put?: never;
         /**
          * Execute Argo query
-         * @description Execute an Argo DSL query for path-based graph traversal.
+         * @description Execute an Argo DSL query for path-based graph traversal with relevance ranking.
+         *
+         *     ## When to Use This Endpoint
+         *
+         *     | Endpoint | Use Case |
+         *     |----------|----------|
+         *     | `POST /query` | Semantic search + graph traversal with **relevance-ranked** results (default k=25) |
+         *     | `POST /graph/reachable` | **Exhaustive** graph exploration from known entities (default limit=100) |
+         *     | `POST /graph/paths` | Find all shortest paths between two entity sets |
+         *
+         *     This endpoint combines semantic similarity scores with path length to rank results. For exhaustive graph traversal without ranking, use the `/graph/*` endpoints directly.
          *
          *     ## Query Syntax
          *
          *     ```
-         *     ENTRY_POINT [ENTRY_FILTER] [-[RELATION]{DEPTH}-> TARGET_FILTER]...
+         *     [SCOPE_PREFIX] ENTRY_POINT [ENTRY_FILTER] [-[RELATION]{DEPTH}-> TARGET_FILTER]...
          *     ```
+         *
+         *     ## Scope Prefixes
+         *
+         *     Control where semantic search looks for entry points. Default is discovery mode.
+         *
+         *     | Prefix | Description | Example |
+         *     |--------|-------------|---------|
+         *     | (none) | **Discovery mode** (default) - find relevant collections, then search within each | `"medical notes"` |
+         *     | `@:collections` | Search for collections themselves | `@:collections "columbia archives"` |
+         *     | `@:collection(id)` | Search within a specific collection | `@:collection(01JCOLL123) "meeting"` |
+         *     | `@:discover` | Explicit discovery mode | `@:discover "research papers"` |
+         *     | `@:public` | Search public domain only | `@:public "orphaned data"` |
+         *
+         *     **Note:** Graph traversal (hops) is always cross-collection regardless of scope.
          *
          *     ### Entry Points
          *
@@ -5863,11 +6710,17 @@ export type paths = {
          *     ### Examples
          *
          *     ```
-         *     "george washington"                           # Simple semantic search
-         *     "albert einstein" type:person                 # With type filter
-         *     "medical college" -[*]{,4}-> type:file        # Find files connected to concept
-         *     @01KE4ZY... -[*]{,2}-> type:person            # Find people near entity
+         *     "george washington"                           # Discovery mode (default)
+         *     @:collections "columbia university"           # Find collections
+         *     @:collection(01JCOLL123) "faculty meeting"    # Within specific collection
+         *     @:discover "alice" -[*]{,2}-> type:person     # Discover, then traverse
+         *     @01KE4ZY... -[*]{,2}-> type:person            # From exact entity
          *     ```
+         *
+         *
+         *     ---
+         *     **Permission:** `query:execute`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -5938,6 +6791,10 @@ export type paths = {
          * @description Find collections that are semantically similar to a given collection.
          *
          *     Uses the collection's weighted centroid vector (combination of description and entity embeddings) to find related collections.
+         *
+         *     ---
+         *     **Permission:** `search:similar`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -6069,6 +6926,10 @@ export type paths = {
          *     1. First finds collections similar to the entity's collection
          *     2. Then searches within each collection for similar items
          *     3. Aggregates and ranks results with diversity weighting
+         *
+         *     ---
+         *     **Permission:** `search:similar`
+         *     **Auth:** required
          */
         post: {
             parameters: {
@@ -6203,6 +7064,711 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/search/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search collections by text
+         * @description Search for collections using semantic text search.
+         *
+         *     Use this endpoint to discover collections about a topic. Results are ranked by semantic similarity to your query.
+         *
+         *     ---
+         *     **Permission:** `search:query`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Search query text */
+                        query: string;
+                        /**
+                         * @description Maximum results to return
+                         * @default 10
+                         */
+                        limit?: number;
+                        /** @description Filter by collection types */
+                        types?: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Search results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            results: {
+                                pi: string;
+                                label: string;
+                                type: string;
+                                score: number;
+                                created_at?: string;
+                                updated_at?: string;
+                            }[];
+                            metadata: {
+                                query: string;
+                                result_count: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Service Unavailable - External service not available */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Service unavailable",
+                         *       "details": {
+                         *         "service": "pinecone"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/search/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search agents by text
+         * @description Search for agents using semantic text search.
+         *
+         *     Use this endpoint to discover agents across the network. Only active agents are returned. Results are ranked by semantic similarity to your query based on agent descriptions and capabilities.
+         *
+         *     ---
+         *     **Permission:** `search:query`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Search query text */
+                        query: string;
+                        /**
+                         * @description Maximum results to return
+                         * @default 10
+                         */
+                        limit?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Search results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            results: {
+                                pi: string;
+                                label: string;
+                                score: number;
+                                collection_pi: string | null;
+                                status?: string;
+                                created_at?: string;
+                                updated_at?: string;
+                            }[];
+                            metadata: {
+                                query: string;
+                                result_count: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Service Unavailable - External service not available */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Service unavailable",
+                         *       "details": {
+                         *         "service": "pinecone"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/search/entities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search entities within collection(s)
+         * @description Search for entities within one or more collections using semantic text search.
+         *
+         *     Provide either `collection_pi` for a single collection or `collection_pis` for multiple collections (searched in parallel).
+         *
+         *     Use `per_collection_limit` to ensure result diversity when searching multiple collections.
+         *
+         *     ---
+         *     **Permission:** `search:query`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Single collection PI to search within */
+                        collection_pi?: string;
+                        /** @description Multiple collection PIs to search (max 20) */
+                        collection_pis?: string[];
+                        /** @description Search query text */
+                        query: string;
+                        /**
+                         * @description Maximum total results to return
+                         * @default 20
+                         */
+                        limit?: number;
+                        /** @description Filter by entity types */
+                        types?: string[];
+                        /** @description Max results per collection for diversity */
+                        per_collection_limit?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Search results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            results: {
+                                pi: string;
+                                label: string;
+                                type: string;
+                                score: number;
+                                collection_pi: string;
+                                created_at?: string;
+                                updated_at?: string;
+                            }[];
+                            metadata: {
+                                collection_pis: string[];
+                                query: string;
+                                collections_searched: number;
+                                result_count: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Service Unavailable - External service not available */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Service unavailable",
+                         *       "details": {
+                         *         "service": "pinecone"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/search/discover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Discover entities across all collections
+         * @description Two-step discovery search: first finds relevant collections, then searches within them.
+         *
+         *     Use this endpoint when you don't know which collections to search. The system will:
+         *     1. Find collections semantically related to your query
+         *     2. Search within each collection in parallel
+         *     3. Aggregate and rank results across all collections
+         *
+         *     Great for exploration and AI agents navigating the network.
+         *
+         *     ---
+         *     **Permission:** `search:query`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Search query text */
+                        query: string;
+                        /**
+                         * @description Maximum total results to return
+                         * @default 20
+                         */
+                        limit?: number;
+                        /** @description Filter by entity types */
+                        types?: string[];
+                        /**
+                         * @description Number of collections to search
+                         * @default 10
+                         */
+                        collection_limit?: number;
+                        /**
+                         * @description Max results per collection
+                         * @default 5
+                         */
+                        per_collection_limit?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Discovery results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            results: {
+                                pi: string;
+                                label: string;
+                                type: string;
+                                score: number;
+                                collection_pi: string;
+                                created_at?: string;
+                                updated_at?: string;
+                            }[];
+                            metadata: {
+                                query: string;
+                                collections_searched: number;
+                                result_count: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Service Unavailable - External service not available */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Service unavailable",
+                         *       "details": {
+                         *         "service": "pinecone"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send chat message
+         * @description Send a message to the Arke chat agent and receive a streaming response.
+         *
+         *     The agent can execute Arke API operations on your behalf using the authenticated user's permissions.
+         *
+         *     ## Headers
+         *
+         *     - `X-Chat-ID`: Optional. Specify to continue an existing chat session. If omitted, a new session is created.
+         *
+         *     ## Response Format
+         *
+         *     The response is a Server-Sent Events (SSE) stream in AI SDK v5 UIMessage format.
+         *     Stream chunks include text deltas, tool calls, and usage information.
+         *
+         *     ## Token Usage Tracking
+         *
+         *     Usage information is included at the end of the stream in the format:
+         *     ```json
+         *     {"type":"message_delta","delta":{"usage":{"input_tokens":123,"output_tokens":456}}}
+         *     ```
+         *
+         *
+         *     ---
+         *     **Permission:** `chat:send`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SendChatRequest"];
+                };
+            };
+            responses: {
+                /** @description Streaming SSE response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/event-stream": string;
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/chat/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get chat session
+         * @description Get information about a chat session including message history.
+         *
+         *     Sessions are publicly viewable for sharing purposes. Only the owner can send messages or delete the session.
+         *
+         *     ---
+         *     **Permission:** `chat:view`
+         *     **Auth:** optional
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Chat session info */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChatSession"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /**
+         * Delete chat session
+         * @description Delete a chat session. Only the session owner can delete it.
+         *
+         *     ---
+         *     **Permission:** `chat:delete`
+         *     **Auth:** required
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Session deleted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChatSessionDeleteResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/entities/{id}/attestation": {
         parameters: {
             query?: never;
@@ -6215,6 +7781,10 @@ export type paths = {
          * @description Returns the Arweave attestation for the current (latest) version of an entity.
          *
          *     Returns 202 Accepted if the attestation upload is still pending.
+         *
+         *     ---
+         *     **Permission:** `entity:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -6294,6 +7864,10 @@ export type paths = {
         /**
          * Get version attestation
          * @description Returns the Arweave attestation for a specific version of an entity.
+         *
+         *     ---
+         *     **Permission:** `entity:view`
+         *     **Auth:** optional
          */
         get: {
             parameters: {
@@ -6356,6 +7930,63 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/attestations/head": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get chain head
+         * @description Returns the latest Arweave attestation transaction ID (network head).
+         *
+         *     ---
+         *     **Permission:** `attestation:view`
+         *     **Auth:** none
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Chain head */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChainHeadResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/attestations/verify/{tx}": {
         parameters: {
             query?: never;
@@ -6368,6 +7999,10 @@ export type paths = {
          * @description Fetches an attestation from Arweave and verifies the CID matches the manifest content.
          *
          *     This is a public endpoint - anyone can verify attestations.
+         *
+         *     ---
+         *     **Permission:** `attestation:verify`
+         *     **Auth:** none
          */
         get: {
             parameters: {
@@ -6508,6 +8143,19 @@ export type components = {
              */
             ts: number;
             /**
+             * @description Audit trail for edits
+             * @example {
+             *       "user_id": "01JCAPTAINAHAB000000000000",
+             *       "method": "manual"
+             *     }
+             */
+            edited_by: {
+                user_id: string;
+                /** @enum {string} */
+                method: "manual" | "ai_generated" | "system" | "import";
+                on_behalf_of?: string;
+            };
+            /**
              * @description Previous version CID (present on updates)
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
@@ -6559,7 +8207,7 @@ export type components = {
             properties?: {
                 [key: string]: unknown;
             };
-            /** @description Properties to remove */
+            /** @description Properties to remove. Use string[] for top-level keys (e.g., ["old_field"]), or nested objects for deep removal (e.g., { config: { options: ["debug"] } }). Dot notation like "config.options.debug" is NOT supported. */
             properties_remove?: string[] | {
                 [key: string]: unknown;
             };
@@ -6902,7 +8550,7 @@ export type components = {
             properties?: {
                 [key: string]: unknown;
             };
-            /** @description Properties to remove */
+            /** @description Properties to remove. Use string[] for top-level keys (e.g., ["old_field"]), or nested objects for deep removal (e.g., { config: { options: ["debug"] } }). Dot notation like "config.options.debug" is NOT supported. */
             properties_remove?: string[] | {
                 [key: string]: unknown;
             };
@@ -7263,6 +8911,19 @@ export type components = {
              */
             ts: number;
             /**
+             * @description Audit trail for edits
+             * @example {
+             *       "user_id": "01JCAPTAINAHAB000000000000",
+             *       "method": "manual"
+             *     }
+             */
+            edited_by: {
+                user_id: string;
+                /** @enum {string} */
+                method: "manual" | "ai_generated" | "system" | "import";
+                on_behalf_of?: string;
+            };
+            /**
              * @description Previous version CID (present on updates)
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
@@ -7285,7 +8946,7 @@ export type components = {
              */
             type: string;
             /**
-             * @description Entity properties (type-specific)
+             * @description Entity properties (type-specific). Text properties may contain inline entity references using the arke: URI scheme (e.g., [Label](arke:01JENTITY123...)) for domain-agnostic linking.
              * @example {
              *       "label": "Chapter 1: Loomings",
              *       "author": "Herman Melville"
@@ -7310,6 +8971,18 @@ export type components = {
              */
             collection?: string;
         };
+        TipResponse: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            id: string;
+            /**
+             * @description Content Identifier (CID) - content-addressed hash
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            cid: string;
+        };
         EntityUpdatedResponse: components["schemas"]["EntityResponse"] & {
             /**
              * @description Previous version CID
@@ -7332,7 +9005,7 @@ export type components = {
             properties?: {
                 [key: string]: unknown;
             };
-            /** @description Properties to remove */
+            /** @description Properties to remove. Use string[] for top-level keys (e.g., ["old_field"]), or nested objects for deep removal (e.g., { config: { options: ["debug"] } }). Dot notation like "config.options.debug" is NOT supported. */
             properties_remove?: string[] | {
                 [key: string]: unknown;
             };
@@ -7485,6 +9158,180 @@ export type components = {
             total_nodes: number;
             /** @description Whether results were truncated due to limit */
             truncated: boolean;
+        };
+        /** @description Metadata about the "from" version (null for version 1) */
+        VersionMeta: {
+            /**
+             * @description Content Identifier (CID) - content-addressed hash
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            cid: string;
+            /**
+             * @description Entity version number
+             * @example 1
+             */
+            ver: number;
+            /**
+             * Format: date-time
+             * @description ISO 8601 datetime
+             * @example 2025-12-26T12:00:00.000Z
+             */
+            ts: string;
+        } | null;
+        PropertyChange: {
+            /** @description Previous value */
+            from?: unknown;
+            /** @description New value */
+            to?: unknown;
+        };
+        PropertiesChanges: {
+            /**
+             * @description Properties that were added
+             * @example {
+             *       "email": "new@example.com"
+             *     }
+             */
+            added: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description Properties that were removed (includes old values)
+             * @example {
+             *       "deprecated_field": "old value"
+             *     }
+             */
+            removed: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description Properties that changed
+             * @example {
+             *       "name": {
+             *         "from": "Old Name",
+             *         "to": "New Name"
+             *       }
+             *     }
+             */
+            changed: {
+                [key: string]: components["schemas"]["PropertyChange"];
+            };
+        };
+        RelationshipChange: {
+            predicate: string;
+            peer: string;
+            peer_type?: string;
+            peer_label?: string;
+            properties: components["schemas"]["PropertyChange"];
+        };
+        RelationshipsChanges: {
+            /** @description Relationships that were added */
+            added: {
+                predicate: string;
+                peer: string;
+                peer_type?: string;
+                peer_label?: string;
+                properties?: {
+                    [key: string]: unknown;
+                };
+            }[];
+            /** @description Relationships that were removed */
+            removed: {
+                predicate: string;
+                peer: string;
+                peer_type?: string;
+                peer_label?: string;
+                properties?: {
+                    [key: string]: unknown;
+                };
+            }[];
+            /** @description Relationships with changed properties */
+            changed: components["schemas"]["RelationshipChange"][];
+        };
+        SemanticChanges: {
+            properties: components["schemas"]["PropertiesChanges"];
+            relationships: components["schemas"]["RelationshipsChanges"];
+        };
+        SemanticDiffResponse: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            entity_id: string;
+            from: components["schemas"]["VersionMeta"];
+            to: components["schemas"]["VersionMeta"];
+            /** @enum {string} */
+            format: "semantic";
+            changes: components["schemas"]["SemanticChanges"];
+        };
+        PatchOperation: {
+            /** @enum {string} */
+            op: "add";
+            path: string;
+            value?: unknown;
+        } | {
+            /** @enum {string} */
+            op: "remove";
+            path: string;
+        } | {
+            /** @enum {string} */
+            op: "replace";
+            path: string;
+            value?: unknown;
+        };
+        PatchDiffResponse: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            entity_id: string;
+            from: components["schemas"]["VersionMeta"];
+            to: components["schemas"]["VersionMeta"];
+            /** @enum {string} */
+            format: "patch";
+            /** @description RFC 6902 JSON Patch operations */
+            patch: components["schemas"]["PatchOperation"][];
+        };
+        DiffResponse: components["schemas"]["SemanticDiffResponse"] | components["schemas"]["PatchDiffResponse"];
+        /** @description How permissions were resolved */
+        PermissionResolution: {
+            /**
+             * @description How permissions were resolved
+             * @example collection
+             * @enum {string}
+             */
+            method: "collection" | "self" | "open_season";
+            /**
+             * @description Collection ID if permissions come from a collection role
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            collection_id?: string;
+            /**
+             * @description Role name in the collection
+             * @example editor
+             */
+            role?: string;
+        };
+        EntityPermissionsResponse: {
+            /**
+             * @description The entity ID
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            entity_id: string;
+            /**
+             * @description The entity type
+             * @example file
+             */
+            entity_type: string;
+            /**
+             * @description Actions the user can perform on this entity
+             * @example [
+             *       "entity:view",
+             *       "entity:update",
+             *       "file:download"
+             *     ]
+             */
+            allowed_actions: string[];
+            resolution: components["schemas"]["PermissionResolution"];
         };
         AddRelationshipResponse: {
             source: components["schemas"]["EntityResponse"] & unknown;
@@ -7685,6 +9532,19 @@ export type components = {
              * @example 1735214400000
              */
             ts: number;
+            /**
+             * @description Audit trail for edits
+             * @example {
+             *       "user_id": "01JCAPTAINAHAB000000000000",
+             *       "method": "manual"
+             *     }
+             */
+            edited_by: {
+                user_id: string;
+                /** @enum {string} */
+                method: "manual" | "ai_generated" | "system" | "import";
+                on_behalf_of?: string;
+            };
         };
         CreateFileRequest: {
             /**
@@ -7778,7 +9638,7 @@ export type components = {
             properties?: {
                 [key: string]: unknown;
             };
-            /** @description Properties to remove */
+            /** @description Properties to remove. Use string[] for top-level keys (e.g., ["old_field"]), or nested objects for deep removal (e.g., { config: { options: ["debug"] } }). Dot notation like "config.options.debug" is NOT supported. */
             properties_remove?: string[] | {
                 [key: string]: unknown;
             };
@@ -7931,6 +9791,19 @@ export type components = {
              * @example 1735214400000
              */
             ts: number;
+            /**
+             * @description Audit trail for edits
+             * @example {
+             *       "user_id": "01JCAPTAINAHAB000000000000",
+             *       "method": "manual"
+             *     }
+             */
+            edited_by: {
+                user_id: string;
+                /** @enum {string} */
+                method: "manual" | "ai_generated" | "system" | "import";
+                on_behalf_of?: string;
+            };
         };
         CreateFolderRequest: {
             /**
@@ -8002,7 +9875,7 @@ export type components = {
             properties?: {
                 [key: string]: unknown;
             };
-            /** @description Properties to remove */
+            /** @description Properties to remove. Use string[] for top-level keys (e.g., ["old_field"]), or nested objects for deep removal (e.g., { config: { options: ["debug"] } }). Dot notation like "config.options.debug" is NOT supported. */
             properties_remove?: string[] | {
                 [key: string]: unknown;
             };
@@ -8366,6 +10239,34 @@ export type components = {
                 note?: string;
             };
         };
+        TypeRestriction: {
+            /**
+             * @description The type with restricted implications
+             * @example collection
+             */
+            type: string;
+            /**
+             * @description Verbs for which the base type DOES imply this type
+             * @example [
+             *       "view"
+             *     ]
+             */
+            allowed_verbs: string[];
+            /** @description Explanation of the restriction */
+            description: string;
+        };
+        /** @description Type hierarchy. The base type implies all other types, with restrictions for certain types. */
+        TypeHierarchy: {
+            /**
+             * @description The base type that implies all other types
+             * @example entity
+             */
+            base_type: string;
+            /** @description Explanation of type hierarchy behavior */
+            description: string;
+            /** @description Types with restricted implication rules */
+            restrictions: components["schemas"]["TypeRestriction"][];
+        };
         /** @description Verb wildcard pattern (*:verb) */
         WildcardInfo: {
             /**
@@ -8426,6 +10327,7 @@ export type components = {
             implications: {
                 [key: string]: string[];
             };
+            type_hierarchy: components["schemas"]["TypeHierarchy"];
             /** @description Wildcard pattern documentation */
             wildcards: {
                 verb: components["schemas"]["WildcardInfo"];
@@ -8459,21 +10361,18 @@ export type components = {
         AgentResponse: components["schemas"]["EntityResponse"] & {
             /** @enum {string} */
             type?: "agent";
-        };
-        SubAgentRef: {
-            pi: string;
-            /** @description Display label for the sub-agent */
-            label?: string;
-            /** @description Description of the sub-agent role */
-            description?: string;
-            /**
-             * @description Actions this sub-agent requires
-             * @example [
-             *       "entity:view",
-             *       "entity:update"
-             *     ]
-             */
-            actions_required: string[];
+            /** @description Warnings about sub-agent references that could not be validated. Present only when uses_agents contains references to non-existent, non-agent, or disabled entities. */
+            warnings?: {
+                /** @description The sub-agent ID that has an issue */
+                sub_agent_id: string;
+                /**
+                 * @description Why this is a warning: not_found (entity does not exist), not_an_agent (entity exists but is not an agent), or disabled (agent is disabled)
+                 * @enum {string}
+                 */
+                reason: "not_found" | "not_an_agent" | "disabled";
+                /** @description Human-readable explanation */
+                message: string;
+            }[];
         };
         CreateAgentRequest: {
             /**
@@ -8510,8 +10409,15 @@ export type components = {
              * @example Extracts text from scanned documents using OCR
              */
             description?: string;
-            /** @description Sub-agents used by this orchestrator */
-            uses_agents?: components["schemas"]["SubAgentRef"][];
+            /** @description Sub-agents this orchestrator delegates work to. Only provide the sub-agent ID (pi) - their permissions are fetched dynamically at invocation time. Warnings are returned if any referenced sub-agents do not exist or are disabled. */
+            uses_agents?: {
+                /** @description Sub-agent entity ID. The sub-agent's actions_required will be fetched dynamically at invocation time. */
+                pi: string;
+                /** @description Optional display label override (defaults to sub-agent's own label) */
+                label?: string;
+                /** @description Optional description of the sub-agent's role in this orchestrator's workflow */
+                description?: string;
+            }[];
             /** @description JSON Schema for input validation */
             input_schema?: {
                 [key: string]: unknown;
@@ -8557,7 +10463,7 @@ export type components = {
             properties?: {
                 [key: string]: unknown;
             };
-            /** @description Properties to remove */
+            /** @description Properties to remove. Use string[] for top-level keys (e.g., ["old_field"]), or nested objects for deep removal (e.g., { config: { options: ["debug"] } }). Dot notation like "config.options.debug" is NOT supported. */
             properties_remove?: string[] | {
                 [key: string]: unknown;
             };
@@ -8634,8 +10540,15 @@ export type components = {
              * @enum {string}
              */
             status?: "development" | "active" | "disabled";
-            /** @description Updated sub-agents */
-            uses_agents?: components["schemas"]["SubAgentRef"][];
+            /** @description Updated sub-agent references. Only provide sub-agent IDs (pi) - their permissions are fetched dynamically at invocation time. */
+            uses_agents?: {
+                /** @description Sub-agent entity ID. The sub-agent's actions_required will be fetched dynamically at invocation time. */
+                pi: string;
+                /** @description Optional display label override (defaults to sub-agent's own label) */
+                label?: string;
+                /** @description Optional description of the sub-agent's role in this orchestrator's workflow */
+                description?: string;
+            }[];
             /** @description Updated input schema */
             input_schema?: {
                 [key: string]: unknown;
@@ -8673,6 +10586,20 @@ export type components = {
             can_proceed: boolean;
             /** @description True if some agents need permission grants */
             grants_needed: boolean;
+            /** @description Warnings about sub-agents that were skipped */
+            warnings?: {
+                /** @description The sub-agent ID that could not be resolved */
+                sub_agent_id: string;
+                /** @description The orchestrator or parent agent that declared this sub-agent reference */
+                parent_agent_id: string;
+                /**
+                 * @description Why the sub-agent was skipped: not_found (entity does not exist) or disabled (agent status is disabled)
+                 * @enum {string}
+                 */
+                reason: "not_found" | "disabled";
+                /** @description Human-readable explanation of the warning */
+                message: string;
+            }[];
         };
         InvokeGrantResult: {
             agent_id: string;
@@ -8718,7 +10645,7 @@ export type components = {
         };
         InvokeConfirmedResponse: components["schemas"]["InvokeStartedResponse"] | components["schemas"]["InvokeRejectedResponse"];
         InvokeAgentRequest: {
-            /** @description Target collection ID to operate on */
+            /** @description Collection ID to grant the agent access to. All agent permissions are collection-scoped. */
             target: string;
             /** @description Job collection where agent should write logs. If not provided, creates new root collection. */
             job_collection?: string;
@@ -8785,6 +10712,106 @@ export type components = {
         };
         ListAgentApiKeysResponse: {
             keys: components["schemas"]["AgentApiKeyInfo"][];
+        };
+        VerifyAgentTokenResponse: {
+            /**
+             * @description Token to deploy at your endpoint
+             * @example vt_abc123def456...
+             */
+            verification_token: string;
+            /** @description Agent ID to include in verification response */
+            agent_id: string;
+            /**
+             * Format: uri
+             * @description Your agent endpoint URL
+             */
+            endpoint: string;
+            /** @description How to complete verification */
+            instructions: string;
+            /**
+             * Format: date-time
+             * @description Token expiration time
+             */
+            expires_at: string;
+        };
+        VerifyAgentSuccessResponse: {
+            /** @enum {boolean} */
+            verified: true;
+            /**
+             * Format: date-time
+             * @description When the endpoint was verified
+             */
+            verified_at: string;
+        };
+        VerifyAgentFailureResponse: {
+            /** @enum {boolean} */
+            verified: false;
+            /**
+             * @description Verification error code
+             * @enum {string}
+             */
+            error: "no_token" | "token_expired" | "fetch_failed" | "invalid_response" | "token_mismatch" | "agent_id_mismatch";
+            /** @description Human-readable error description */
+            message: string;
+        };
+        VerifyAgentRequest: {
+            /**
+             * @description Set to true to perform verification. Omit or false to generate/get verification token.
+             * @example true
+             */
+            confirm?: boolean;
+        };
+        EntityRef: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            pi: string;
+            type?: string;
+            label?: string;
+        };
+        JobStatusResponse: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            id: string;
+            /**
+             * @description Content Identifier (CID) - content-addressed hash
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            cid: string;
+            /**
+             * @description Job collection status
+             * @example running
+             * @enum {string}
+             */
+            status: "running" | "done" | "error";
+            /**
+             * Format: date-time
+             * @description ISO 8601 datetime
+             * @example 2025-12-26T12:00:00.000Z
+             */
+            started_at: string;
+            /**
+             * Format: date-time
+             * @description ISO 8601 datetime
+             * @example 2025-12-26T12:00:00.000Z
+             */
+            completed_at: string | null;
+            agent: components["schemas"]["EntityRef"];
+            target?: components["schemas"]["EntityRef"];
+            main_agent?: components["schemas"]["EntityRef"];
+            /**
+             * @description Number of files contained in this job collection
+             * @example 5
+             */
+            files_count: number;
+            /**
+             * @description Number of sub-job collections
+             * @example 2
+             */
+            sub_jobs_count: number;
         };
         Event: {
             /**
@@ -9037,13 +11064,13 @@ export type components = {
             path: string;
             /**
              * @description Maximum number of results to return
-             * @default 10
-             * @example 10
+             * @default 25
+             * @example 25
              */
             k: number;
             /**
              * @description Beam width for exploration (default: k * 3)
-             * @example 30
+             * @example 75
              */
             k_explore?: number;
             /**
@@ -9051,6 +11078,80 @@ export type components = {
              * @example 01JCOLL_MEDICAL
              */
             collection?: string;
+        };
+        TextPart: {
+            /** @enum {string} */
+            type: "text";
+            text: string;
+        };
+        ToolPart: {
+            type: string;
+            toolCallId?: string;
+            toolName?: string;
+            args?: {
+                [key: string]: unknown;
+            };
+            output?: unknown;
+            /** @enum {string} */
+            state?: "partial-call" | "call" | "output-available";
+        };
+        MessagePart: components["schemas"]["TextPart"] | components["schemas"]["ToolPart"] | {
+            type: string;
+        };
+        ChatMessage: {
+            id: string;
+            /** @enum {string} */
+            role: "user" | "assistant" | "system" | "tool";
+            parts?: components["schemas"]["MessagePart"][];
+            content?: string;
+        };
+        SendChatRequest: {
+            /** @description Array of chat messages in AI SDK v5 UIMessage format */
+            messages: components["schemas"]["ChatMessage"][];
+        };
+        ChatSession: {
+            /**
+             * @description Chat session ID
+             * @example chat_abc123
+             */
+            id: string;
+            /**
+             * @description ISO 8601 creation timestamp
+             * @example 2025-01-14T12:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description ISO 8601 last update timestamp
+             * @example 2025-01-14T12:30:00.000Z
+             */
+            updatedAt: string;
+            /** @description Owner user ID (Arke PI or Supabase ID) */
+            ownerId: string | null;
+            /**
+             * @description Auto-generated chat title from first message
+             * @example Help me understand the codebase...
+             */
+            title: string | null;
+            /** @description Full message history (only included in session detail) */
+            messages?: {
+                id: string;
+                /** @enum {string} */
+                role: "user" | "assistant" | "system" | "tool";
+                content: string;
+                createdAt: string;
+                toolInvocations?: {
+                    toolCallId: string;
+                    toolName: string;
+                    args?: {
+                        [key: string]: unknown;
+                    };
+                    result?: unknown;
+                    state: string;
+                }[];
+            }[];
+        };
+        ChatSessionDeleteResponse: {
+            success: boolean;
         };
         AttestationResponse: {
             /**
@@ -9112,6 +11213,24 @@ export type components = {
              */
             message: string;
         };
+        ChainHeadResponse: {
+            /**
+             * @description Sequence number of the latest attestation
+             * @example 784
+             */
+            seq: number;
+            /**
+             * @description Arweave transaction ID
+             * @example Rxv_BpobNBUr0x5DstsAEUVxCO12hKxv7cnHnGLYp2c
+             */
+            tx: string;
+            /**
+             * Format: uri
+             * @description Arweave gateway URL for direct access
+             * @example https://arweave.net/Rxv_BpobNBUr0x5DstsAEUVxCO12hKxv7cnHnGLYp2c
+             */
+            arweave_url: string;
+        };
         VerifyAttestationResponse: {
             arweave_tx: string;
             attestation: {
@@ -9161,7 +11280,12 @@ export type components = {
         };
     };
     responses: never;
-    parameters: never;
+    parameters: {
+        /** @description Target network. Use `test` for isolated test data with II-prefixed IDs. */
+        "X-Arke-Network": "main" | "test";
+        /** @description User entity ID for service accounts acting on behalf of a user. Only valid with `role: service` authentication. */
+        "X-On-Behalf-Of": string;
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
