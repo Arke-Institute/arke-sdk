@@ -2216,6 +2216,193 @@
           "expect_tip"
         ]
       },
+      "CascadeDeletedEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "cid": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Content Identifier (CID) - content-addressed hash",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "type": {
+            "type": "string",
+            "description": "Entity type",
+            "example": "file"
+          },
+          "depth": {
+            "type": "integer",
+            "description": "Depth from root entity at which this entity was found",
+            "example": 1
+          }
+        },
+        "required": [
+          "id",
+          "cid",
+          "type",
+          "depth"
+        ]
+      },
+      "CascadeSkippedEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "type": {
+            "type": "string",
+            "description": "Entity type",
+            "example": "file"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "not_in_collection",
+              "already_deleted",
+              "edited_by_mismatch",
+              "cas_conflict"
+            ],
+            "description": "Reason an entity was skipped during cascade delete"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "reason"
+        ]
+      },
+      "CascadeDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "root": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityDeletedResponse"
+              },
+              {
+                "description": "Deletion result for the root entity"
+              }
+            ]
+          },
+          "deleted": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CascadeDeletedEntity"
+            },
+            "description": "Entities successfully deleted (ordered by depth, deepest first)"
+          },
+          "skipped": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CascadeSkippedEntity"
+            },
+            "description": "Entities skipped during traversal with reasons"
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "total_traversed": {
+                "type": "integer",
+                "description": "Total entities visited during BFS traversal"
+              },
+              "total_deleted": {
+                "type": "integer",
+                "description": "Total entities successfully deleted (excluding root)"
+              },
+              "total_skipped": {
+                "type": "integer",
+                "description": "Total entities skipped during traversal"
+              },
+              "max_depth_reached": {
+                "type": "integer",
+                "description": "Maximum depth reached during traversal"
+              }
+            },
+            "required": [
+              "total_traversed",
+              "total_deleted",
+              "total_skipped",
+              "max_depth_reached"
+            ],
+            "description": "Summary statistics for the cascade delete operation"
+          }
+        },
+        "required": [
+          "root",
+          "deleted",
+          "skipped",
+          "summary"
+        ]
+      },
+      "CascadeDeleteRequest": {
+        "type": "object",
+        "properties": {
+          "expect_tip": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Current tip CID for CAS validation. Request fails with 409 if this does not match.",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional note describing this change",
+            "example": "Added Chapter 42: The Whiteness of the Whale"
+          },
+          "collection_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Collection to scope the cascade delete. Only entities in this collection will be deleted. Permission check is performed on this collection.",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "cascade_predicates": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "description": "Predicate patterns to follow during cascade traversal. Supports wildcards:\n- `\"child\"` - exact match only\n- `\"has_*\"` - matches has_document, has_image, etc.\n- `\"*_copy\"` - matches file_copy, document_copy, etc.\n- `\"*\"` - matches ALL predicates\n\n**Important:** The `collection` predicate NEVER cascades, even if `\"*\"` is specified. This protects the collection structure from accidental deletion.",
+            "example": [
+              "child",
+              "has_*"
+            ]
+          },
+          "edited_by_filter": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Only delete entities where edited_by.user_id matches this PI. Useful for cleaning up entities created by a specific agent.",
+            "example": "01KAGENTXXXXXXXXXXXXXXXX"
+          },
+          "max_depth": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20,
+            "default": 10,
+            "description": "Maximum relationship depth to traverse (default: 10, max: 20)",
+            "example": 10
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Reason for deleting the entities (applied to all deleted entities)",
+            "example": "Cleanup after agent task"
+          }
+        },
+        "required": [
+          "expect_tip",
+          "collection_id",
+          "cascade_predicates"
+        ]
+      },
       "EntityUpdateResponse": {
         "allOf": [
           {
@@ -9336,6 +9523,138 @@
                 },
                 "example": {
                   "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entities/{id}/cascade": {
+      "delete": {
+        "tags": [
+          "Entities"
+        ],
+        "summary": "Cascade delete entity and related entities",
+        "description": "Deletes an entity and all related entities matching predicate patterns within a scoped collection.\n\n**Permission Model:**\n- Requires `entity:delete` permission on the specified `collection_id`\n- Single permission check at the start (not per-entity)\n- Individual entity type permissions are NOT checked during cascade\n\n**Cascade Rules:**\n- `collection` predicate NEVER cascades (hard rule - protects collection structure)\n- Only entities in the specified collection are deleted\n- Entities outside the collection are skipped (reported in `skipped` array)\n\n**Predicate Patterns:**\n- `\"child\"` - exact match only\n- `\"has_*\"` - matches has_document, has_image, etc.\n- `\"*_copy\"` - matches file_copy, document_copy, etc.\n- `\"*\"` - matches ALL predicates (except collection)\n\n**Traversal:**\n- BFS traversal with parallel processing per depth layer\n- Max depth: 20 (default: 10)\n- Optional `edited_by_filter` to only delete entities created by a specific actor (useful for agent cleanup)\n\n**CAS Handling:**\n- Root entity uses the provided `expect_tip`\n- Child entities use re-fetch + single retry strategy\n- CAS conflicts are reported as skipped (not failures)\n\n**Response:**\n- Lists all deleted entities with their depth from root\n- Lists skipped entities with reasons\n- Provides summary statistics\n\n---\n**Permission:** `entity:delete`  \n**Auth:** required",
+        "x-arke-action": "entity:delete",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CascadeDeleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cascade delete completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CascadeDeleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - CAS validation failed (entity was modified)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CASErrorResponse"
+                },
+                "example": {
+                  "error": "Conflict: entity was modified",
+                  "details": {
+                    "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                    "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                  }
                 }
               }
             }
