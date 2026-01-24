@@ -1963,6 +1963,58 @@
           "type"
         ]
       },
+      "EntityPreview": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Entity ID (persistent identifier)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "type": {
+            "type": "string",
+            "description": "Entity type",
+            "example": "document"
+          },
+          "label": {
+            "type": "string",
+            "description": "Entity label (from properties.label, filename, or name)",
+            "example": "Research Paper.pdf"
+          },
+          "collection_pi": {
+            "type": "string",
+            "description": "Collection ID this entity belongs to",
+            "example": "01JCOLLECTION123456789ABCD"
+          },
+          "description_preview": {
+            "type": "string",
+            "description": "Truncated description (max 200 chars + \"...\")",
+            "example": "This document contains research findings from the 2025 study on entity management systems. It covers key architectural decisions and performance benchmarks..."
+          },
+          "text_preview": {
+            "type": "string",
+            "description": "Truncated text content (max 200 chars + \"...\")",
+            "example": "Introduction: The rise of decentralized entity management systems has created new challenges for data integrity and consistency. This paper explores..."
+          },
+          "created_at": {
+            "type": "string",
+            "description": "Entity creation timestamp (ISO 8601)",
+            "example": "2025-01-15T10:00:00.000Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "Last update timestamp (ISO 8601)",
+            "example": "2025-01-20T14:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "label",
+          "created_at",
+          "updated_at"
+        ]
+      },
       "TipResponse": {
         "type": "object",
         "properties": {
@@ -9161,7 +9213,7 @@
           "Entities"
         ],
         "summary": "Get entity by ID",
-        "description": "Returns any entity by ID. Permission check uses parent collection if entity belongs to one.\n\n---\n**Permission:** `entity:view`  \n**Auth:** optional",
+        "description": "Returns any entity by ID. Permission check uses parent collection if entity belongs to one.\n\n**Relationship Expansion:**\n\nUse the `expand=relationships[:mode]` query parameter to hydrate relationship peer data:\n\n- **No expansion (default)**: Returns relationships with stored `peer_label`/`peer_type` (may be stale)\n  ```json\n  { \"predicate\": \"contains\", \"peer\": \"01KDOC...\", \"peer_label\": \"Old Label\" }\n  ```\n\n- **`?expand=relationships:preview`**: Adds `peer_preview` with fresh lightweight data (id, type, label, truncated description/text, timestamps)\n  ```json\n  {\n    \"predicate\": \"contains\",\n    \"peer\": \"01KDOC...\",\n    \"peer_label\": \"Old Label\",\n    \"peer_preview\": {\n      \"id\": \"01KDOC...\",\n      \"type\": \"document\",\n      \"label\": \"Updated Label\",\n      \"description_preview\": \"This is a document with...\",\n      \"created_at\": \"2025-01-15T10:00:00Z\",\n      \"updated_at\": \"2025-01-20T14:30:00Z\"\n    }\n  }\n  ```\n\n- **`?expand=relationships:full`**: Adds `peer_entity` with complete entity manifest (all properties, relationships, version history)\n  ```json\n  {\n    \"predicate\": \"contains\",\n    \"peer\": \"01KDOC...\",\n    \"peer_label\": \"Old Label\",\n    \"peer_entity\": {\n      \"id\": \"01KDOC...\",\n      \"cid\": \"bafyrei...\",\n      \"type\": \"document\",\n      \"properties\": { \"label\": \"Updated Label\", \"text\": \"...\" },\n      \"relationships\": [...],\n      \"ver\": 3,\n      \"created_at\": \"2025-01-15T10:00:00Z\",\n      \"ts\": 1737380000000,\n      \"edited_by\": { \"user_id\": \"01JUSER...\", \"method\": \"manual\" }\n    }\n  }\n  ```\n\n**Performance:** Preview expansion is recommended for most use cases. Full expansion with many large entities can result in multi-MB payloads.\n\n---\n**Permission:** `entity:view`  \n**Auth:** optional",
         "x-arke-action": "entity:view",
         "x-arke-auth": "optional",
         "x-arke-tier": "standard",
@@ -9177,6 +9229,16 @@
             "description": "Entity ID (ULID)",
             "name": "id",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "relationships:preview"
+            },
+            "required": false,
+            "description": "Comma-separated list of fields to expand. Supports: relationships[:preview|full]",
+            "name": "expand",
+            "in": "query"
           }
         ],
         "responses": {
@@ -9472,6 +9534,70 @@
                     "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
                     "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entities/{id}/preview": {
+      "get": {
+        "tags": [
+          "Entities"
+        ],
+        "summary": "Get entity preview",
+        "description": "Returns lightweight preview data for an entity. Useful for:\n- Link previews and hover cards\n- Relationship metadata freshness (vs stale peer_label)\n- AI context management (smaller payloads)\n- Search result enhancement\n\nReturns: id, type, label, collection_pi, description_preview (200 chars), text_preview (200 chars), timestamps.\n\n**Performance:** Single KV fetch, ~40-60ms response time, typically <1KB payload.\n\n---\n**Permission:** `entity:view`  \n**Auth:** optional",
+        "x-arke-action": "entity:view",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entity preview data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityPreview"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
                 }
               }
             }

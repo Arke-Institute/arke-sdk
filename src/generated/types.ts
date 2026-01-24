@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-01-22T18:25:50.170Z
+ * Generated: 2026-01-24T04:38:00.909Z
  */
 
 export type paths = {
@@ -2052,13 +2052,64 @@ export type paths = {
          * Get entity by ID
          * @description Returns any entity by ID. Permission check uses parent collection if entity belongs to one.
          *
+         *     **Relationship Expansion:**
+         *
+         *     Use the `expand=relationships[:mode]` query parameter to hydrate relationship peer data:
+         *
+         *     - **No expansion (default)**: Returns relationships with stored `peer_label`/`peer_type` (may be stale)
+         *       ```json
+         *       { "predicate": "contains", "peer": "01KDOC...", "peer_label": "Old Label" }
+         *       ```
+         *
+         *     - **`?expand=relationships:preview`**: Adds `peer_preview` with fresh lightweight data (id, type, label, truncated description/text, timestamps)
+         *       ```json
+         *       {
+         *         "predicate": "contains",
+         *         "peer": "01KDOC...",
+         *         "peer_label": "Old Label",
+         *         "peer_preview": {
+         *           "id": "01KDOC...",
+         *           "type": "document",
+         *           "label": "Updated Label",
+         *           "description_preview": "This is a document with...",
+         *           "created_at": "2025-01-15T10:00:00Z",
+         *           "updated_at": "2025-01-20T14:30:00Z"
+         *         }
+         *       }
+         *       ```
+         *
+         *     - **`?expand=relationships:full`**: Adds `peer_entity` with complete entity manifest (all properties, relationships, version history)
+         *       ```json
+         *       {
+         *         "predicate": "contains",
+         *         "peer": "01KDOC...",
+         *         "peer_label": "Old Label",
+         *         "peer_entity": {
+         *           "id": "01KDOC...",
+         *           "cid": "bafyrei...",
+         *           "type": "document",
+         *           "properties": { "label": "Updated Label", "text": "..." },
+         *           "relationships": [...],
+         *           "ver": 3,
+         *           "created_at": "2025-01-15T10:00:00Z",
+         *           "ts": 1737380000000,
+         *           "edited_by": { "user_id": "01JUSER...", "method": "manual" }
+         *         }
+         *       }
+         *       ```
+         *
+         *     **Performance:** Preview expansion is recommended for most use cases. Full expansion with many large entities can result in multi-MB payloads.
+         *
          *     ---
          *     **Permission:** `entity:view`
          *     **Auth:** optional
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Comma-separated list of fields to expand. Supports: relationships[:preview|full] */
+                    expand?: string;
+                };
                 header?: never;
                 path: {
                     /** @description Entity ID (ULID) */
@@ -2367,6 +2418,88 @@ export type paths = {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entities/{id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get entity preview
+         * @description Returns lightweight preview data for an entity. Useful for:
+         *     - Link previews and hover cards
+         *     - Relationship metadata freshness (vs stale peer_label)
+         *     - AI context management (smaller payloads)
+         *     - Search result enhancement
+         *
+         *     Returns: id, type, label, collection_pi, description_preview (200 chars), text_preview (200 chars), timestamps.
+         *
+         *     **Performance:** Single KV fetch, ~40-60ms response time, typically <1KB payload.
+         *
+         *     ---
+         *     **Permission:** `entity:view`
+         *     **Auth:** optional
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Entity preview data */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EntityPreview"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -9136,6 +9269,48 @@ export type components = {
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
             collection?: string;
+        };
+        EntityPreview: {
+            /**
+             * @description Entity ID (persistent identifier)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            id: string;
+            /**
+             * @description Entity type
+             * @example document
+             */
+            type: string;
+            /**
+             * @description Entity label (from properties.label, filename, or name)
+             * @example Research Paper.pdf
+             */
+            label: string;
+            /**
+             * @description Collection ID this entity belongs to
+             * @example 01JCOLLECTION123456789ABCD
+             */
+            collection_pi?: string;
+            /**
+             * @description Truncated description (max 200 chars + "...")
+             * @example This document contains research findings from the 2025 study on entity management systems. It covers key architectural decisions and performance benchmarks...
+             */
+            description_preview?: string;
+            /**
+             * @description Truncated text content (max 200 chars + "...")
+             * @example Introduction: The rise of decentralized entity management systems has created new challenges for data integrity and consistency. This paper explores...
+             */
+            text_preview?: string;
+            /**
+             * @description Entity creation timestamp (ISO 8601)
+             * @example 2025-01-15T10:00:00.000Z
+             */
+            created_at: string;
+            /**
+             * @description Last update timestamp (ISO 8601)
+             * @example 2025-01-20T14:30:00.000Z
+             */
+            updated_at: string;
         };
         TipResponse: {
             /**
