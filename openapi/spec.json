@@ -778,6 +778,68 @@
           "pagination"
         ]
       },
+      "EntityPreview": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Entity ID (persistent identifier)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "type": {
+            "type": "string",
+            "description": "Entity type",
+            "example": "document"
+          },
+          "label": {
+            "type": "string",
+            "description": "Entity label (from properties.label, filename, or name)",
+            "example": "Research Paper.pdf"
+          },
+          "collection_pi": {
+            "type": "string",
+            "description": "Collection ID this entity belongs to",
+            "example": "01JCOLLECTION123456789ABCD"
+          },
+          "description_preview": {
+            "type": "string",
+            "description": "Truncated description (max 200 chars + \"...\")",
+            "example": "This document contains research findings from the 2025 study on entity management systems. It covers key architectural decisions and performance benchmarks..."
+          },
+          "text_preview": {
+            "type": "string",
+            "description": "Truncated text content (max 200 chars + \"...\")",
+            "example": "Introduction: The rise of decentralized entity management systems has created new challenges for data integrity and consistency. This paper explores..."
+          },
+          "created_at": {
+            "type": "string",
+            "description": "Entity creation timestamp (ISO 8601)",
+            "example": "2025-01-15T10:00:00.000Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "Last update timestamp (ISO 8601)",
+            "example": "2025-01-20T14:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "label",
+          "created_at",
+          "updated_at"
+        ],
+        "description": "Lightweight entity preview with fresh data. Included by default (expand: \"preview\").",
+        "example": {
+          "id": "01KDETYWYWM0MJVKM8DK3AEXPY",
+          "type": "file",
+          "label": "Research Paper.pdf",
+          "collection_pi": "01JCOLLECTION123456789AB",
+          "description_preview": "A comprehensive study on distributed systems architecture...",
+          "created_at": "2026-01-12T00:00:00.000Z",
+          "updated_at": "2026-01-12T10:30:00.000Z"
+        }
+      },
       "SearchResultItem": {
         "type": "object",
         "properties": {
@@ -817,6 +879,19 @@
             "type": "string",
             "description": "When the entity was last updated",
             "example": "2026-01-12T10:30:00.000Z"
+          },
+          "entity_preview": {
+            "$ref": "#/components/schemas/EntityPreview"
+          },
+          "entity": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityResponse"
+              },
+              {
+                "description": "Complete entity manifest with all properties and relationships. Only included when expand: \"full\"."
+              }
+            ]
           }
         },
         "required": [
@@ -922,6 +997,16 @@
             "default": 20,
             "description": "Maximum number of results to return (default: 20, max: 100)",
             "example": 50
+          },
+          "expand": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "full",
+              "none"
+            ],
+            "description": "Entity expansion mode. Default: \"preview\" for lightweight previews, \"full\" for complete manifests, \"none\" for no expansion.",
+            "example": "preview"
           }
         },
         "required": [
@@ -1673,7 +1758,7 @@
           },
           "label": {
             "type": "string",
-            "description": "Entity display label",
+            "description": "Entity display label (from GraphDB, may be stale)",
             "example": "My Document"
           },
           "created_at": {
@@ -1684,7 +1769,27 @@
           "updated_at": {
             "type": "string",
             "format": "date-time",
-            "description": "When the entity was last updated"
+            "description": "When the entity was last updated (from GraphDB)"
+          },
+          "preview": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityPreview"
+              },
+              {
+                "description": "Fresh entity preview (only present when ?expand=preview)"
+              }
+            ]
+          },
+          "entity": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityResponse"
+              },
+              {
+                "description": "Full entity manifest (only present when ?expand=full). WARNING: Large payloads with many entities."
+              }
+            ]
           }
         },
         "required": [
@@ -1961,58 +2066,6 @@
         },
         "required": [
           "type"
-        ]
-      },
-      "EntityPreview": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Entity ID (persistent identifier)",
-            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
-          },
-          "type": {
-            "type": "string",
-            "description": "Entity type",
-            "example": "document"
-          },
-          "label": {
-            "type": "string",
-            "description": "Entity label (from properties.label, filename, or name)",
-            "example": "Research Paper.pdf"
-          },
-          "collection_pi": {
-            "type": "string",
-            "description": "Collection ID this entity belongs to",
-            "example": "01JCOLLECTION123456789ABCD"
-          },
-          "description_preview": {
-            "type": "string",
-            "description": "Truncated description (max 200 chars + \"...\")",
-            "example": "This document contains research findings from the 2025 study on entity management systems. It covers key architectural decisions and performance benchmarks..."
-          },
-          "text_preview": {
-            "type": "string",
-            "description": "Truncated text content (max 200 chars + \"...\")",
-            "example": "Introduction: The rise of decentralized entity management systems has created new challenges for data integrity and consistency. This paper explores..."
-          },
-          "created_at": {
-            "type": "string",
-            "description": "Entity creation timestamp (ISO 8601)",
-            "example": "2025-01-15T10:00:00.000Z"
-          },
-          "updated_at": {
-            "type": "string",
-            "description": "Last update timestamp (ISO 8601)",
-            "example": "2025-01-20T14:30:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "type",
-          "label",
-          "created_at",
-          "updated_at"
         ]
       },
       "TipResponse": {
@@ -6268,6 +6321,26 @@
             "type": "string",
             "description": "Source entity type"
           },
+          "subject_preview": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityPreview"
+              },
+              {
+                "description": "Fresh subject preview (default, or expand=preview)"
+              }
+            ]
+          },
+          "subject_entity": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityResponse"
+              },
+              {
+                "description": "Full subject manifest (expand=full)"
+              }
+            ]
+          },
           "predicate": {
             "type": "string",
             "description": "Relationship predicate"
@@ -6285,6 +6358,26 @@
           "object_type": {
             "type": "string",
             "description": "Target entity type"
+          },
+          "object_preview": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityPreview"
+              },
+              {
+                "description": "Fresh object preview (default, or expand=preview)"
+              }
+            ]
+          },
+          "object_entity": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityResponse"
+              },
+              {
+                "description": "Full object manifest (expand=full)"
+              }
+            ]
           }
         },
         "required": [
@@ -6295,7 +6388,34 @@
           "object_pi",
           "object_label",
           "object_type"
-        ]
+        ],
+        "example": {
+          "subject_pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+          "subject_label": "Project Folder",
+          "subject_type": "folder",
+          "subject_preview": {
+            "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
+            "type": "folder",
+            "label": "Project Folder",
+            "collection_pi": "01JCOLLECTION123456789ABCD",
+            "description_preview": "Main project folder containing research documents...",
+            "created_at": "2025-01-10T08:00:00.000Z",
+            "updated_at": "2025-01-18T16:45:00.000Z"
+          },
+          "predicate": "contains",
+          "object_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+          "object_label": "Research Paper.pdf",
+          "object_type": "file",
+          "object_preview": {
+            "id": "01KE506KZGD8M2P1XK3VNQT4YR",
+            "type": "file",
+            "label": "Research Paper.pdf",
+            "collection_pi": "01JCOLLECTION123456789ABCD",
+            "description_preview": "Analysis of entity management patterns and best practices...",
+            "created_at": "2025-01-15T10:00:00.000Z",
+            "updated_at": "2025-01-20T14:30:00.000Z"
+          }
+        }
       },
       "PathResult": {
         "type": "object",
@@ -6443,6 +6563,26 @@
             "items": {
               "$ref": "#/components/schemas/PathEdge"
             }
+          },
+          "target_preview": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityPreview"
+              },
+              {
+                "description": "Fresh target preview (default, or expand=preview)"
+              }
+            ]
+          },
+          "target_entity": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityResponse"
+              },
+              {
+                "description": "Full target manifest (expand=full)"
+              }
+            ]
           }
         },
         "required": [
@@ -6452,7 +6592,24 @@
           "target_type",
           "length",
           "edges"
-        ]
+        ],
+        "example": {
+          "source_pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+          "target_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+          "target_label": "Research Paper.pdf",
+          "target_type": "file",
+          "length": 1,
+          "edges": [],
+          "target_preview": {
+            "id": "01KE506KZGD8M2P1XK3VNQT4YR",
+            "type": "file",
+            "label": "Research Paper.pdf",
+            "collection_pi": "01JCOLLECTION123456789ABCD",
+            "description_preview": "Analysis of entity management patterns and best practices...",
+            "created_at": "2025-01-15T10:00:00.000Z",
+            "updated_at": "2025-01-20T14:30:00.000Z"
+          }
+        }
       },
       "PathsReachableResponse": {
         "type": "object",
@@ -6559,6 +6716,26 @@
             "additionalProperties": {
               "nullable": true
             }
+          },
+          "peer_preview": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityPreview"
+              },
+              {
+                "description": "Fresh peer preview (default, or expand=preview)"
+              }
+            ]
+          },
+          "peer_entity": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityResponse"
+              },
+              {
+                "description": "Full peer manifest (expand=full)"
+              }
+            ]
           }
         },
         "required": [
@@ -6568,7 +6745,24 @@
           "peer_type",
           "peer_label",
           "properties"
-        ]
+        ],
+        "example": {
+          "direction": "outgoing",
+          "predicate": "contains",
+          "peer_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+          "peer_type": "file",
+          "peer_label": "Research Paper.pdf",
+          "properties": {},
+          "peer_preview": {
+            "id": "01KE506KZGD8M2P1XK3VNQT4YR",
+            "type": "file",
+            "label": "Research Paper.pdf",
+            "collection_pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+            "description_preview": "Analysis of entity management patterns and best practices...",
+            "created_at": "2025-01-15T10:00:00.000Z",
+            "updated_at": "2025-01-20T14:30:00.000Z"
+          }
+        }
       },
       "GraphEntityResponse": {
         "type": "object",
@@ -6612,54 +6806,34 @@
           "created_at",
           "updated_at",
           "relationships"
-        ]
-      },
-      "QueryEntity": {
-        "type": "object",
-        "properties": {
-          "pi": {
-            "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Entity ID (ULID format)",
-            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
-          },
-          "type": {
-            "type": "string"
-          },
-          "label": {
-            "type": "string"
-          },
-          "collection_pi": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "pi",
-          "type",
-          "label",
-          "collection_pi"
-        ]
-      },
-      "EntityStep": {
-        "type": "object",
-        "properties": {
-          "entity": {
-            "type": "string"
-          },
-          "label": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "score": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "entity"
-        ]
+        ],
+        "example": {
+          "pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+          "type": "folder",
+          "label": "Project Folder",
+          "collection_pi": "01JCOLLECTION123456789ABCD",
+          "created_at": "2025-01-10T08:00:00.000Z",
+          "updated_at": "2025-01-18T16:45:00.000Z",
+          "relationships": [
+            {
+              "direction": "outgoing",
+              "predicate": "contains",
+              "peer_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+              "peer_type": "file",
+              "peer_label": "Research Paper.pdf",
+              "properties": {},
+              "peer_preview": {
+                "id": "01KE506KZGD8M2P1XK3VNQT4YR",
+                "type": "file",
+                "label": "Research Paper.pdf",
+                "collection_pi": "01JCOLLECTION123456789ABCD",
+                "description_preview": "Analysis of entity management patterns and best practices...",
+                "created_at": "2025-01-15T10:00:00.000Z",
+                "updated_at": "2025-01-20T14:30:00.000Z"
+              }
+            }
+          ]
+        }
       },
       "EdgeStep": {
         "type": "object",
@@ -6686,33 +6860,69 @@
       "PathStep": {
         "anyOf": [
           {
-            "$ref": "#/components/schemas/EntityStep"
+            "type": "object",
+            "properties": {
+              "entity": {
+                "type": "string",
+                "description": "Entity ID",
+                "example": "01KPERSON_EINSTEIN"
+              },
+              "label": {
+                "type": "string",
+                "example": "Albert Einstein"
+              },
+              "type": {
+                "type": "string",
+                "example": "person"
+              },
+              "score": {
+                "type": "number",
+                "description": "Semantic similarity score (0-1)",
+                "example": 0.92
+              },
+              "preview_data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/EntityPreview"
+                  },
+                  {
+                    "description": "Entity preview data (present by default, omit expand or use expand=preview)"
+                  }
+                ]
+              },
+              "full_entity": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/EntityResponse"
+                  },
+                  {
+                    "description": "Full entity manifest (only present when expand=full)"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "entity"
+            ],
+            "description": "Entity step in a query path",
+            "example": {
+              "entity": "01KPERSON_EINSTEIN",
+              "label": "Albert Einstein",
+              "type": "person",
+              "score": 0.92,
+              "preview_data": {
+                "id": "01KPERSON_EINSTEIN",
+                "type": "person",
+                "label": "Albert Einstein",
+                "description_preview": "German-born theoretical physicist...",
+                "created_at": "2025-01-01T00:00:00.000Z",
+                "updated_at": "2025-01-15T12:00:00.000Z"
+              }
+            }
           },
           {
             "$ref": "#/components/schemas/EdgeStep"
           }
-        ]
-      },
-      "QueryResultItem": {
-        "type": "object",
-        "properties": {
-          "entity": {
-            "$ref": "#/components/schemas/QueryEntity"
-          },
-          "path": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PathStep"
-            }
-          },
-          "score": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "entity",
-          "path",
-          "score"
         ]
       },
       "QueryMetadata": {
@@ -6770,7 +6980,129 @@
           "results": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/QueryResultItem"
+              "type": "object",
+              "properties": {
+                "entity": {
+                  "type": "object",
+                  "properties": {
+                    "pi": {
+                      "type": "string",
+                      "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+                      "description": "Entity ID (ULID format)",
+                      "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                    },
+                    "type": {
+                      "type": "string",
+                      "example": "person"
+                    },
+                    "label": {
+                      "type": "string",
+                      "example": "Albert Einstein"
+                    },
+                    "collection_pi": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": "01JCOLL_RESEARCH"
+                    },
+                    "preview_data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/EntityPreview"
+                        },
+                        {
+                          "description": "Entity preview data (present by default, omit expand or use expand=preview)"
+                        }
+                      ]
+                    },
+                    "full_entity": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/EntityResponse"
+                        },
+                        {
+                          "description": "Full entity manifest (only present when expand=full)"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "pi",
+                    "type",
+                    "label",
+                    "collection_pi"
+                  ],
+                  "description": "Query result entity with optional expansion data",
+                  "example": {
+                    "pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+                    "type": "person",
+                    "label": "Albert Einstein",
+                    "collection_pi": "01JCOLL_RESEARCH",
+                    "preview_data": {
+                      "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
+                      "type": "person",
+                      "label": "Albert Einstein",
+                      "collection_pi": "01JCOLL_RESEARCH",
+                      "description_preview": "German-born theoretical physicist who developed the theory of relativity...",
+                      "created_at": "2025-01-15T10:00:00.000Z",
+                      "updated_at": "2025-01-20T14:30:00.000Z"
+                    }
+                  }
+                },
+                "path": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PathStep"
+                  },
+                  "description": "Path from entry point to result entity (empty for zero-hop queries)"
+                },
+                "score": {
+                  "type": "number",
+                  "description": "Combined relevance score (semantic similarity + path length)",
+                  "example": 0.89
+                }
+              },
+              "required": [
+                "entity",
+                "path",
+                "score"
+              ],
+              "description": "A single query result with entity, path, and score",
+              "example": {
+                "entity": {
+                  "pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+                  "type": "file",
+                  "label": "Theory of Relativity.pdf",
+                  "collection_pi": "01JCOLL_RESEARCH",
+                  "preview_data": {
+                    "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
+                    "type": "file",
+                    "label": "Theory of Relativity.pdf",
+                    "collection_pi": "01JCOLL_RESEARCH",
+                    "description_preview": "Seminal paper on special and general relativity...",
+                    "created_at": "2025-01-10T08:00:00.000Z",
+                    "updated_at": "2025-01-10T08:00:00.000Z"
+                  }
+                },
+                "path": [
+                  {
+                    "entity": "01KPERSON_EINSTEIN",
+                    "label": "Albert Einstein",
+                    "type": "person",
+                    "preview_data": {
+                      "id": "01KPERSON_EINSTEIN",
+                      "type": "person",
+                      "label": "Albert Einstein",
+                      "created_at": "2025-01-01T00:00:00.000Z",
+                      "updated_at": "2025-01-15T12:00:00.000Z"
+                    }
+                  },
+                  {
+                    "edge": "authored",
+                    "direction": "outgoing"
+                  }
+                ],
+                "score": 0.89
+              }
             }
           },
           "metadata": {
@@ -6810,6 +7142,16 @@
             "type": "string",
             "description": "Scope query to collection PI",
             "example": "01JCOLL_MEDICAL"
+          },
+          "expand": {
+            "type": "string",
+            "enum": [
+              "none",
+              "preview",
+              "full"
+            ],
+            "description": "Control entity expansion in results and path steps.\n- **omitted/preview** (default): Attach lightweight preview data (label, timestamps, truncated description/text)\n- **full**: Attach complete entity manifest (all properties, relationships, version info)\n- **none**: No expansion - return only Pinecone metadata (fastest, smallest payload)",
+            "example": "preview"
           }
         },
         "required": [
@@ -7859,7 +8201,7 @@
           "Search"
         ],
         "summary": "Search across user collections",
-        "description": "Performs semantic search across all collections the authenticated user has access to.\n\n## Features\n- Searches all user's collections in parallel (up to 25)\n- Optionally includes public-domain entities\n- Filter by entity type or collection role\n- Results ranked by semantic relevance\n\n## Performance\n- Collections are queried in parallel for speed\n- If user has more than 25 collections, queries first 25 (by created_at). Use role filter to narrow down.\n- Response includes metadata showing collections_queried vs collections_total\n\n## Scoring\n- Results use cosine similarity scores (0-1)\n- Scores are comparable across collections\n\n\n---\n**Permission:** `search:execute`  \n**Auth:** required",
+        "description": "Performs semantic search across all collections the authenticated user has access to.\n\n## Features\n- Searches all user's collections in parallel (up to 25)\n- Optionally includes public-domain entities\n- Filter by entity type or collection role\n- Results ranked by semantic relevance\n\n## Performance\n- Collections are queried in parallel for speed\n- If user has more than 25 collections, queries first 25 (by created_at). Use role filter to narrow down.\n- Response includes metadata showing collections_queried vs collections_total\n\n## Scoring\n- Results use cosine similarity scores (0-1)\n- Scores are comparable across collections\n\n## Entity Expansion\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n\n---\n**Permission:** `search:execute`  \n**Auth:** required",
         "x-arke-action": "search:execute",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -9005,7 +9347,7 @@
           "Collections"
         ],
         "summary": "List entities in a collection",
-        "description": "Returns entities belonging to this collection from the graph database.\n\nSupports pagination and optional type filtering. Results are ordered by creation date (newest first).\n\n---\n**Permission:** `collection:view`  \n**Auth:** optional",
+        "description": "Returns entities belonging to this collection from the graph database.\n\nSupports pagination and optional type filtering. Results are ordered by creation date (newest first).\n\n**Expansion Modes:**\n\nBy default, returns lightweight summaries from GraphDB (pi, type, label, timestamps).\n\nUse the `expand` parameter to hydrate entity data from storage:\n\n- **`?expand=preview`**: Adds `preview` field with fresh lightweight data (label, truncated description/text, timestamps). ~5-10KB per entity.\n\n- **`?expand=full`**: Adds `entity` field with complete manifest (all properties, relationships, version history). ~20-50KB per entity.\n\n**Performance Note:** Expansion requires fetching each entity from storage. Limited to 100 entities per request. Use smaller `limit` values when expanding.\n\n---\n**Permission:** `collection:view`  \n**Auth:** optional",
         "x-arke-action": "collection:view",
         "x-arke-auth": "optional",
         "x-arke-tier": "external",
@@ -9056,6 +9398,20 @@
             },
             "required": false,
             "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "preview",
+                "full"
+              ],
+              "description": "Expand entity data. \"preview\" adds lightweight previews, \"full\" adds complete manifests. Maximum 100 entities when using expand.",
+              "example": "preview"
+            },
+            "required": false,
+            "name": "expand",
             "in": "query"
           }
         ],
@@ -13542,13 +13898,30 @@
           "Graph"
         ],
         "summary": "Find paths between entities",
-        "description": "Find shortest paths between source and target entity sets. Returns all paths up to the limit (default 100).\n\nUse this when you know both endpoints and want to discover how they connect - for example, finding the chain of relationships between a person and a document.\n\n---\n**Permission:** `graph:query`  \n**Auth:** required",
+        "description": "Find shortest paths between source and target entity sets. Returns all paths up to the limit (default 100).\n\nUse this when you know both endpoints and want to discover how they connect - for example, finding the chain of relationships between a person and a document.\n\n**Entity Expansion (default: preview):**\n- Omit `expand` or use `?expand=preview` - Lightweight previews for all path entities\n- `?expand=full` - Complete entity manifests (use with caution)\n- `?expand=none` - Disable expansion (graph metadata only)\n\n**Performance Warning:** 100 paths can reference 400-800 unique entities, adding 5-10s latency with expansion.\n\n**Recommendations:**\n- Use `limit: 10-20` when using expansion\n- Prefer preview over full\n- Use `expand=none` for large result sets, then fetch specific entities separately\n\n---\n**Permission:** `graph:query`  \n**Auth:** required",
         "x-arke-action": "graph:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
         "security": [
           {
             "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "preview",
+                "full",
+                "none"
+              ],
+              "example": "preview"
+            },
+            "required": false,
+            "description": "Entity expansion mode. Omit for preview (default), \"full\" for complete manifests, \"none\" to disable",
+            "name": "expand",
+            "in": "query"
           }
         ],
         "requestBody": {
@@ -13604,13 +13977,30 @@
           "Graph"
         ],
         "summary": "Find reachable entities (exhaustive)",
-        "description": "Find all entities of a specific type reachable from source entities within N hops. Returns up to 100 results by default.\n\n**When to use this vs POST /query:** This endpoint returns exhaustive, unranked results - all reachable entities up to the limit. Use `POST /query` when you want relevance-ranked results combining semantic similarity with graph structure. Use this endpoint when you need comprehensive graph exploration from known entity IDs.\n\n---\n**Permission:** `graph:query`  \n**Auth:** required",
+        "description": "Find all entities of a specific type reachable from source entities within N hops. Returns up to 100 results by default.\n\n**When to use this vs POST /query:** This endpoint returns exhaustive, unranked results - all reachable entities up to the limit. Use `POST /query` when you want relevance-ranked results combining semantic similarity with graph structure. Use this endpoint when you need comprehensive graph exploration from known entity IDs.\n\n**Target Expansion (default: preview):**\n- Omit `expand` or use `?expand=preview` - Lightweight target previews\n- `?expand=full` - Complete target manifests\n- `?expand=none` - Disable expansion (graph metadata only)\n\n**Performance:** With 100 targets, expansion adds ~1s.\n\n---\n**Permission:** `graph:query`  \n**Auth:** required",
         "x-arke-action": "graph:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
         "security": [
           {
             "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "preview",
+                "full",
+                "none"
+              ],
+              "example": "preview"
+            },
+            "required": false,
+            "description": "Entity expansion mode. Omit for preview (default), \"full\" for complete manifests, \"none\" to disable",
+            "name": "expand",
+            "in": "query"
           }
         ],
         "requestBody": {
@@ -13666,7 +14056,7 @@
           "Graph"
         ],
         "summary": "Get entity from graph",
-        "description": "Get entity details with all relationships from the graph database. Unlike the entity manifest, this includes both outgoing and incoming relationships - showing not just what this entity links to, but also what links to it.\n\n---\n**Permission:** `graph:query`  \n**Auth:** required",
+        "description": "Get entity details with all relationships from the graph database. Unlike the entity manifest, this includes both outgoing and incoming relationships - showing not just what this entity links to, but also what links to it.\n\n**Peer Expansion (default: preview):**\n- Omit `expand` or use `?expand=preview` - Lightweight peer previews\n- `?expand=full` - Complete peer manifests\n- `?expand=none` - Disable expansion (graph metadata only)\n\n**Performance:** With 50 peers, expansion adds ~500ms.\n\n---\n**Permission:** `graph:query`  \n**Auth:** required",
         "x-arke-action": "graph:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -13687,6 +14077,21 @@
             "description": "Entity ID (ULID)",
             "name": "id",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "preview",
+                "full",
+                "none"
+              ],
+              "example": "preview"
+            },
+            "required": false,
+            "description": "Entity expansion mode. Omit for preview (default), \"full\" for complete manifests, \"none\" to disable",
+            "name": "expand",
+            "in": "query"
           }
         ],
         "responses": {
@@ -13722,7 +14127,7 @@
           "Query"
         ],
         "summary": "Execute Argo query",
-        "description": "Execute an Argo DSL query for path-based graph traversal with relevance ranking.\n\n## When to Use This Endpoint\n\n| Endpoint | Use Case |\n|----------|----------|\n| `POST /query` | Semantic search + graph traversal with **relevance-ranked** results (default k=25) |\n| `POST /graph/reachable` | **Exhaustive** graph exploration from known entities (default limit=100) |\n| `POST /graph/paths` | Find all shortest paths between two entity sets |\n\nThis endpoint combines semantic similarity scores with path length to rank results. For exhaustive graph traversal without ranking, use the `/graph/*` endpoints directly.\n\n## Query Syntax\n\n```\n[SCOPE_PREFIX] ENTRY_POINT [ENTRY_FILTER] [-[RELATION]{DEPTH}-> TARGET_FILTER]...\n```\n\n## Scope Prefixes\n\nControl where semantic search looks for entry points. Default is discovery mode.\n\n| Prefix | Description | Example |\n|--------|-------------|---------|\n| (none) | **Discovery mode** (default) - find relevant collections, then search within each | `\"medical notes\"` |\n| `@:collections` | Search for collections themselves | `@:collections \"columbia archives\"` |\n| `@:collection(id)` | Search within a specific collection | `@:collection(01JCOLL123) \"meeting\"` |\n| `@:discover` | Explicit discovery mode | `@:discover \"research papers\"` |\n| `@:public` | Search public domain only | `@:public \"orphaned data\"` |\n\n**Note:** Graph traversal (hops) is always cross-collection regardless of scope.\n\n### Entry Points\n\n| Syntax | Description | Example |\n|--------|-------------|---------|\n| `\"text\"` | Semantic search | `\"george washington\"` |\n| `@id` | Exact entity ID | `@01KE4ZY69F9R40E88PK9S0TQRQ` |\n| `type:X` | All entities of type | `type:person` |\n| `type:X ~ \"text\"` | Semantic search within type | `type:person ~ \"physician\"` |\n\n### Edges (Hops)\n\n| Syntax | Direction |\n|--------|-----------|\n| `-[*]->` | Outgoing |\n| `<-[*]-` | Incoming |\n| `<-[*]->` | Both |\n| `-[*]{,4}->` | Variable depth (1-4) |\n\n### Examples\n\n```\n\"george washington\"                           # Discovery mode (default)\n@:collections \"columbia university\"           # Find collections\n@:collection(01JCOLL123) \"faculty meeting\"    # Within specific collection\n@:discover \"alice\" -[*]{,2}-> type:person     # Discover, then traverse\n@01KE4ZY... -[*]{,2}-> type:person            # From exact entity\n```\n\n\n---\n**Permission:** `query:execute`  \n**Auth:** required",
+        "description": "Execute an Argo DSL query for path-based graph traversal with relevance ranking.\n\n## When to Use This Endpoint\n\n| Endpoint | Use Case |\n|----------|----------|\n| `POST /query` | Semantic search + graph traversal with **relevance-ranked** results (default k=25) |\n| `POST /graph/reachable` | **Exhaustive** graph exploration from known entities (default limit=100) |\n| `POST /graph/paths` | Find all shortest paths between two entity sets |\n\nThis endpoint combines semantic similarity scores with path length to rank results. For exhaustive graph traversal without ranking, use the `/graph/*` endpoints directly.\n\n## Query Syntax\n\n```\n[SCOPE_PREFIX] ENTRY_POINT [ENTRY_FILTER] [-[RELATION]{DEPTH}-> TARGET_FILTER]...\n```\n\n## Scope Prefixes\n\nControl where semantic search looks for entry points. Default is discovery mode.\n\n| Prefix | Description | Example |\n|--------|-------------|---------|\n| (none) | **Discovery mode** (default) - find relevant collections, then search within each | `\"medical notes\"` |\n| `@:collections` | Search for collections themselves | `@:collections \"columbia archives\"` |\n| `@:collection(id)` | Search within a specific collection | `@:collection(01JCOLL123) \"meeting\"` |\n| `@:discover` | Explicit discovery mode | `@:discover \"research papers\"` |\n| `@:public` | Search public domain only | `@:public \"orphaned data\"` |\n\n**Note:** Graph traversal (hops) is always cross-collection regardless of scope.\n\n### Entry Points\n\n| Syntax | Description | Example |\n|--------|-------------|---------|\n| `\"text\"` | Semantic search | `\"george washington\"` |\n| `@id` | Exact entity ID | `@01KE4ZY69F9R40E88PK9S0TQRQ` |\n| `type:X` | All entities of type | `type:person` |\n| `type:X ~ \"text\"` | Semantic search within type | `type:person ~ \"physician\"` |\n\n### Edges (Hops)\n\n| Syntax | Direction |\n|--------|-----------|\n| `-[*]->` | Outgoing |\n| `<-[*]-` | Incoming |\n| `<-[*]->` | Both |\n| `-[*]{,4}->` | Variable depth (1-4) |\n\n### Examples\n\n```\n\"george washington\"                           # Discovery mode (default)\n@:collections \"columbia university\"           # Find collections\n@:collection(01JCOLL123) \"faculty meeting\"    # Within specific collection\n@:discover \"alice\" -[*]{,2}-> type:person     # Discover, then traverse\n@01KE4ZY... -[*]{,2}-> type:person            # From exact entity\n```\n\n## Entity Expansion\n\nControl how much entity data is included in results via the `expand` parameter.\n\n| Value | Description | Use Case |\n|-------|-------------|----------|\n| (omitted) | **Preview** (default) - lightweight preview data | Best balance of detail and payload size |\n| `preview` | Same as omitted - lightweight preview data | Explicit preview mode |\n| `full` | Complete entity manifest | When you need all properties, relationships, versions |\n| `none` | No expansion - Pinecone metadata only | Fastest response, smallest payload |\n\n**Preview mode** includes: label, truncated description/text (200 chars), created_at, updated_at.\n\n**Full mode** includes: all properties, relationships, version info, CID.\n\nBoth result entities and path step entities are expanded.\n\n\n---\n**Permission:** `query:execute`  \n**Auth:** required",
         "x-arke-action": "query:execute",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -13784,7 +14189,7 @@
           "Search"
         ],
         "summary": "Find similar collections",
-        "description": "Find collections that are semantically similar to a given collection.\n\nUses the collection's weighted centroid vector (combination of description and entity embeddings) to find related collections.\n\n---\n**Permission:** `search:similar`  \n**Auth:** required",
+        "description": "Find collections that are semantically similar to a given collection.\n\nUses the collection's weighted centroid vector (combination of description and entity embeddings) to find related collections.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:similar`  \n**Auth:** required",
         "x-arke-action": "search:similar",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -13814,6 +14219,16 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Force fresh query, bypassing cache"
+                  },
+                  "expand": {
+                    "type": "string",
+                    "enum": [
+                      "preview",
+                      "full",
+                      "none"
+                    ],
+                    "description": "Entity expansion mode. Default: \"preview\" for lightweight previews, \"full\" for complete manifests, \"none\" for no expansion.",
+                    "example": "preview"
                   }
                 },
                 "required": [
@@ -13850,6 +14265,34 @@
                           },
                           "updated_at": {
                             "type": "string"
+                          },
+                          "entity_preview": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/EntityPreview"
+                              },
+                              {
+                                "description": "Lightweight entity preview (included by default)",
+                                "example": {
+                                  "id": "01KCOLLECTION123456789ABCD",
+                                  "type": "collection",
+                                  "label": "Research Papers Collection",
+                                  "description_preview": "A curated collection of academic research papers...",
+                                  "created_at": "2026-01-10T00:00:00.000Z",
+                                  "updated_at": "2026-01-15T12:00:00.000Z"
+                                }
+                              }
+                            ]
+                          },
+                          "entity": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/EntityResponse"
+                              },
+                              {
+                                "description": "Full entity manifest (when expand: \"full\")"
+                              }
+                            ]
                           }
                         },
                         "required": [
@@ -13951,7 +14394,7 @@
           "Search"
         ],
         "summary": "Find similar items across collections",
-        "description": "Find entities that are semantically similar to a given entity, searching across multiple collections.\n\nThis performs a two-tier search:\n1. First finds collections similar to the entity's collection\n2. Then searches within each collection for similar items\n3. Aggregates and ranks results with diversity weighting\n\n---\n**Permission:** `search:similar`  \n**Auth:** required",
+        "description": "Find entities that are semantically similar to a given entity, searching across multiple collections.\n\nThis performs a two-tier search:\n1. First finds collections similar to the entity's collection\n2. Then searches within each collection for similar items\n3. Aggregates and ranks results with diversity weighting\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:similar`  \n**Auth:** required",
         "x-arke-action": "search:similar",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -14004,6 +14447,16 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Force fresh query, bypassing cache"
+                  },
+                  "expand": {
+                    "type": "string",
+                    "enum": [
+                      "preview",
+                      "full",
+                      "none"
+                    ],
+                    "description": "Entity expansion mode. Default: \"preview\" for lightweight previews, \"full\" for complete manifests, \"none\" for no expansion.",
+                    "example": "preview"
                   }
                 },
                 "required": [
@@ -14048,6 +14501,35 @@
                           },
                           "updated_at": {
                             "type": "string"
+                          },
+                          "entity_preview": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/EntityPreview"
+                              },
+                              {
+                                "description": "Lightweight entity preview (included by default)",
+                                "example": {
+                                  "id": "01KENTITY123456789ABCDEFGH",
+                                  "type": "document",
+                                  "label": "Similar Research Paper",
+                                  "collection_pi": "01JCOLLECTION123456789AB",
+                                  "description_preview": "Related findings on distributed systems...",
+                                  "created_at": "2026-01-08T00:00:00.000Z",
+                                  "updated_at": "2026-01-12T10:00:00.000Z"
+                                }
+                              }
+                            ]
+                          },
+                          "entity": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/EntityResponse"
+                              },
+                              {
+                                "description": "Full entity manifest (when expand: \"full\")"
+                              }
+                            ]
                           }
                         },
                         "required": [
@@ -14155,7 +14637,7 @@
           "Search"
         ],
         "summary": "Search collections by text",
-        "description": "Search for collections using semantic text search.\n\nUse this endpoint to discover collections about a topic. Results are ranked by semantic similarity to your query.\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
+        "description": "Search for collections using semantic text search.\n\nUse this endpoint to discover collections about a topic. Results are ranked by semantic similarity to your query.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
         "x-arke-action": "search:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -14189,6 +14671,16 @@
                       "type": "string"
                     },
                     "description": "Filter by collection types"
+                  },
+                  "expand": {
+                    "type": "string",
+                    "enum": [
+                      "preview",
+                      "full",
+                      "none"
+                    ],
+                    "description": "Entity expansion mode. Default: \"preview\" for lightweight previews, \"full\" for complete manifests, \"none\" for no expansion.",
+                    "example": "preview"
                   }
                 },
                 "required": [
@@ -14228,6 +14720,34 @@
                           },
                           "updated_at": {
                             "type": "string"
+                          },
+                          "entity_preview": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/EntityPreview"
+                              },
+                              {
+                                "description": "Lightweight entity preview (included by default)",
+                                "example": {
+                                  "id": "01KCOLLECTION123456789ABCD",
+                                  "type": "collection",
+                                  "label": "Machine Learning Papers",
+                                  "description_preview": "A collection of papers on neural networks and deep learning...",
+                                  "created_at": "2026-01-05T00:00:00.000Z",
+                                  "updated_at": "2026-01-10T08:00:00.000Z"
+                                }
+                              }
+                            ]
+                          },
+                          "entity": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/EntityResponse"
+                              },
+                              {
+                                "description": "Full entity manifest (when expand: \"full\")"
+                              }
+                            ]
                           }
                         },
                         "required": [
@@ -14311,7 +14831,7 @@
           "Search"
         ],
         "summary": "Search agents by text",
-        "description": "Search for agents using semantic text search.\n\nUse this endpoint to discover agents across the network. Only active agents are returned. Results are ranked by semantic similarity to your query based on agent descriptions and capabilities.\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
+        "description": "Search for agents using semantic text search.\n\nUse this endpoint to discover agents across the network. Only active agents are returned. Results are ranked by semantic similarity to your query based on agent descriptions and capabilities.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
         "x-arke-action": "search:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -14338,6 +14858,16 @@
                     "maximum": 100,
                     "default": 10,
                     "description": "Maximum results to return"
+                  },
+                  "expand": {
+                    "type": "string",
+                    "enum": [
+                      "preview",
+                      "full",
+                      "none"
+                    ],
+                    "description": "Entity expansion mode. Default: \"preview\" for lightweight previews, \"full\" for complete manifests, \"none\" for no expansion.",
+                    "example": "preview"
                   }
                 },
                 "required": [
@@ -14381,6 +14911,35 @@
                           },
                           "updated_at": {
                             "type": "string"
+                          },
+                          "entity_preview": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/EntityPreview"
+                              },
+                              {
+                                "description": "Lightweight entity preview (included by default)",
+                                "example": {
+                                  "id": "01KAGENT123456789ABCDEFGHI",
+                                  "type": "agent",
+                                  "label": "Document Analyzer Agent",
+                                  "collection_pi": "01JCOLLECTION123456789AB",
+                                  "description_preview": "An AI agent that analyzes documents and extracts key insights...",
+                                  "created_at": "2026-01-01T00:00:00.000Z",
+                                  "updated_at": "2026-01-15T16:00:00.000Z"
+                                }
+                              }
+                            ]
+                          },
+                          "entity": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/EntityResponse"
+                              },
+                              {
+                                "description": "Full entity manifest (when expand: \"full\")"
+                              }
+                            ]
                           }
                         },
                         "required": [
@@ -14464,7 +15023,7 @@
           "Search"
         ],
         "summary": "Search entities within collection(s)",
-        "description": "Search for entities within one or more collections using semantic text search.\n\nProvide either `collection_pi` for a single collection or `collection_pis` for multiple collections (searched in parallel).\n\nUse `per_collection_limit` to ensure result diversity when searching multiple collections.\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
+        "description": "Search for entities within one or more collections using semantic text search.\n\nProvide either `collection_pi` for a single collection or `collection_pis` for multiple collections (searched in parallel).\n\nUse `per_collection_limit` to ensure result diversity when searching multiple collections.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
         "x-arke-action": "search:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -14516,6 +15075,16 @@
                     "minimum": 1,
                     "maximum": 50,
                     "description": "Max results per collection for diversity"
+                  },
+                  "expand": {
+                    "type": "string",
+                    "enum": [
+                      "preview",
+                      "full",
+                      "none"
+                    ],
+                    "description": "Entity expansion mode. Default: \"preview\" for lightweight previews, \"full\" for complete manifests, \"none\" for no expansion.",
+                    "example": "preview"
                   }
                 },
                 "required": [
@@ -14558,6 +15127,35 @@
                           },
                           "updated_at": {
                             "type": "string"
+                          },
+                          "entity_preview": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/EntityPreview"
+                              },
+                              {
+                                "description": "Lightweight entity preview (included by default)",
+                                "example": {
+                                  "id": "01KENTITY123456789ABCDEFGH",
+                                  "type": "document",
+                                  "label": "Research Findings Report",
+                                  "collection_pi": "01JCOLLECTION123456789AB",
+                                  "description_preview": "Detailed analysis of experimental results...",
+                                  "created_at": "2026-01-10T00:00:00.000Z",
+                                  "updated_at": "2026-01-14T09:00:00.000Z"
+                                }
+                              }
+                            ]
+                          },
+                          "entity": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/EntityResponse"
+                              },
+                              {
+                                "description": "Full entity manifest (when expand: \"full\")"
+                              }
+                            ]
                           }
                         },
                         "required": [
@@ -14653,7 +15251,7 @@
           "Search"
         ],
         "summary": "Discover entities across all collections",
-        "description": "Two-step discovery search: first finds relevant collections, then searches within them.\n\nUse this endpoint when you don't know which collections to search. The system will:\n1. Find collections semantically related to your query\n2. Search within each collection in parallel\n3. Aggregate and rank results across all collections\n\nGreat for exploration and AI agents navigating the network.\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
+        "description": "Two-step discovery search: first finds relevant collections, then searches within them.\n\nUse this endpoint when you don't know which collections to search. The system will:\n1. Find collections semantically related to your query\n2. Search within each collection in parallel\n3. Aggregate and rank results across all collections\n\nGreat for exploration and AI agents navigating the network.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
         "x-arke-action": "search:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -14701,6 +15299,16 @@
                     "maximum": 20,
                     "default": 5,
                     "description": "Max results per collection"
+                  },
+                  "expand": {
+                    "type": "string",
+                    "enum": [
+                      "preview",
+                      "full",
+                      "none"
+                    ],
+                    "description": "Entity expansion mode. Default: \"preview\" for lightweight previews, \"full\" for complete manifests, \"none\" for no expansion.",
+                    "example": "preview"
                   }
                 },
                 "required": [
@@ -14743,6 +15351,35 @@
                           },
                           "updated_at": {
                             "type": "string"
+                          },
+                          "entity_preview": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/EntityPreview"
+                              },
+                              {
+                                "description": "Lightweight entity preview (included by default)",
+                                "example": {
+                                  "id": "01KENTITY123456789ABCDEFGH",
+                                  "type": "file",
+                                  "label": "Discovered Document.pdf",
+                                  "collection_pi": "01JCOLLECTION123456789AB",
+                                  "description_preview": "A document discovered through semantic search...",
+                                  "created_at": "2026-01-08T00:00:00.000Z",
+                                  "updated_at": "2026-01-12T14:00:00.000Z"
+                                }
+                              }
+                            ]
+                          },
+                          "entity": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/EntityResponse"
+                              },
+                              {
+                                "description": "Full entity manifest (when expand: \"full\")"
+                              }
+                            ]
                           }
                         },
                         "required": [

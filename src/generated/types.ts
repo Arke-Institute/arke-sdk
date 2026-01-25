@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-01-24T04:38:00.909Z
+ * Generated: 2026-01-25T03:52:16.348Z
  */
 
 export type paths = {
@@ -708,6 +708,17 @@ export type paths = {
          *     ## Scoring
          *     - Results use cosine similarity scores (0-1)
          *     - Scores are comparable across collections
+         *
+         *     ## Entity Expansion
+         *
+         *     Use `expand` in the request body to fetch entity data inline with search results:
+         *
+         *     - **`expand: "preview"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)
+         *     - **`expand: "full"`**: Adds `entity` with complete manifest including all properties and relationships
+         *     - **`expand: "none"`**: Returns search metadata only (fastest, lowest bandwidth)
+         *
+         *     Preview mode is recommended for most use cases. Full expansion can result in large payloads.
+         *     Gracefully handles deleted or inaccessible entities (returns results without expansion data).
          *
          *
          *     ---
@@ -1849,6 +1860,18 @@ export type paths = {
          *
          *     Supports pagination and optional type filtering. Results are ordered by creation date (newest first).
          *
+         *     **Expansion Modes:**
+         *
+         *     By default, returns lightweight summaries from GraphDB (pi, type, label, timestamps).
+         *
+         *     Use the `expand` parameter to hydrate entity data from storage:
+         *
+         *     - **`?expand=preview`**: Adds `preview` field with fresh lightweight data (label, truncated description/text, timestamps). ~5-10KB per entity.
+         *
+         *     - **`?expand=full`**: Adds `entity` field with complete manifest (all properties, relationships, version history). ~20-50KB per entity.
+         *
+         *     **Performance Note:** Expansion requires fetching each entity from storage. Limited to 100 entities per request. Use smaller `limit` values when expanding.
+         *
          *     ---
          *     **Permission:** `collection:view`
          *     **Auth:** optional
@@ -1859,6 +1882,7 @@ export type paths = {
                     type?: string;
                     limit?: number;
                     offset?: number | null;
+                    expand?: "preview" | "full";
                 };
                 header?: never;
                 path: {
@@ -6752,13 +6776,28 @@ export type paths = {
          *
          *     Use this when you know both endpoints and want to discover how they connect - for example, finding the chain of relationships between a person and a document.
          *
+         *     **Entity Expansion (default: preview):**
+         *     - Omit `expand` or use `?expand=preview` - Lightweight previews for all path entities
+         *     - `?expand=full` - Complete entity manifests (use with caution)
+         *     - `?expand=none` - Disable expansion (graph metadata only)
+         *
+         *     **Performance Warning:** 100 paths can reference 400-800 unique entities, adding 5-10s latency with expansion.
+         *
+         *     **Recommendations:**
+         *     - Use `limit: 10-20` when using expansion
+         *     - Prefer preview over full
+         *     - Use `expand=none` for large result sets, then fetch specific entities separately
+         *
          *     ---
          *     **Permission:** `graph:query`
          *     **Auth:** required
          */
         post: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Entity expansion mode. Omit for preview (default), "full" for complete manifests, "none" to disable */
+                    expand?: "preview" | "full" | "none";
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -6826,13 +6865,23 @@ export type paths = {
          *
          *     **When to use this vs POST /query:** This endpoint returns exhaustive, unranked results - all reachable entities up to the limit. Use `POST /query` when you want relevance-ranked results combining semantic similarity with graph structure. Use this endpoint when you need comprehensive graph exploration from known entity IDs.
          *
+         *     **Target Expansion (default: preview):**
+         *     - Omit `expand` or use `?expand=preview` - Lightweight target previews
+         *     - `?expand=full` - Complete target manifests
+         *     - `?expand=none` - Disable expansion (graph metadata only)
+         *
+         *     **Performance:** With 100 targets, expansion adds ~1s.
+         *
          *     ---
          *     **Permission:** `graph:query`
          *     **Auth:** required
          */
         post: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Entity expansion mode. Omit for preview (default), "full" for complete manifests, "none" to disable */
+                    expand?: "preview" | "full" | "none";
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -6896,13 +6945,23 @@ export type paths = {
          * Get entity from graph
          * @description Get entity details with all relationships from the graph database. Unlike the entity manifest, this includes both outgoing and incoming relationships - showing not just what this entity links to, but also what links to it.
          *
+         *     **Peer Expansion (default: preview):**
+         *     - Omit `expand` or use `?expand=preview` - Lightweight peer previews
+         *     - `?expand=full` - Complete peer manifests
+         *     - `?expand=none` - Disable expansion (graph metadata only)
+         *
+         *     **Performance:** With 50 peers, expansion adds ~500ms.
+         *
          *     ---
          *     **Permission:** `graph:query`
          *     **Auth:** required
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Entity expansion mode. Omit for preview (default), "full" for complete manifests, "none" to disable */
+                    expand?: "preview" | "full" | "none";
+                };
                 header?: never;
                 path: {
                     /** @description Entity ID (ULID) */
@@ -7016,6 +7075,23 @@ export type paths = {
          *     @01KE4ZY... -[*]{,2}-> type:person            # From exact entity
          *     ```
          *
+         *     ## Entity Expansion
+         *
+         *     Control how much entity data is included in results via the `expand` parameter.
+         *
+         *     | Value | Description | Use Case |
+         *     |-------|-------------|----------|
+         *     | (omitted) | **Preview** (default) - lightweight preview data | Best balance of detail and payload size |
+         *     | `preview` | Same as omitted - lightweight preview data | Explicit preview mode |
+         *     | `full` | Complete entity manifest | When you need all properties, relationships, versions |
+         *     | `none` | No expansion - Pinecone metadata only | Fastest response, smallest payload |
+         *
+         *     **Preview mode** includes: label, truncated description/text (200 chars), created_at, updated_at.
+         *
+         *     **Full mode** includes: all properties, relationships, version info, CID.
+         *
+         *     Both result entities and path step entities are expanded.
+         *
          *
          *     ---
          *     **Permission:** `query:execute`
@@ -7091,6 +7167,17 @@ export type paths = {
          *
          *     Uses the collection's weighted centroid vector (combination of description and entity embeddings) to find related collections.
          *
+         *     **Entity Expansion:**
+         *
+         *     Use `expand` in the request body to fetch entity data inline with search results:
+         *
+         *     - **`expand: "preview"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)
+         *     - **`expand: "full"`**: Adds `entity` with complete manifest including all properties and relationships
+         *     - **`expand: "none"`**: Returns search metadata only (fastest, lowest bandwidth)
+         *
+         *     Preview mode is recommended for most use cases. Full expansion can result in large payloads.
+         *     Gracefully handles deleted or inaccessible entities (returns results without expansion data).
+         *
          *     ---
          *     **Permission:** `search:similar`
          *     **Auth:** required
@@ -7117,6 +7204,12 @@ export type paths = {
                          * @default false
                          */
                         refresh?: boolean;
+                        /**
+                         * @description Entity expansion mode. Default: "preview" for lightweight previews, "full" for complete manifests, "none" for no expansion.
+                         * @example preview
+                         * @enum {string}
+                         */
+                        expand?: "preview" | "full" | "none";
                     };
                 };
             };
@@ -7134,6 +7227,8 @@ export type paths = {
                                 score: number;
                                 created_at?: string;
                                 updated_at?: string;
+                                entity_preview?: components["schemas"]["EntityPreview"] & unknown;
+                                entity?: components["schemas"]["EntityResponse"] & unknown;
                             }[];
                             metadata: {
                                 source_pi: string;
@@ -7226,6 +7321,17 @@ export type paths = {
          *     2. Then searches within each collection for similar items
          *     3. Aggregates and ranks results with diversity weighting
          *
+         *     **Entity Expansion:**
+         *
+         *     Use `expand` in the request body to fetch entity data inline with search results:
+         *
+         *     - **`expand: "preview"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)
+         *     - **`expand: "full"`**: Adds `entity` with complete manifest including all properties and relationships
+         *     - **`expand: "none"`**: Returns search metadata only (fastest, lowest bandwidth)
+         *
+         *     Preview mode is recommended for most use cases. Full expansion can result in large payloads.
+         *     Gracefully handles deleted or inaccessible entities (returns results without expansion data).
+         *
          *     ---
          *     **Permission:** `search:similar`
          *     **Auth:** required
@@ -7269,6 +7375,12 @@ export type paths = {
                          * @default false
                          */
                         refresh?: boolean;
+                        /**
+                         * @description Entity expansion mode. Default: "preview" for lightweight previews, "full" for complete manifests, "none" for no expansion.
+                         * @example preview
+                         * @enum {string}
+                         */
+                        expand?: "preview" | "full" | "none";
                     };
                 };
             };
@@ -7288,6 +7400,8 @@ export type paths = {
                                 score: number;
                                 created_at?: string;
                                 updated_at?: string;
+                                entity_preview?: components["schemas"]["EntityPreview"] & unknown;
+                                entity?: components["schemas"]["EntityResponse"] & unknown;
                             }[];
                             metadata: {
                                 source_pi: string;
@@ -7378,6 +7492,17 @@ export type paths = {
          *
          *     Use this endpoint to discover collections about a topic. Results are ranked by semantic similarity to your query.
          *
+         *     **Entity Expansion:**
+         *
+         *     Use `expand` in the request body to fetch entity data inline with search results:
+         *
+         *     - **`expand: "preview"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)
+         *     - **`expand: "full"`**: Adds `entity` with complete manifest including all properties and relationships
+         *     - **`expand: "none"`**: Returns search metadata only (fastest, lowest bandwidth)
+         *
+         *     Preview mode is recommended for most use cases. Full expansion can result in large payloads.
+         *     Gracefully handles deleted or inaccessible entities (returns results without expansion data).
+         *
          *     ---
          *     **Permission:** `search:query`
          *     **Auth:** required
@@ -7401,6 +7526,12 @@ export type paths = {
                         limit?: number;
                         /** @description Filter by collection types */
                         types?: string[];
+                        /**
+                         * @description Entity expansion mode. Default: "preview" for lightweight previews, "full" for complete manifests, "none" for no expansion.
+                         * @example preview
+                         * @enum {string}
+                         */
+                        expand?: "preview" | "full" | "none";
                     };
                 };
             };
@@ -7419,6 +7550,8 @@ export type paths = {
                                 score: number;
                                 created_at?: string;
                                 updated_at?: string;
+                                entity_preview?: components["schemas"]["EntityPreview"] & unknown;
+                                entity?: components["schemas"]["EntityResponse"] & unknown;
                             }[];
                             metadata: {
                                 query: string;
@@ -7492,6 +7625,17 @@ export type paths = {
          *
          *     Use this endpoint to discover agents across the network. Only active agents are returned. Results are ranked by semantic similarity to your query based on agent descriptions and capabilities.
          *
+         *     **Entity Expansion:**
+         *
+         *     Use `expand` in the request body to fetch entity data inline with search results:
+         *
+         *     - **`expand: "preview"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)
+         *     - **`expand: "full"`**: Adds `entity` with complete manifest including all properties and relationships
+         *     - **`expand: "none"`**: Returns search metadata only (fastest, lowest bandwidth)
+         *
+         *     Preview mode is recommended for most use cases. Full expansion can result in large payloads.
+         *     Gracefully handles deleted or inaccessible entities (returns results without expansion data).
+         *
          *     ---
          *     **Permission:** `search:query`
          *     **Auth:** required
@@ -7513,6 +7657,12 @@ export type paths = {
                          * @default 10
                          */
                         limit?: number;
+                        /**
+                         * @description Entity expansion mode. Default: "preview" for lightweight previews, "full" for complete manifests, "none" for no expansion.
+                         * @example preview
+                         * @enum {string}
+                         */
+                        expand?: "preview" | "full" | "none";
                     };
                 };
             };
@@ -7532,6 +7682,8 @@ export type paths = {
                                 status?: string;
                                 created_at?: string;
                                 updated_at?: string;
+                                entity_preview?: components["schemas"]["EntityPreview"] & unknown;
+                                entity?: components["schemas"]["EntityResponse"] & unknown;
                             }[];
                             metadata: {
                                 query: string;
@@ -7607,6 +7759,17 @@ export type paths = {
          *
          *     Use `per_collection_limit` to ensure result diversity when searching multiple collections.
          *
+         *     **Entity Expansion:**
+         *
+         *     Use `expand` in the request body to fetch entity data inline with search results:
+         *
+         *     - **`expand: "preview"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)
+         *     - **`expand: "full"`**: Adds `entity` with complete manifest including all properties and relationships
+         *     - **`expand: "none"`**: Returns search metadata only (fastest, lowest bandwidth)
+         *
+         *     Preview mode is recommended for most use cases. Full expansion can result in large payloads.
+         *     Gracefully handles deleted or inaccessible entities (returns results without expansion data).
+         *
          *     ---
          *     **Permission:** `search:query`
          *     **Auth:** required
@@ -7636,6 +7799,12 @@ export type paths = {
                         types?: string[];
                         /** @description Max results per collection for diversity */
                         per_collection_limit?: number;
+                        /**
+                         * @description Entity expansion mode. Default: "preview" for lightweight previews, "full" for complete manifests, "none" for no expansion.
+                         * @example preview
+                         * @enum {string}
+                         */
+                        expand?: "preview" | "full" | "none";
                     };
                 };
             };
@@ -7655,6 +7824,8 @@ export type paths = {
                                 collection_pi: string;
                                 created_at?: string;
                                 updated_at?: string;
+                                entity_preview?: components["schemas"]["EntityPreview"] & unknown;
+                                entity?: components["schemas"]["EntityResponse"] & unknown;
                             }[];
                             metadata: {
                                 collection_pis: string[];
@@ -7735,6 +7906,17 @@ export type paths = {
          *
          *     Great for exploration and AI agents navigating the network.
          *
+         *     **Entity Expansion:**
+         *
+         *     Use `expand` in the request body to fetch entity data inline with search results:
+         *
+         *     - **`expand: "preview"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)
+         *     - **`expand: "full"`**: Adds `entity` with complete manifest including all properties and relationships
+         *     - **`expand: "none"`**: Returns search metadata only (fastest, lowest bandwidth)
+         *
+         *     Preview mode is recommended for most use cases. Full expansion can result in large payloads.
+         *     Gracefully handles deleted or inaccessible entities (returns results without expansion data).
+         *
          *     ---
          *     **Permission:** `search:query`
          *     **Auth:** required
@@ -7768,6 +7950,12 @@ export type paths = {
                          * @default 5
                          */
                         per_collection_limit?: number;
+                        /**
+                         * @description Entity expansion mode. Default: "preview" for lightweight previews, "full" for complete manifests, "none" for no expansion.
+                         * @example preview
+                         * @enum {string}
+                         */
+                        expand?: "preview" | "full" | "none";
                     };
                 };
             };
@@ -7787,6 +7975,8 @@ export type paths = {
                                 collection_pi: string;
                                 created_at?: string;
                                 updated_at?: string;
+                                entity_preview?: components["schemas"]["EntityPreview"] & unknown;
+                                entity?: components["schemas"]["EntityResponse"] & unknown;
                             }[];
                             metadata: {
                                 query: string;
@@ -8671,6 +8861,60 @@ export type components = {
                 has_more: boolean;
             };
         };
+        /**
+         * @description Lightweight entity preview with fresh data. Included by default (expand: "preview").
+         * @example {
+         *       "id": "01KDETYWYWM0MJVKM8DK3AEXPY",
+         *       "type": "file",
+         *       "label": "Research Paper.pdf",
+         *       "collection_pi": "01JCOLLECTION123456789AB",
+         *       "description_preview": "A comprehensive study on distributed systems architecture...",
+         *       "created_at": "2026-01-12T00:00:00.000Z",
+         *       "updated_at": "2026-01-12T10:30:00.000Z"
+         *     }
+         */
+        EntityPreview: {
+            /**
+             * @description Entity ID (persistent identifier)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            id: string;
+            /**
+             * @description Entity type
+             * @example document
+             */
+            type: string;
+            /**
+             * @description Entity label (from properties.label, filename, or name)
+             * @example Research Paper.pdf
+             */
+            label: string;
+            /**
+             * @description Collection ID this entity belongs to
+             * @example 01JCOLLECTION123456789ABCD
+             */
+            collection_pi?: string;
+            /**
+             * @description Truncated description (max 200 chars + "...")
+             * @example This document contains research findings from the 2025 study on entity management systems. It covers key architectural decisions and performance benchmarks...
+             */
+            description_preview?: string;
+            /**
+             * @description Truncated text content (max 200 chars + "...")
+             * @example Introduction: The rise of decentralized entity management systems has created new challenges for data integrity and consistency. This paper explores...
+             */
+            text_preview?: string;
+            /**
+             * @description Entity creation timestamp (ISO 8601)
+             * @example 2025-01-15T10:00:00.000Z
+             */
+            created_at: string;
+            /**
+             * @description Last update timestamp (ISO 8601)
+             * @example 2025-01-20T14:30:00.000Z
+             */
+            updated_at: string;
+        };
         SearchResultItem: {
             /**
              * @description Entity persistent identifier
@@ -8707,6 +8951,8 @@ export type components = {
              * @example 2026-01-12T10:30:00.000Z
              */
             updated_at?: string;
+            entity_preview?: components["schemas"]["EntityPreview"];
+            entity?: components["schemas"]["EntityResponse"] & unknown;
         };
         /** @description Search metadata and statistics */
         SearchMetadata: {
@@ -8757,6 +9003,12 @@ export type components = {
              * @example 50
              */
             limit: number;
+            /**
+             * @description Entity expansion mode. Default: "preview" for lightweight previews, "full" for complete manifests, "none" for no expansion.
+             * @example preview
+             * @enum {string}
+             */
+            expand?: "preview" | "full" | "none";
         };
         CollectionResponse: components["schemas"]["EntityResponse"] & {
             /** @enum {string} */
@@ -9130,7 +9382,7 @@ export type components = {
              */
             type: string;
             /**
-             * @description Entity display label
+             * @description Entity display label (from GraphDB, may be stale)
              * @example My Document
              */
             label: string;
@@ -9141,9 +9393,11 @@ export type components = {
             created_at: string;
             /**
              * Format: date-time
-             * @description When the entity was last updated
+             * @description When the entity was last updated (from GraphDB)
              */
             updated_at: string;
+            preview?: components["schemas"]["EntityPreview"] & unknown;
+            entity?: components["schemas"]["EntityResponse"] & unknown;
         };
         CollectionEntitiesResponse: {
             /** @description Collection ID */
@@ -9269,48 +9523,6 @@ export type components = {
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
             collection?: string;
-        };
-        EntityPreview: {
-            /**
-             * @description Entity ID (persistent identifier)
-             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-             */
-            id: string;
-            /**
-             * @description Entity type
-             * @example document
-             */
-            type: string;
-            /**
-             * @description Entity label (from properties.label, filename, or name)
-             * @example Research Paper.pdf
-             */
-            label: string;
-            /**
-             * @description Collection ID this entity belongs to
-             * @example 01JCOLLECTION123456789ABCD
-             */
-            collection_pi?: string;
-            /**
-             * @description Truncated description (max 200 chars + "...")
-             * @example This document contains research findings from the 2025 study on entity management systems. It covers key architectural decisions and performance benchmarks...
-             */
-            description_preview?: string;
-            /**
-             * @description Truncated text content (max 200 chars + "...")
-             * @example Introduction: The rise of decentralized entity management systems has created new challenges for data integrity and consistency. This paper explores...
-             */
-            text_preview?: string;
-            /**
-             * @description Entity creation timestamp (ISO 8601)
-             * @example 2025-01-15T10:00:00.000Z
-             */
-            created_at: string;
-            /**
-             * @description Last update timestamp (ISO 8601)
-             * @example 2025-01-20T14:30:00.000Z
-             */
-            updated_at: string;
         };
         TipResponse: {
             /**
@@ -11294,6 +11506,35 @@ export type components = {
              */
             cursor: number;
         };
+        /**
+         * @example {
+         *       "subject_pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+         *       "subject_label": "Project Folder",
+         *       "subject_type": "folder",
+         *       "subject_preview": {
+         *         "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
+         *         "type": "folder",
+         *         "label": "Project Folder",
+         *         "collection_pi": "01JCOLLECTION123456789ABCD",
+         *         "description_preview": "Main project folder containing research documents...",
+         *         "created_at": "2025-01-10T08:00:00.000Z",
+         *         "updated_at": "2025-01-18T16:45:00.000Z"
+         *       },
+         *       "predicate": "contains",
+         *       "object_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+         *       "object_label": "Research Paper.pdf",
+         *       "object_type": "file",
+         *       "object_preview": {
+         *         "id": "01KE506KZGD8M2P1XK3VNQT4YR",
+         *         "type": "file",
+         *         "label": "Research Paper.pdf",
+         *         "collection_pi": "01JCOLLECTION123456789ABCD",
+         *         "description_preview": "Analysis of entity management patterns and best practices...",
+         *         "created_at": "2025-01-15T10:00:00.000Z",
+         *         "updated_at": "2025-01-20T14:30:00.000Z"
+         *       }
+         *     }
+         */
         PathEdge: {
             /**
              * @description Source entity PI
@@ -11304,6 +11545,8 @@ export type components = {
             subject_label: string;
             /** @description Source entity type */
             subject_type: string;
+            subject_preview?: components["schemas"]["EntityPreview"] & unknown;
+            subject_entity?: components["schemas"]["EntityResponse"] & unknown;
             /** @description Relationship predicate */
             predicate: string;
             /**
@@ -11315,6 +11558,8 @@ export type components = {
             object_label: string;
             /** @description Target entity type */
             object_type: string;
+            object_preview?: components["schemas"]["EntityPreview"] & unknown;
+            object_entity?: components["schemas"]["EntityResponse"] & unknown;
         };
         PathResult: {
             /**
@@ -11371,6 +11616,25 @@ export type components = {
              */
             limit: number;
         };
+        /**
+         * @example {
+         *       "source_pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+         *       "target_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+         *       "target_label": "Research Paper.pdf",
+         *       "target_type": "file",
+         *       "length": 1,
+         *       "edges": [],
+         *       "target_preview": {
+         *         "id": "01KE506KZGD8M2P1XK3VNQT4YR",
+         *         "type": "file",
+         *         "label": "Research Paper.pdf",
+         *         "collection_pi": "01JCOLLECTION123456789ABCD",
+         *         "description_preview": "Analysis of entity management patterns and best practices...",
+         *         "created_at": "2025-01-15T10:00:00.000Z",
+         *         "updated_at": "2025-01-20T14:30:00.000Z"
+         *       }
+         *     }
+         */
         ReachableResult: {
             /**
              * @description Entity ID (ULID format)
@@ -11387,6 +11651,8 @@ export type components = {
             /** @description Path length (number of hops) */
             length: number;
             edges: components["schemas"]["PathEdge"][];
+            target_preview?: components["schemas"]["EntityPreview"] & unknown;
+            target_entity?: components["schemas"]["EntityResponse"] & unknown;
         };
         PathsReachableResponse: {
             results: components["schemas"]["ReachableResult"][];
@@ -11426,6 +11692,25 @@ export type components = {
              */
             limit: number;
         };
+        /**
+         * @example {
+         *       "direction": "outgoing",
+         *       "predicate": "contains",
+         *       "peer_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+         *       "peer_type": "file",
+         *       "peer_label": "Research Paper.pdf",
+         *       "properties": {},
+         *       "peer_preview": {
+         *         "id": "01KE506KZGD8M2P1XK3VNQT4YR",
+         *         "type": "file",
+         *         "label": "Research Paper.pdf",
+         *         "collection_pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+         *         "description_preview": "Analysis of entity management patterns and best practices...",
+         *         "created_at": "2025-01-15T10:00:00.000Z",
+         *         "updated_at": "2025-01-20T14:30:00.000Z"
+         *       }
+         *     }
+         */
         RelationshipInfo: {
             /** @enum {string} */
             direction: "outgoing" | "incoming";
@@ -11440,7 +11725,38 @@ export type components = {
             properties: {
                 [key: string]: unknown;
             };
+            peer_preview?: components["schemas"]["EntityPreview"] & unknown;
+            peer_entity?: components["schemas"]["EntityResponse"] & unknown;
         };
+        /**
+         * @example {
+         *       "pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+         *       "type": "folder",
+         *       "label": "Project Folder",
+         *       "collection_pi": "01JCOLLECTION123456789ABCD",
+         *       "created_at": "2025-01-10T08:00:00.000Z",
+         *       "updated_at": "2025-01-18T16:45:00.000Z",
+         *       "relationships": [
+         *         {
+         *           "direction": "outgoing",
+         *           "predicate": "contains",
+         *           "peer_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+         *           "peer_type": "file",
+         *           "peer_label": "Research Paper.pdf",
+         *           "properties": {},
+         *           "peer_preview": {
+         *             "id": "01KE506KZGD8M2P1XK3VNQT4YR",
+         *             "type": "file",
+         *             "label": "Research Paper.pdf",
+         *             "collection_pi": "01JCOLLECTION123456789ABCD",
+         *             "description_preview": "Analysis of entity management patterns and best practices...",
+         *             "created_at": "2025-01-15T10:00:00.000Z",
+         *             "updated_at": "2025-01-20T14:30:00.000Z"
+         *           }
+         *         }
+         *       ]
+         *     }
+         */
         GraphEntityResponse: {
             /**
              * @description Entity ID (ULID format)
@@ -11456,34 +11772,30 @@ export type components = {
             updated_at: string;
             relationships: components["schemas"]["RelationshipInfo"][];
         };
-        QueryEntity: {
-            /**
-             * @description Entity ID (ULID format)
-             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-             */
-            pi: string;
-            type: string;
-            label: string;
-            collection_pi: string | null;
-        };
-        EntityStep: {
-            entity: string;
-            label?: string;
-            type?: string;
-            score?: number;
-        };
         EdgeStep: {
             edge: string;
             /** @enum {string} */
             direction: "outgoing" | "incoming";
             score?: number;
         };
-        PathStep: components["schemas"]["EntityStep"] | components["schemas"]["EdgeStep"];
-        QueryResultItem: {
-            entity: components["schemas"]["QueryEntity"];
-            path: components["schemas"]["PathStep"][];
-            score: number;
-        };
+        PathStep: {
+            /**
+             * @description Entity ID
+             * @example 01KPERSON_EINSTEIN
+             */
+            entity: string;
+            /** @example Albert Einstein */
+            label?: string;
+            /** @example person */
+            type?: string;
+            /**
+             * @description Semantic similarity score (0-1)
+             * @example 0.92
+             */
+            score?: number;
+            preview_data?: components["schemas"]["EntityPreview"] & unknown;
+            full_entity?: components["schemas"]["EntityResponse"] & unknown;
+        } | components["schemas"]["EdgeStep"];
         QueryMetadata: {
             query: string;
             hops: number;
@@ -11498,7 +11810,48 @@ export type components = {
             stopped_at_hop?: number;
         };
         QueryResponse: {
-            results: components["schemas"]["QueryResultItem"][];
+            results: {
+                /**
+                 * @description Query result entity with optional expansion data
+                 * @example {
+                 *       "pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+                 *       "type": "person",
+                 *       "label": "Albert Einstein",
+                 *       "collection_pi": "01JCOLL_RESEARCH",
+                 *       "preview_data": {
+                 *         "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
+                 *         "type": "person",
+                 *         "label": "Albert Einstein",
+                 *         "collection_pi": "01JCOLL_RESEARCH",
+                 *         "description_preview": "German-born theoretical physicist who developed the theory of relativity...",
+                 *         "created_at": "2025-01-15T10:00:00.000Z",
+                 *         "updated_at": "2025-01-20T14:30:00.000Z"
+                 *       }
+                 *     }
+                 */
+                entity: {
+                    /**
+                     * @description Entity ID (ULID format)
+                     * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                     */
+                    pi: string;
+                    /** @example person */
+                    type: string;
+                    /** @example Albert Einstein */
+                    label: string;
+                    /** @example 01JCOLL_RESEARCH */
+                    collection_pi: string | null;
+                    preview_data?: components["schemas"]["EntityPreview"] & unknown;
+                    full_entity?: components["schemas"]["EntityResponse"] & unknown;
+                };
+                /** @description Path from entry point to result entity (empty for zero-hop queries) */
+                path: components["schemas"]["PathStep"][];
+                /**
+                 * @description Combined relevance score (semantic similarity + path length)
+                 * @example 0.89
+                 */
+                score: number;
+            }[];
             metadata: components["schemas"]["QueryMetadata"];
         };
         QueryRequest: {
@@ -11523,6 +11876,15 @@ export type components = {
              * @example 01JCOLL_MEDICAL
              */
             collection?: string;
+            /**
+             * @description Control entity expansion in results and path steps.
+             *     - **omitted/preview** (default): Attach lightweight preview data (label, timestamps, truncated description/text)
+             *     - **full**: Attach complete entity manifest (all properties, relationships, version info)
+             *     - **none**: No expansion - return only Pinecone metadata (fastest, smallest payload)
+             * @example preview
+             * @enum {string}
+             */
+            expand?: "none" | "preview" | "full";
         };
         TextPart: {
             /** @enum {string} */
