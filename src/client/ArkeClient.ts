@@ -5,8 +5,9 @@
  */
 
 import createClient, { type Client } from 'openapi-fetch';
-import type { paths } from '../generated/types.js';
+import type { paths, components } from '../generated/types.js';
 import { ArkeClientConfig, DEFAULT_CONFIG } from './config.js';
+import { createRetryFetch } from './retry.js';
 
 export type ArkeApiClient = Client<paths>;
 
@@ -88,9 +89,16 @@ export class ArkeClient {
       headers['X-Arke-Network'] = 'test';
     }
 
+    // Create retry-enabled fetch if retry config is not explicitly disabled
+    const customFetch =
+      this.config.retry === false
+        ? undefined
+        : createRetryFetch(this.config.retry ?? {});
+
     return createClient<paths>({
       baseUrl: this.config.baseUrl ?? DEFAULT_CONFIG.baseUrl,
       headers,
+      ...(customFetch && { fetch: customFetch }),
     });
   }
 
@@ -205,6 +213,59 @@ export class ArkeClient {
     });
     return { data: data as ReadableStream<Uint8Array> | null | undefined, error };
   }
+
+  /**
+   * Upload file content
+   *
+   * This is a convenience method that handles the binary body serialization
+   * that openapi-fetch doesn't handle automatically for non-JSON bodies.
+   *
+   * @example
+   * ```typescript
+   * // Upload from a Blob
+   * const blob = new Blob(['Hello, world!'], { type: 'text/plain' });
+   * const { data, error } = await arke.uploadFileContent('01ABC...', blob, 'text/plain');
+   *
+   * // Upload from an ArrayBuffer
+   * const buffer = new TextEncoder().encode('Hello, world!').buffer;
+   * const { data, error } = await arke.uploadFileContent('01ABC...', buffer, 'text/plain');
+   *
+   * // Upload from a Uint8Array
+   * const bytes = new TextEncoder().encode('Hello, world!');
+   * const { data, error } = await arke.uploadFileContent('01ABC...', bytes, 'text/plain');
+   * ```
+   */
+  async uploadFileContent(
+    fileId: string,
+    content: Blob | ArrayBuffer | Uint8Array,
+    contentType: string
+  ): Promise<{
+    data: components['schemas']['UploadContentResponse'] | undefined;
+    error: unknown;
+  }> {
+    // Convert to Blob if needed
+    let body: Blob;
+    if (content instanceof Blob) {
+      body = content;
+    } else if (content instanceof Uint8Array) {
+      // Copy to a new ArrayBuffer to handle SharedArrayBuffer compatibility
+      const buffer = new ArrayBuffer(content.byteLength);
+      new Uint8Array(buffer).set(content);
+      body = new Blob([buffer], { type: contentType });
+    } else {
+      // ArrayBuffer
+      body = new Blob([content], { type: contentType });
+    }
+
+    const { data, error } = await this.api.POST('/files/{id}/content', {
+      params: { path: { id: fileId } },
+      body: body as unknown as Record<string, never>,
+      bodySerializer: (b: unknown) => b as BodyInit,
+      headers: { 'Content-Type': contentType },
+    } as Parameters<typeof this.api.POST>[1]);
+
+    return { data: data as components['schemas']['UploadContentResponse'] | undefined, error };
+  }
 }
 
 /**
@@ -216,5 +277,5 @@ export function createArkeClient(config?: ArkeClientConfig): ArkeClient {
 }
 
 // Re-export types and errors
-export type { ArkeClientConfig } from './config.js';
+export type { ArkeClientConfig, RetryConfig } from './config.js';
 export * from './errors.js';

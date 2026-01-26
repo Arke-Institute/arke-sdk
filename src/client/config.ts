@@ -2,6 +2,10 @@
  * SDK configuration types
  */
 
+import type { RetryConfig } from './retry.js';
+
+export type { RetryConfig } from './retry.js';
+
 export interface ArkeClientConfig {
   /**
    * Base URL for the Arke API
@@ -36,6 +40,30 @@ export interface ArkeClientConfig {
    * Custom headers to include in all requests
    */
   headers?: Record<string, string>;
+
+  /**
+   * Retry configuration for transient errors
+   *
+   * Set to `false` to disable retries entirely.
+   * If not specified, uses default retry behavior (3 retries with exponential backoff).
+   *
+   * CAS conflicts (409) are never retried - they are returned immediately.
+   *
+   * @example
+   * ```typescript
+   * const arke = new ArkeClient({
+   *   authToken: 'ak_...',
+   *   retry: {
+   *     maxRetries: 5,
+   *     initialDelay: 200,
+   *     onRetry: (attempt, error, delay) => {
+   *       console.log(`Retry ${attempt} after ${delay}ms`);
+   *     }
+   *   }
+   * });
+   * ```
+   */
+  retry?: RetryConfig | false;
 }
 
 export const DEFAULT_CONFIG: Required<Pick<ArkeClientConfig, 'baseUrl' | 'network'>> = {
