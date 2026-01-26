@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-01-25T03:52:16.348Z
+ * Generated: 2026-01-26T22:08:41.056Z
  */
 
 export type paths = {
@@ -2124,6 +2124,9 @@ export type paths = {
          *
          *     **Performance:** Preview expansion is recommended for most use cases. Full expansion with many large entities can result in multi-MB payloads.
          *
+         *     **Expansion Limit:**
+         *     Use `?expand_limit=N` to control maximum relationships expanded (1-500, default 100). When truncated, the response includes `_expansion_metadata` with counts.
+         *
          *     ---
          *     **Permission:** `entity:view`
          *     **Auth:** optional
@@ -2133,6 +2136,8 @@ export type paths = {
                 query?: {
                     /** @description Comma-separated list of fields to expand. Supports: relationships[:preview|full] */
                     expand?: string;
+                    /** @description Maximum number of relationships to expand (1-500, default 100). When exceeded, relationships beyond the limit are returned without peer data. */
+                    expand_limit?: number;
                 };
                 header?: never;
                 path: {
@@ -6611,7 +6616,7 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
-    "/jobs/{id}": {
+    "/agents/{id}/jobs/{job_id}/status": {
         parameters: {
             query?: never;
             header?: never;
@@ -6619,54 +6624,87 @@ export type paths = {
             cookie?: never;
         };
         /**
-         * Get job status
-         * @description Returns focused job status and summary. Use this endpoint for quick status polling.
+         * Get job status from agent
+         * @description Proxies to the agent's `/status/:job_id` endpoint and returns the response.
          *
-         *     Returns 404 if the entity is not a job collection.
+         *     Use this endpoint to poll job status after invoking an agent. The `agent_id` and `job_id`
+         *     are both returned in the invoke response.
          *
-         *     **Response includes:**
-         *     - Current status (running/done/error)
-         *     - Timestamps (started_at, completed_at)
-         *     - Agent references (agent, main_agent, target)
-         *     - Counts (files_count, sub_jobs_count)
+         *     **Query Parameters (passed through to agent):**
+         *     - `detail=full` - Include detailed sub-job/dispatch information (orchestrators/workflows)
+         *     - `errors=N` - Include last N errors (orchestrators only)
+         *
+         *     **Response:** Returns the agent's status response directly. Schema varies by agent type
+         *     (service, workflow, orchestrator) but always includes:
+         *     - `job_id` - Job identifier
+         *     - `status` - Current status (pending/running/done/error)
+         *     - `progress` - Progress counters (total/pending/done/error)
+         *     - `started_at` - When the job started
+         *     - `completed_at` - When the job completed (if done/error)
+         *     - `updated_at` - Last state modification
+         *
+         *     Agent-specific fields (phase, stages, sub_jobs, folders, dispatches) are also included
+         *     when applicable.
          *
          *     ---
-         *     **Permission:** `collection:view`
+         *     **Permission:** `agent:view`
          *     **Auth:** optional
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    detail?: "full";
+                    errors?: number | null;
+                };
                 header?: never;
                 path: {
-                    /** @description Entity ID (ULID) */
                     id: string;
+                    job_id: string;
                 };
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description Job status */
+                /** @description Job status from agent */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["JobStatusResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
+                        "application/json": {
+                            /**
+                             * @description Unique job identifier
+                             * @example job_01KFXPQ3ABCDEFGHIJKLMN
+                             */
+                            job_id: string;
+                            /**
+                             * @description Current job status
+                             * @example running
+                             * @enum {string}
+                             */
+                            status: "pending" | "running" | "done" | "error";
+                            progress: components["schemas"]["JobProgress"];
+                            /**
+                             * @description When this job started (ISO timestamp)
+                             * @example 2026-01-26T17:48:15.000Z
+                             */
+                            started_at: string;
+                            /**
+                             * @description When this job completed (ISO timestamp)
+                             * @example 2026-01-26T17:49:30.000Z
+                             */
+                            completed_at?: string;
+                            /**
+                             * @description Last state modification (ISO timestamp)
+                             * @example 2026-01-26T17:49:27.000Z
+                             */
+                            updated_at?: string;
+                            /** @description Final result data (only when status is done) */
+                            result?: {
+                                [key: string]: unknown;
+                            };
+                            error?: components["schemas"]["JobError"];
+                        };
                     };
                 };
                 /** @description Not Found - Resource does not exist */
@@ -6681,6 +6719,15 @@ export type paths = {
                          *     }
                          */
                         "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Agent unreachable or returned an error */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgentUnreachableError"];
                     };
                 };
             };
@@ -11418,57 +11465,51 @@ export type components = {
              */
             confirm?: boolean;
         };
-        EntityRef: {
+        JobProgress: {
             /**
-             * @description Entity ID (ULID format)
-             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             * @description Total items to process
+             * @example 10
              */
-            pi: string;
-            type?: string;
-            label?: string;
-        };
-        JobStatusResponse: {
+            total: number;
             /**
-             * @description Entity ID (ULID format)
-             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             * @description Items not yet started
+             * @example 3
              */
-            id: string;
+            pending: number;
             /**
-             * @description Content Identifier (CID) - content-addressed hash
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            cid: string;
-            /**
-             * @description Job collection status
-             * @example running
-             * @enum {string}
-             */
-            status: "running" | "done" | "error";
-            /**
-             * Format: date-time
-             * @description ISO 8601 datetime
-             * @example 2025-12-26T12:00:00.000Z
-             */
-            started_at: string;
-            /**
-             * Format: date-time
-             * @description ISO 8601 datetime
-             * @example 2025-12-26T12:00:00.000Z
-             */
-            completed_at: string | null;
-            agent: components["schemas"]["EntityRef"];
-            target?: components["schemas"]["EntityRef"];
-            main_agent?: components["schemas"]["EntityRef"];
-            /**
-             * @description Number of files contained in this job collection
-             * @example 5
-             */
-            files_count: number;
-            /**
-             * @description Number of sub-job collections
+             * @description Items dispatched but not complete
              * @example 2
              */
-            sub_jobs_count: number;
+            dispatched?: number;
+            /**
+             * @description Successfully completed items
+             * @example 4
+             */
+            done: number;
+            /**
+             * @description Failed items
+             * @example 1
+             */
+            error: number;
+        };
+        JobError: {
+            /**
+             * @description Error code
+             * @example TIMEOUT
+             */
+            code: string;
+            /**
+             * @description Human-readable error message
+             * @example Request timed out after 30 seconds
+             */
+            message: string;
+        };
+        AgentUnreachableError: {
+            /**
+             * @description Error message
+             * @example Failed to reach agent: Connection refused
+             */
+            error: string;
         };
         Event: {
             /**

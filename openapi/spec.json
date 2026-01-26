@@ -6153,95 +6153,77 @@
           }
         }
       },
-      "EntityRef": {
+      "JobProgress": {
         "type": "object",
         "properties": {
-          "pi": {
-            "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Entity ID (ULID format)",
-            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total items to process",
+            "example": 10
           },
-          "type": {
-            "type": "string"
+          "pending": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Items not yet started",
+            "example": 3
           },
-          "label": {
-            "type": "string"
+          "dispatched": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Items dispatched but not complete",
+            "example": 2
+          },
+          "done": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Successfully completed items",
+            "example": 4
+          },
+          "error": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Failed items",
+            "example": 1
           }
         },
         "required": [
-          "pi"
+          "total",
+          "pending",
+          "done",
+          "error"
         ]
       },
-      "JobStatusResponse": {
+      "JobError": {
         "type": "object",
         "properties": {
-          "id": {
+          "code": {
             "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Entity ID (ULID format)",
-            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            "description": "Error code",
+            "example": "TIMEOUT"
           },
-          "cid": {
+          "message": {
             "type": "string",
-            "minLength": 1,
-            "description": "Content Identifier (CID) - content-addressed hash",
-            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "running",
-              "done",
-              "error"
-            ],
-            "description": "Job collection status",
-            "example": "running"
-          },
-          "started_at": {
-            "type": "string",
-            "format": "date-time",
-            "description": "ISO 8601 datetime",
-            "example": "2025-12-26T12:00:00.000Z"
-          },
-          "completed_at": {
-            "type": "string",
-            "nullable": true,
-            "format": "date-time",
-            "description": "ISO 8601 datetime",
-            "example": "2025-12-26T12:00:00.000Z"
-          },
-          "agent": {
-            "$ref": "#/components/schemas/EntityRef"
-          },
-          "target": {
-            "$ref": "#/components/schemas/EntityRef"
-          },
-          "main_agent": {
-            "$ref": "#/components/schemas/EntityRef"
-          },
-          "files_count": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Number of files contained in this job collection",
-            "example": 5
-          },
-          "sub_jobs_count": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Number of sub-job collections",
-            "example": 2
+            "description": "Human-readable error message",
+            "example": "Request timed out after 30 seconds"
           }
         },
         "required": [
-          "id",
-          "cid",
-          "status",
-          "started_at",
-          "completed_at",
-          "agent",
-          "files_count",
-          "sub_jobs_count"
+          "code",
+          "message"
+        ]
+      },
+      "AgentUnreachableError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message",
+            "example": "Failed to reach agent: Connection refused"
+          }
+        },
+        "required": [
+          "error"
         ]
       },
       "Event": {
@@ -9569,7 +9551,7 @@
           "Entities"
         ],
         "summary": "Get entity by ID",
-        "description": "Returns any entity by ID. Permission check uses parent collection if entity belongs to one.\n\n**Relationship Expansion:**\n\nUse the `expand=relationships[:mode]` query parameter to hydrate relationship peer data:\n\n- **No expansion (default)**: Returns relationships with stored `peer_label`/`peer_type` (may be stale)\n  ```json\n  { \"predicate\": \"contains\", \"peer\": \"01KDOC...\", \"peer_label\": \"Old Label\" }\n  ```\n\n- **`?expand=relationships:preview`**: Adds `peer_preview` with fresh lightweight data (id, type, label, truncated description/text, timestamps)\n  ```json\n  {\n    \"predicate\": \"contains\",\n    \"peer\": \"01KDOC...\",\n    \"peer_label\": \"Old Label\",\n    \"peer_preview\": {\n      \"id\": \"01KDOC...\",\n      \"type\": \"document\",\n      \"label\": \"Updated Label\",\n      \"description_preview\": \"This is a document with...\",\n      \"created_at\": \"2025-01-15T10:00:00Z\",\n      \"updated_at\": \"2025-01-20T14:30:00Z\"\n    }\n  }\n  ```\n\n- **`?expand=relationships:full`**: Adds `peer_entity` with complete entity manifest (all properties, relationships, version history)\n  ```json\n  {\n    \"predicate\": \"contains\",\n    \"peer\": \"01KDOC...\",\n    \"peer_label\": \"Old Label\",\n    \"peer_entity\": {\n      \"id\": \"01KDOC...\",\n      \"cid\": \"bafyrei...\",\n      \"type\": \"document\",\n      \"properties\": { \"label\": \"Updated Label\", \"text\": \"...\" },\n      \"relationships\": [...],\n      \"ver\": 3,\n      \"created_at\": \"2025-01-15T10:00:00Z\",\n      \"ts\": 1737380000000,\n      \"edited_by\": { \"user_id\": \"01JUSER...\", \"method\": \"manual\" }\n    }\n  }\n  ```\n\n**Performance:** Preview expansion is recommended for most use cases. Full expansion with many large entities can result in multi-MB payloads.\n\n---\n**Permission:** `entity:view`  \n**Auth:** optional",
+        "description": "Returns any entity by ID. Permission check uses parent collection if entity belongs to one.\n\n**Relationship Expansion:**\n\nUse the `expand=relationships[:mode]` query parameter to hydrate relationship peer data:\n\n- **No expansion (default)**: Returns relationships with stored `peer_label`/`peer_type` (may be stale)\n  ```json\n  { \"predicate\": \"contains\", \"peer\": \"01KDOC...\", \"peer_label\": \"Old Label\" }\n  ```\n\n- **`?expand=relationships:preview`**: Adds `peer_preview` with fresh lightweight data (id, type, label, truncated description/text, timestamps)\n  ```json\n  {\n    \"predicate\": \"contains\",\n    \"peer\": \"01KDOC...\",\n    \"peer_label\": \"Old Label\",\n    \"peer_preview\": {\n      \"id\": \"01KDOC...\",\n      \"type\": \"document\",\n      \"label\": \"Updated Label\",\n      \"description_preview\": \"This is a document with...\",\n      \"created_at\": \"2025-01-15T10:00:00Z\",\n      \"updated_at\": \"2025-01-20T14:30:00Z\"\n    }\n  }\n  ```\n\n- **`?expand=relationships:full`**: Adds `peer_entity` with complete entity manifest (all properties, relationships, version history)\n  ```json\n  {\n    \"predicate\": \"contains\",\n    \"peer\": \"01KDOC...\",\n    \"peer_label\": \"Old Label\",\n    \"peer_entity\": {\n      \"id\": \"01KDOC...\",\n      \"cid\": \"bafyrei...\",\n      \"type\": \"document\",\n      \"properties\": { \"label\": \"Updated Label\", \"text\": \"...\" },\n      \"relationships\": [...],\n      \"ver\": 3,\n      \"created_at\": \"2025-01-15T10:00:00Z\",\n      \"ts\": 1737380000000,\n      \"edited_by\": { \"user_id\": \"01JUSER...\", \"method\": \"manual\" }\n    }\n  }\n  ```\n\n**Performance:** Preview expansion is recommended for most use cases. Full expansion with many large entities can result in multi-MB payloads.\n\n**Expansion Limit:**\nUse `?expand_limit=N` to control maximum relationships expanded (1-500, default 100). When truncated, the response includes `_expansion_metadata` with counts.\n\n---\n**Permission:** `entity:view`  \n**Auth:** optional",
         "x-arke-action": "entity:view",
         "x-arke-auth": "optional",
         "x-arke-tier": "standard",
@@ -9594,6 +9576,18 @@
             "required": false,
             "description": "Comma-separated list of fields to expand. Supports: relationships[:preview|full]",
             "name": "expand",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "example": 100
+            },
+            "required": false,
+            "description": "Maximum number of relationships to expand (1-500, default 100). When exceeded, relationships beyond the limit are returned without peer data.",
+            "name": "expand_limit",
             "in": "query"
           }
         ],
@@ -13765,14 +13759,14 @@
         }
       }
     },
-    "/jobs/{id}": {
+    "/agents/{id}/jobs/{job_id}/status": {
       "get": {
         "tags": [
-          "Jobs"
+          "Agents"
         ],
-        "summary": "Get job status",
-        "description": "Returns focused job status and summary. Use this endpoint for quick status polling.\n\nReturns 404 if the entity is not a job collection.\n\n**Response includes:**\n- Current status (running/done/error)\n- Timestamps (started_at, completed_at)\n- Agent references (agent, main_agent, target)\n- Counts (files_count, sub_jobs_count)\n\n---\n**Permission:** `collection:view`  \n**Auth:** optional",
-        "x-arke-action": "collection:view",
+        "summary": "Get job status from agent",
+        "description": "Proxies to the agent's `/status/:job_id` endpoint and returns the response.\n\nUse this endpoint to poll job status after invoking an agent. The `agent_id` and `job_id`\nare both returned in the invoke response.\n\n**Query Parameters (passed through to agent):**\n- `detail=full` - Include detailed sub-job/dispatch information (orchestrators/workflows)\n- `errors=N` - Include last N errors (orchestrators only)\n\n**Response:** Returns the agent's status response directly. Schema varies by agent type\n(service, workflow, orchestrator) but always includes:\n- `job_id` - Job identifier\n- `status` - Current status (pending/running/done/error)\n- `progress` - Progress counters (total/pending/done/error)\n- `started_at` - When the job started\n- `completed_at` - When the job completed (if done/error)\n- `updated_at` - Last state modification\n\nAgent-specific fields (phase, stages, sub_jobs, folders, dispatches) are also included\nwhen applicable.\n\n---\n**Permission:** `agent:view`  \n**Auth:** optional",
+        "x-arke-action": "agent:view",
         "x-arke-auth": "optional",
         "x-arke-tier": "standard",
         "parameters": [
@@ -13780,35 +13774,109 @@
             "schema": {
               "type": "string",
               "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-              "description": "Entity ID (ULID format)",
-              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+              "description": "Agent entity ID"
             },
             "required": true,
-            "description": "Entity ID (ULID)",
             "name": "id",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Job ID returned from agent invocation (e.g., job_01KFX...)",
+              "example": "job_01KFXPQ3ABCDEFGHIJKLMN"
+            },
+            "required": true,
+            "name": "job_id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "full"
+              ],
+              "description": "Include detailed sub-job information (orchestrators/workflows only)"
+            },
+            "required": false,
+            "name": "detail",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "nullable": true,
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Include last N errors in response (orchestrators only)"
+            },
+            "required": false,
+            "name": "errors",
+            "in": "query"
           }
         ],
         "responses": {
           "200": {
-            "description": "Job status",
+            "description": "Job status from agent",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobStatusResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - Insufficient permissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Forbidden: You do not have permission to perform this action"
+                  "type": "object",
+                  "properties": {
+                    "job_id": {
+                      "type": "string",
+                      "description": "Unique job identifier",
+                      "example": "job_01KFXPQ3ABCDEFGHIJKLMN"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "running",
+                        "done",
+                        "error"
+                      ],
+                      "description": "Current job status",
+                      "example": "running"
+                    },
+                    "progress": {
+                      "$ref": "#/components/schemas/JobProgress"
+                    },
+                    "started_at": {
+                      "type": "string",
+                      "description": "When this job started (ISO timestamp)",
+                      "example": "2026-01-26T17:48:15.000Z"
+                    },
+                    "completed_at": {
+                      "type": "string",
+                      "description": "When this job completed (ISO timestamp)",
+                      "example": "2026-01-26T17:49:30.000Z"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "description": "Last state modification (ISO timestamp)",
+                      "example": "2026-01-26T17:49:27.000Z"
+                    },
+                    "result": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "nullable": true
+                      },
+                      "description": "Final result data (only when status is done)"
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/JobError"
+                    }
+                  },
+                  "required": [
+                    "job_id",
+                    "status",
+                    "progress",
+                    "started_at"
+                  ],
+                  "description": "Job status response from an agent's /status/:job_id endpoint.\n\nThis schema defines the base fields that all agents return. Agent-specific fields\n(phase, stages, sub_jobs, folders, dispatches, nested_progress, etc.) are also\nallowed and passed through.\n\n**Query parameters (passed through to agent):**\n- `?detail=full` - Include detailed sub-job/dispatch information (orchestrators/workflows)\n- `?errors=N` - Include last N errors (orchestrators only)\n\n**Agent types return different additional fields:**\n- **Services**: May include `nested_progress` for Lambda-backed services\n- **Workflows**: May include `phase`, `stages`, `sub_jobs`\n- **Orchestrators**: May include `phase`, `discovery`, `grouping`, `dispatch`, `folders`, `dispatches`, `recent_errors`",
+                  "title": "AgentJobStatusResponse"
                 }
               }
             }
@@ -13822,6 +13890,16 @@
                 },
                 "example": {
                   "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Agent unreachable or returned an error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentUnreachableError"
                 }
               }
             }
