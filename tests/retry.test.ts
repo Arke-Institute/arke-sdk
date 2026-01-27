@@ -331,6 +331,40 @@ describe('createRetryFetch', () => {
     expect(response).toBe(successResponse);
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
+
+  it('should clone Request objects to allow retries', async () => {
+    const errorResponse = new Response('Server Error', { status: 503 });
+    const successResponse = new Response('{"ok": true}', { status: 200 });
+
+    mockFetch
+      .mockResolvedValueOnce(errorResponse)
+      .mockResolvedValueOnce(successResponse);
+
+    const retryFetch = createRetryFetch({
+      maxRetries: 3,
+      initialDelay: 10,
+    });
+
+    // Use a Request object as input (like openapi-fetch does)
+    const request = new Request('https://api.example.com/test', {
+      method: 'POST',
+      body: JSON.stringify({ data: 'test' }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const response = await retryFetch(request);
+
+    expect(response).toBe(successResponse);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    // Verify fetch was called with cloned requests (not the original)
+    const firstCallArg = mockFetch.mock.calls[0][0];
+    const secondCallArg = mockFetch.mock.calls[1][0];
+    expect(firstCallArg).toBeInstanceOf(Request);
+    expect(secondCallArg).toBeInstanceOf(Request);
+    // They should be different Request instances (clones)
+    expect(firstCallArg).not.toBe(request);
+    expect(secondCallArg).not.toBe(request);
+  });
 });
 
 describe('DEFAULT_RETRY_CONFIG', () => {

@@ -205,7 +205,9 @@ export function createRetryFetch(config: RetryConfig = {}): typeof fetch {
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        const response = await fetch(input, init);
+        // Clone Request objects to allow retries - Request bodies can only be consumed once
+        const reqInput = input instanceof Request ? input.clone() : input;
+        const response = await fetch(reqInput, init);
 
         // Check for Cloudflare error pages
         if (isCloudflareErrorResponse(response) && attempt < maxRetries) {
