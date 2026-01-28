@@ -116,9 +116,11 @@ class BytePool {
       return await fn();
     } finally {
       this.bytesInFlight -= size;
-      // Wake up next waiting task
-      const next = this.waitQueue.shift();
-      if (next) next();
+      // Wake ALL waiting tasks so they can re-evaluate the condition.
+      // wake-one is incorrect here: if a large file finishes, multiple
+      // smaller files may now fit but only the first waiter would check.
+      const queue = this.waitQueue.splice(0);
+      for (const resolve of queue) resolve();
     }
   }
 }
@@ -165,7 +167,7 @@ export async function uploadTree(
   tree: UploadTree,
   options: UploadOptions
 ): Promise<UploadResult> {
-  const { target, onProgress, concurrency = 10, continueOnError = false, note } = options;
+  const { target, onProgress, concurrency = 10, continueOnError = false, maxBytesInFlight, note } = options;
 
   const errors: Array<{ path: string; error: string }> = [];
   const createdFolders: CreatedFolder[] = [];
@@ -524,8 +526,8 @@ export async function uploadTree(
     // ─────────────────────────────────────────────────────────────────────────
     reportProgress({ phase: 'uploading', bytesUploaded: 0 });
 
-    // Use byte-based pool to maintain ~200MB in flight
-    const pool = new BytePool();
+    // Use byte-based pool to maintain target bytes in flight
+    const pool = new BytePool(maxBytesInFlight);
 
     await Promise.all(
       createdFiles.map(async (file) => {

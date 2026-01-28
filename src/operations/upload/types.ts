@@ -147,6 +147,9 @@ export interface UploadOptions {
   /** Continue uploading even if some files fail (default: false) */
   continueOnError?: boolean;
 
+  /** Maximum bytes in flight during file content upload (default: 200 MB) */
+  maxBytesInFlight?: number;
+
   /** Custom note to add to created entities */
   note?: string;
 }
