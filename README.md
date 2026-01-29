@@ -37,8 +37,8 @@ if (error) {
 
 ```typescript
 const arke = new ArkeClient({
-  // Base URL (default: 'https://arke-v1.arke.institute')
-  baseUrl: 'https://arke-v1.arke.institute',
+  // Base URL (default: 'https://api.arke.institute')
+  baseUrl: 'https://api.arke.institute',
 
   // JWT or API key
   authToken: 'your-token',

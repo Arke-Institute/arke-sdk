@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://arke-v1.arke.institute",
+      "url": "https://api.arke.institute",
       "description": "Production"
     }
   ],
@@ -284,6 +284,11 @@
                 "type": "string",
                 "minLength": 1
               },
+              "user_label": {
+                "type": "string",
+                "description": "Display name of the user/agent (populated during expansion)",
+                "example": "Captain Ahab"
+              },
               "method": {
                 "type": "string",
                 "enum": [
@@ -295,15 +300,21 @@
               },
               "on_behalf_of": {
                 "type": "string"
+              },
+              "on_behalf_of_label": {
+                "type": "string",
+                "description": "Display name of the on_behalf_of user/agent (populated during expansion)",
+                "example": "Research Assistant"
               }
             },
             "required": [
               "user_id",
               "method"
             ],
-            "description": "Audit trail for edits",
+            "description": "Audit trail for edits. Label fields are populated when ?expand=relationships is used.",
             "example": {
               "user_id": "01JCAPTAINAHAB000000000000",
+              "user_label": "Captain Ahab",
               "method": "manual"
             }
           },
@@ -1944,6 +1955,11 @@
                 "type": "string",
                 "minLength": 1
               },
+              "user_label": {
+                "type": "string",
+                "description": "Display name of the user/agent (populated during expansion)",
+                "example": "Captain Ahab"
+              },
               "method": {
                 "type": "string",
                 "enum": [
@@ -1955,15 +1971,21 @@
               },
               "on_behalf_of": {
                 "type": "string"
+              },
+              "on_behalf_of_label": {
+                "type": "string",
+                "description": "Display name of the on_behalf_of user/agent (populated during expansion)",
+                "example": "Research Assistant"
               }
             },
             "required": [
               "user_id",
               "method"
             ],
-            "description": "Audit trail for edits",
+            "description": "Audit trail for edits. Label fields are populated when ?expand=relationships is used.",
             "example": {
               "user_id": "01JCAPTAINAHAB000000000000",
+              "user_label": "Captain Ahab",
               "method": "manual"
             }
           },
@@ -2066,6 +2088,211 @@
         },
         "required": [
           "type"
+        ]
+      },
+      "BatchCreateSuccess": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "index": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "cid": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Content Identifier (CID) - content-addressed hash",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "type": {
+            "type": "string"
+          },
+          "ver": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Entity version number",
+            "example": 1
+          }
+        },
+        "required": [
+          "success",
+          "index",
+          "id",
+          "cid",
+          "type",
+          "ver"
+        ]
+      },
+      "BatchCreateFailure": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "index": {
+            "type": "integer"
+          },
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "index",
+          "error",
+          "code"
+        ]
+      },
+      "BatchCreateEntityResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/BatchCreateSuccess"
+                },
+                {
+                  "$ref": "#/components/schemas/BatchCreateFailure"
+                }
+              ]
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "succeeded": {
+                "type": "integer"
+              },
+              "failed": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "total",
+              "succeeded",
+              "failed"
+            ]
+          }
+        },
+        "required": [
+          "results",
+          "summary"
+        ]
+      },
+      "BatchCreateEntityItem": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "description": "Optional note describing this change",
+            "example": "Added Chapter 42: The Whiteness of the Whale"
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Entity type identifier"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Entity properties"
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "peer": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "peer_type": {
+                  "type": "string"
+                },
+                "peer_label": {
+                  "type": "string"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "nullable": true
+                  }
+                }
+              },
+              "required": [
+                "predicate",
+                "peer"
+              ],
+              "description": "Entity relationship",
+              "example": {
+                "predicate": "crew",
+                "peer": "01KDETYWYWM0MJVKM8DK3AEXPY",
+                "peer_type": "collection"
+              }
+            },
+            "description": "Entity relationships"
+          },
+          "collection": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Parent collection ID (creates collection relationship)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "BatchCreateEntityRequest": {
+        "type": "object",
+        "properties": {
+          "entities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BatchCreateEntityItem"
+            },
+            "minItems": 1,
+            "maxItems": 100,
+            "description": "Array of entities to create (1-100)"
+          },
+          "default_collection": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Default collection for entities that do not specify one",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          }
+        },
+        "required": [
+          "entities"
         ]
       },
       "TipResponse": {
@@ -3472,6 +3699,11 @@
                 "type": "string",
                 "minLength": 1
               },
+              "user_label": {
+                "type": "string",
+                "description": "Display name of the user/agent (populated during expansion)",
+                "example": "Captain Ahab"
+              },
               "method": {
                 "type": "string",
                 "enum": [
@@ -3483,15 +3715,21 @@
               },
               "on_behalf_of": {
                 "type": "string"
+              },
+              "on_behalf_of_label": {
+                "type": "string",
+                "description": "Display name of the on_behalf_of user/agent (populated during expansion)",
+                "example": "Research Assistant"
               }
             },
             "required": [
               "user_id",
               "method"
             ],
-            "description": "Audit trail for edits",
+            "description": "Audit trail for edits. Label fields are populated when ?expand=relationships is used.",
             "example": {
               "user_id": "01JCAPTAINAHAB000000000000",
+              "user_label": "Captain Ahab",
               "method": "manual"
             }
           }
@@ -4017,6 +4255,11 @@
                 "type": "string",
                 "minLength": 1
               },
+              "user_label": {
+                "type": "string",
+                "description": "Display name of the user/agent (populated during expansion)",
+                "example": "Captain Ahab"
+              },
               "method": {
                 "type": "string",
                 "enum": [
@@ -4028,15 +4271,21 @@
               },
               "on_behalf_of": {
                 "type": "string"
+              },
+              "on_behalf_of_label": {
+                "type": "string",
+                "description": "Display name of the on_behalf_of user/agent (populated during expansion)",
+                "example": "Research Assistant"
               }
             },
             "required": [
               "user_id",
               "method"
             ],
-            "description": "Audit trail for edits",
+            "description": "Audit trail for edits. Label fields are populated when ?expand=relationships is used.",
             "example": {
               "user_id": "01JCAPTAINAHAB000000000000",
+              "user_label": "Captain Ahab",
               "method": "manual"
             }
           }
@@ -4740,6 +4989,11 @@
                 "type": "string",
                 "minLength": 1
               },
+              "user_label": {
+                "type": "string",
+                "description": "Display name of the user/agent (populated during expansion)",
+                "example": "Captain Ahab"
+              },
               "method": {
                 "type": "string",
                 "enum": [
@@ -4751,15 +5005,21 @@
               },
               "on_behalf_of": {
                 "type": "string"
+              },
+              "on_behalf_of_label": {
+                "type": "string",
+                "description": "Display name of the on_behalf_of user/agent (populated during expansion)",
+                "example": "Research Assistant"
               }
             },
             "required": [
               "user_id",
               "method"
             ],
-            "description": "Audit trail for edits",
+            "description": "Audit trail for edits. Label fields are populated when ?expand=relationships is used.",
             "example": {
               "user_id": "01JCAPTAINAHAB000000000000",
+              "user_label": "Captain Ahab",
               "method": "manual"
             }
           },
@@ -4935,6 +5195,11 @@
                     "type": "string",
                     "minLength": 1
                   },
+                  "user_label": {
+                    "type": "string",
+                    "description": "Display name of the user/agent (populated during expansion)",
+                    "example": "Captain Ahab"
+                  },
                   "method": {
                     "type": "string",
                     "enum": [
@@ -4946,15 +5211,21 @@
                   },
                   "on_behalf_of": {
                     "type": "string"
+                  },
+                  "on_behalf_of_label": {
+                    "type": "string",
+                    "description": "Display name of the on_behalf_of user/agent (populated during expansion)",
+                    "example": "Research Assistant"
                   }
                 },
                 "required": [
                   "user_id",
                   "method"
                 ],
-                "description": "Audit trail for edits",
+                "description": "Audit trail for edits. Label fields are populated when ?expand=relationships is used.",
                 "example": {
                   "user_id": "01JCAPTAINAHAB000000000000",
+                  "user_label": "Captain Ahab",
                   "method": "manual"
                 }
               },
@@ -7140,6 +7411,104 @@
           "path"
         ]
       },
+      "MessageTooLargeDetails": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "MESSAGE_TOO_LARGE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "string",
+            "example": "2MB"
+          },
+          "actual": {
+            "type": "string",
+            "example": "2.48MB"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "limit"
+        ]
+      },
+      "MessageTooLargeError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Human-readable error message",
+            "example": "Message exceeds maximum size limit. Please shorten your message."
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "MESSAGE_TOO_LARGE"
+            ],
+            "description": "Error code for client handling"
+          },
+          "details": {
+            "$ref": "#/components/schemas/MessageTooLargeDetails"
+          }
+        },
+        "required": [
+          "error",
+          "code"
+        ]
+      },
+      "ChatStorageFullDetails": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "CHAT_STORAGE_FULL"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "string",
+            "example": "10GB"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "limit"
+        ]
+      },
+      "ChatStorageFullError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Human-readable error message",
+            "example": "This conversation has reached its maximum storage capacity. Please start a new conversation."
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "CHAT_STORAGE_FULL"
+            ],
+            "description": "Error code for client handling"
+          },
+          "details": {
+            "$ref": "#/components/schemas/ChatStorageFullDetails"
+          }
+        },
+        "required": [
+          "error",
+          "code"
+        ]
+      },
       "TextPart": {
         "type": "object",
         "properties": {
@@ -7256,6 +7625,72 @@
         },
         "required": [
           "messages"
+        ]
+      },
+      "ChatListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Chat UUID (use with X-Chat-ID header)",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "Auto-generated from first message (50 chars)",
+            "example": "Help me understand the Arke API..."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "ISO8601 timestamp of chat creation",
+            "example": "2026-01-26T14:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "ISO8601 timestamp of last message",
+            "example": "2026-01-26T15:45:00.000Z"
+          },
+          "lastMessagePreview": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last assistant response (100 chars, markdown stripped)",
+            "example": "I found 3 entities matching your query. The first one is..."
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "createdAt",
+          "updatedAt",
+          "lastMessagePreview"
+        ]
+      },
+      "ListChatsResponse": {
+        "type": "object",
+        "properties": {
+          "chats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatListItem"
+            },
+            "description": "Array of chat metadata objects"
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of chats for this user",
+            "example": 42
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "True if more chats exist beyond current page",
+            "example": true
+          }
+        },
+        "required": [
+          "chats",
+          "total",
+          "hasMore"
         ]
       },
       "ChatSession": {
@@ -9538,6 +9973,104 @@
                     "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
                     "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entities/batch": {
+      "post": {
+        "tags": [
+          "Entities"
+        ],
+        "summary": "Batch create entities",
+        "description": "Creates multiple entities in a single request with bounded internal concurrency.\n\nEntities are created in chunks of 10 internally. Each entity follows the same permission model as single creates.\n\nReturns per-entity results. HTTP 201 if all succeed, 207 if some fail.\n\n**Max batch size:** 100 entities.\n\n---\n**Permission:** `entity:create`  \n**Auth:** required",
+        "x-arke-action": "entity:create",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchCreateEntityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "All entities created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchCreateEntityResponse"
+                }
+              }
+            }
+          },
+          "207": {
+            "description": "Partial success - some entities failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchCreateEntityResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
                 }
               }
             }
@@ -14909,7 +15442,7 @@
           "Search"
         ],
         "summary": "Search agents by text",
-        "description": "Search for agents using semantic text search.\n\nUse this endpoint to discover agents across the network. Only active agents are returned. Results are ranked by semantic similarity to your query based on agent descriptions and capabilities.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
+        "description": "Search for agents using semantic text search.\n\n**Official Agents (Default):** By default, this endpoint searches only the official Arke agents collection (`01KFF0H1KSR4SHHDQ7T2HXQEK6`). These agents are pre-approved, actively maintained, and tested for security and reliability.\n\n**All Agents:** Set `scope: \"all\"` to search network-wide. This is not recommended as results may include duplicates, outdated agents, or unapproved implementations.\n\nResults are ranked by semantic similarity to your query based on agent descriptions and capabilities.\n\n**Entity Expansion:**\n\nBy default, agent search returns **full entity manifests** (including `endpoint`, `input_schema`, `actions_required`, etc.) to make discovery results immediately useful.\n\n- **`expand: \"full\"` (default)**: Complete agent manifests with all properties\n- **`expand: \"preview\"`**: Lightweight previews (id, type, label, description_preview, timestamps)\n- **`expand: \"none\"`**: Search metadata only (fastest)\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
         "x-arke-action": "search:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -14946,6 +15479,15 @@
                     ],
                     "description": "Entity expansion mode. Default: \"preview\" for lightweight previews, \"full\" for complete manifests, \"none\" for no expansion.",
                     "example": "preview"
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "official",
+                      "all"
+                    ],
+                    "default": "official",
+                    "description": "Search scope. \"official\" (default) searches only the pre-approved Arke agents collection. \"all\" searches all agents network-wide (not recommended - may include duplicates, outdated, or unapproved agents)."
                   }
                 },
                 "required": [
@@ -15546,7 +16088,7 @@
           "Chat"
         ],
         "summary": "Send chat message",
-        "description": "Send a message to the Arke chat agent and receive a streaming response.\n\nThe agent can execute Arke API operations on your behalf using the authenticated user's permissions.\n\n## Headers\n\n- `X-Chat-ID`: Optional. Specify to continue an existing chat session. If omitted, a new session is created.\n\n## Response Format\n\nThe response is a Server-Sent Events (SSE) stream in AI SDK v5 UIMessage format.\nStream chunks include text deltas, tool calls, and usage information.\n\n## Token Usage Tracking\n\nUsage information is included at the end of the stream in the format:\n```json\n{\"type\":\"message_delta\",\"delta\":{\"usage\":{\"input_tokens\":123,\"output_tokens\":456}}}\n```\n\n\n---\n**Permission:** `chat:send`  \n**Auth:** required",
+        "description": "Send a message to the Arke chat agent and receive a streaming response.\n\nThe agent can execute Arke API operations on your behalf using the authenticated user's permissions.\n\n## Headers\n\n- `X-Chat-ID`: Optional. Specify to continue an existing chat session. If omitted, a new session is created.\n\n## Response Format\n\nThe response is a Server-Sent Events (SSE) stream in AI SDK v5 UIMessage format.\nStream chunks include text deltas, tool calls, and usage information.\n\n## Token Usage Tracking\n\nUsage information is included at the end of the stream in the format:\n```json\n{\"type\":\"message_delta\",\"delta\":{\"usage\":{\"input_tokens\":123,\"output_tokens\":456}}}\n```\n\n## Storage Limits\n\n- **Single message**: 2 MB max (returns 413 with code `MESSAGE_TOO_LARGE`)\n- **Chat database**: 10 GB max (returns 507 with code `CHAT_STORAGE_FULL`)\n- **LLM context**: ~128K tokens (returns stream error)\n\n\n---\n**Permission:** `chat:send`  \n**Auth:** required",
         "x-arke-action": "chat:send",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -15601,6 +16143,68 @@
                 }
               }
             }
+          },
+          "413": {
+            "description": "Message exceeds 2MB storage limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageTooLargeError"
+                }
+              }
+            }
+          },
+          "507": {
+            "description": "Chat storage full (10GB limit)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatStorageFullError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/sessions": {
+      "get": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "List user chats",
+        "description": "Returns a paginated list of the authenticated user's chats, sorted newest-first.\n\nOnly returns chats owned by the authenticated user. Anonymous chats are not indexed.\n\nQuery parameters:\n- `limit`: Max chats to return (1-100, default 20)\n- `offset`: Number of chats to skip for pagination (default 0)\n\n---\n**Permission:** `chat:view`  \n**Auth:** required",
+        "x-arke-action": "chat:view",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of user chats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListChatsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
           }
         }
       }
@@ -15611,10 +16215,15 @@
           "Chat"
         ],
         "summary": "Get chat session",
-        "description": "Get information about a chat session including message history.\n\nSessions are publicly viewable for sharing purposes. Only the owner can send messages or delete the session.\n\n---\n**Permission:** `chat:view`  \n**Auth:** optional",
+        "description": "Get information about a chat session including message history.\n\nOnly the session owner can view their chat sessions.\n\n---\n**Permission:** `chat:view`  \n**Auth:** required",
         "x-arke-action": "chat:view",
-        "x-arke-auth": "optional",
+        "x-arke-auth": "required",
         "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Chat session info",
@@ -15622,6 +16231,32 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ChatSession"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
                 }
               }
             }

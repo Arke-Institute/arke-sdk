@@ -13,7 +13,7 @@ import * as path from 'path';
 // Configuration
 // =============================================================================
 
-export const PROD_URL = 'https://arke-v1.arke.institute';
+export const PROD_URL = 'https://api.arke.institute';
 
 export interface E2EConfig {
   baseUrl: string;

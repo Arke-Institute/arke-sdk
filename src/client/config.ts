@@ -9,7 +9,7 @@ export type { RetryConfig } from './retry.js';
 export interface ArkeClientConfig {
   /**
    * Base URL for the Arke API
-   * @default 'https://arke-v1.arke.institute'
+   * @default 'https://api.arke.institute'
    */
   baseUrl?: string;
 
@@ -67,6 +67,6 @@ export interface ArkeClientConfig {
 }
 
 export const DEFAULT_CONFIG: Required<Pick<ArkeClientConfig, 'baseUrl' | 'network'>> = {
-  baseUrl: 'https://arke-v1.arke.institute',
+  baseUrl: 'https://api.arke.institute',
   network: 'main',
 };

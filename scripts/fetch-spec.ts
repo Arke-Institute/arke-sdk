@@ -14,7 +14,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 
 const URLS = {
-  production: 'https://arke-v1.arke.institute/openapi.json',
+  production: 'https://api.arke.institute/openapi.json',
   local: 'http://localhost:8787/openapi.json',
 };
 
