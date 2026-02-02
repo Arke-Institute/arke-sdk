@@ -190,6 +190,101 @@
           "error"
         ]
       },
+      "AlphaInvite": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ishmael@pequod.ship"
+          },
+          "invited_by": {
+            "type": "string",
+            "example": "admin"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "revoked",
+              "waitlisted"
+            ],
+            "example": "pending"
+          },
+          "created_at": {
+            "type": "string",
+            "example": "2026-01-28T12:00:00.000Z"
+          },
+          "accepted_at": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "invited_by",
+          "status",
+          "created_at",
+          "accepted_at"
+        ]
+      },
+      "CreateAlphaInviteResponse": {
+        "type": "object",
+        "properties": {
+          "invite": {
+            "$ref": "#/components/schemas/AlphaInvite"
+          }
+        },
+        "required": [
+          "invite"
+        ]
+      },
+      "CreateAlphaInviteRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address to invite",
+            "example": "ishmael@pequod.ship"
+          },
+          "invited_by": {
+            "type": "string",
+            "description": "Who is sending the invite (defaults to \"admin\")",
+            "example": "admin"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ListAlphaInvitesResponse": {
+        "type": "object",
+        "properties": {
+          "invites": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlphaInvite"
+            }
+          },
+          "count": {
+            "type": "integer",
+            "example": 5
+          }
+        },
+        "required": [
+          "invites",
+          "count"
+        ]
+      },
       "EntityResponse": {
         "type": "object",
         "properties": {
@@ -6497,6 +6592,2323 @@
           "error"
         ]
       },
+      "KladosResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "klados"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "CreateKladosRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "description": "Optional note describing this change",
+            "example": "Added Chapter 42: The Whiteness of the Whale"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Custom entity ID (generated if not provided)"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Klados display name",
+            "example": "PDF Text Extractor"
+          },
+          "endpoint": {
+            "type": "string",
+            "format": "uri",
+            "description": "Klados service base URL",
+            "example": "https://pdf-extractor.example.com/v1"
+          },
+          "actions_required": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z_*]+:[a-z_*]+$"
+            },
+            "minItems": 1,
+            "description": "Actions this klados requires on target collections",
+            "example": [
+              "entity:view",
+              "entity:update",
+              "file:create"
+            ]
+          },
+          "accepts": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Content types (use [\"*\"] for any)",
+                "example": [
+                  "file/pdf",
+                  "file/png"
+                ]
+              },
+              "cardinality": {
+                "type": "string",
+                "enum": [
+                  "one",
+                  "many"
+                ],
+                "description": "Cardinality: one for single entity, many for multiple",
+                "example": "one"
+              }
+            },
+            "required": [
+              "types",
+              "cardinality"
+            ],
+            "description": "What this klados accepts as input",
+            "title": "ContractSpec"
+          },
+          "produces": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Content types (use [\"*\"] for any)",
+                "example": [
+                  "file/pdf",
+                  "file/png"
+                ]
+              },
+              "cardinality": {
+                "type": "string",
+                "enum": [
+                  "one",
+                  "many"
+                ],
+                "description": "Cardinality: one for single entity, many for multiple",
+                "example": "one"
+              }
+            },
+            "required": [
+              "types",
+              "cardinality"
+            ],
+            "description": "What this klados produces as output",
+            "title": "ContractSpec"
+          },
+          "collection": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Collection to place klados in"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Klados description",
+            "example": "Extracts text content from PDF files"
+          },
+          "input_schema": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "JSON Schema for input validation"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Additional properties to store"
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "peer": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "peer_type": {
+                  "type": "string"
+                },
+                "peer_label": {
+                  "type": "string"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "nullable": true
+                  }
+                }
+              },
+              "required": [
+                "predicate",
+                "peer"
+              ],
+              "description": "Entity relationship",
+              "example": {
+                "predicate": "crew",
+                "peer": "01KDETYWYWM0MJVKM8DK3AEXPY",
+                "peer_type": "collection"
+              }
+            },
+            "description": "Relationships to create"
+          }
+        },
+        "required": [
+          "label",
+          "endpoint",
+          "actions_required",
+          "accepts",
+          "produces",
+          "collection"
+        ]
+      },
+      "KladosUpdateResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/KladosResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "prev_cid": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Previous version CID",
+                "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+              }
+            },
+            "required": [
+              "prev_cid"
+            ]
+          }
+        ]
+      },
+      "UpdateKladosRequest": {
+        "type": "object",
+        "properties": {
+          "expect_tip": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Current tip CID for CAS validation. Request fails with 409 if this does not match.",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional note describing this change",
+            "example": "Added Chapter 42: The Whiteness of the Whale"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Properties to add or update (deep merged)"
+          },
+          "properties_remove": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Top-level property keys to remove",
+                "example": [
+                  "deprecated_field",
+                  "old_field"
+                ]
+              },
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "nullable": true
+                },
+                "description": "Nested removal structure. Each key navigates into a nested object; leaf arrays specify keys to delete at that level.",
+                "example": {
+                  "settings": {
+                    "notifications": [
+                      "email",
+                      "slack"
+                    ]
+                  }
+                }
+              }
+            ],
+            "description": "Properties to remove. Use string[] for top-level keys (e.g., [\"old_field\"]), or nested objects for deep removal (e.g., { config: { options: [\"debug\"] } }). Dot notation like \"config.options.debug\" is NOT supported."
+          },
+          "relationships_add": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate (e.g., \"admin\", \"contains\", \"collection\")",
+                  "example": "admin"
+                },
+                "peer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Target entity ID",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                },
+                "peer_type": {
+                  "type": "string",
+                  "description": "Target entity type hint",
+                  "example": "user"
+                },
+                "peer_label": {
+                  "type": "string",
+                  "description": "Target entity label hint",
+                  "example": "Captain Ahab"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "nullable": true
+                  },
+                  "description": "Properties to add/update on this relationship (deep merged if relationship exists)",
+                  "example": {
+                    "expires_at": "2025-12-31T00:00:00Z"
+                  }
+                },
+                "properties_remove": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "nullable": true
+                      }
+                    }
+                  ],
+                  "description": "Properties to remove from this relationship (string array or nested object)"
+                }
+              },
+              "required": [
+                "predicate",
+                "peer"
+              ],
+              "description": "Relationship to add or update (upsert semantics)"
+            },
+            "description": "Relationships to add or update (upsert semantics)"
+          },
+          "relationships_remove": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate",
+                  "example": "viewer"
+                },
+                "peer": {
+                  "type": "string",
+                  "description": "Target entity ID. If omitted, removes ALL relationships with this predicate.",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                }
+              },
+              "required": [
+                "predicate"
+              ],
+              "description": "Relationship to remove"
+            },
+            "description": "Relationships to remove"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Updated klados display name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Updated klados description"
+          },
+          "endpoint": {
+            "type": "string",
+            "format": "uri",
+            "description": "Updated klados service URL. Changing this clears endpoint_verified_at."
+          },
+          "actions_required": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z_*]+:[a-z_*]+$"
+            },
+            "minItems": 1,
+            "description": "Actions this klados requires on target collections",
+            "example": [
+              "entity:view",
+              "entity:update",
+              "file:create"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "development",
+              "active",
+              "disabled"
+            ],
+            "description": "Klados status",
+            "example": "development"
+          },
+          "accepts": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Content types (use [\"*\"] for any)",
+                "example": [
+                  "file/pdf",
+                  "file/png"
+                ]
+              },
+              "cardinality": {
+                "type": "string",
+                "enum": [
+                  "one",
+                  "many"
+                ],
+                "description": "Cardinality: one for single entity, many for multiple",
+                "example": "one"
+              }
+            },
+            "required": [
+              "types",
+              "cardinality"
+            ],
+            "description": "Input/output contract specification for klados",
+            "title": "ContractSpec"
+          },
+          "produces": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "Content types (use [\"*\"] for any)",
+                "example": [
+                  "file/pdf",
+                  "file/png"
+                ]
+              },
+              "cardinality": {
+                "type": "string",
+                "enum": [
+                  "one",
+                  "many"
+                ],
+                "description": "Cardinality: one for single entity, many for multiple",
+                "example": "one"
+              }
+            },
+            "required": [
+              "types",
+              "cardinality"
+            ],
+            "description": "Input/output contract specification for klados",
+            "title": "ContractSpec"
+          },
+          "input_schema": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Updated input schema"
+          }
+        },
+        "required": [
+          "expect_tip"
+        ]
+      },
+      "InvokeKladosGrant": {
+        "type": "object",
+        "properties": {
+          "klados": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "label"
+            ]
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "role": {
+            "type": "string"
+          },
+          "already_granted": {
+            "type": "boolean"
+          },
+          "expired": {
+            "type": "boolean"
+          },
+          "current_expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "klados",
+          "actions",
+          "role",
+          "already_granted"
+        ]
+      },
+      "InvokeKladosPreviewResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending_confirmation"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvokeKladosGrant"
+            }
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "label"
+            ]
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "can_proceed": {
+            "type": "boolean",
+            "description": "True if all grants exist or user can create them"
+          },
+          "grants_needed": {
+            "type": "boolean",
+            "description": "True if klados needs permission grants"
+          }
+        },
+        "required": [
+          "status",
+          "message",
+          "grants",
+          "target",
+          "expires_at",
+          "can_proceed",
+          "grants_needed"
+        ]
+      },
+      "InvokeKladosGrantResult": {
+        "type": "object",
+        "properties": {
+          "klados_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+          },
+          "role": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "was_update": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "klados_id",
+          "role",
+          "expires_at",
+          "was_update"
+        ]
+      },
+      "InvokeKladosStartedResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "started"
+            ]
+          },
+          "job_id": {
+            "type": "string",
+            "description": "Unique job identifier",
+            "example": "job_01JEXAMPLEID12345678901"
+          },
+          "job_collection": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "The job collection where klados writes logs"
+          },
+          "klados_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Klados that was invoked"
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvokeKladosGrantResult"
+            }
+          },
+          "target_cid": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Content Identifier (CID) - content-addressed hash",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "status",
+          "job_id",
+          "job_collection",
+          "klados_id",
+          "grants",
+          "target_cid",
+          "expires_at"
+        ]
+      },
+      "InvokeKladosRejectedResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "rejected"
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message explaining why the klados rejected the job"
+          },
+          "retry_after": {
+            "type": "integer",
+            "description": "Suggested seconds to wait before retrying"
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvokeKladosGrantResult"
+            }
+          },
+          "target_cid": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Content Identifier (CID) - content-addressed hash",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "status",
+          "error",
+          "grants",
+          "target_cid",
+          "expires_at"
+        ]
+      },
+      "InvokeKladosConfirmedResponse": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InvokeKladosStartedResponse"
+          },
+          {
+            "$ref": "#/components/schemas/InvokeKladosRejectedResponse"
+          }
+        ]
+      },
+      "InvokeKladosRequest": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity or collection ID to process"
+          },
+          "job_collection": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Job collection where klados should write logs. If not provided, creates new collection."
+          },
+          "input": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Input data for the klados (validated against input_schema)"
+          },
+          "expires_in": {
+            "type": "integer",
+            "minimum": 60,
+            "maximum": 86400,
+            "default": 3600,
+            "description": "Permission duration in seconds (60-86400, default: 3600)",
+            "example": 3600
+          },
+          "confirm": {
+            "type": "boolean",
+            "default": false,
+            "description": "false = preview grants, true = execute klados",
+            "example": false
+          },
+          "rhiza_context": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+                "description": "Rhiza workflow ID"
+              },
+              "path": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                },
+                "description": "Path of klados IDs from entry to current"
+              },
+              "parent_logs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                },
+                "description": "Parent log IDs for chain traversal"
+              },
+              "batch": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+                    "description": "Batch entity ID"
+                  },
+                  "index": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Slot index (0-based)"
+                  },
+                  "total": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Total slots in batch"
+                  }
+                },
+                "required": [
+                  "id",
+                  "index",
+                  "total"
+                ],
+                "description": "Batch context if part of scatter operation"
+              }
+            },
+            "required": [
+              "id",
+              "path",
+              "parent_logs"
+            ],
+            "description": "Rhiza context for workflow invocations",
+            "title": "RhizaContext"
+          }
+        },
+        "required": [
+          "target"
+        ]
+      },
+      "VerifyKladosTokenResponse": {
+        "type": "object",
+        "properties": {
+          "verification_token": {
+            "type": "string",
+            "description": "Token to deploy at your endpoint",
+            "example": "vt_abc123def456..."
+          },
+          "klados_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Klados ID to include in verification response"
+          },
+          "endpoint": {
+            "type": "string",
+            "format": "uri",
+            "description": "Your klados endpoint URL"
+          },
+          "instructions": {
+            "type": "string",
+            "description": "How to complete verification"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Token expiration time"
+          }
+        },
+        "required": [
+          "verification_token",
+          "klados_id",
+          "endpoint",
+          "instructions",
+          "expires_at"
+        ]
+      },
+      "VerifyKladosSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "verified": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "verified_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the endpoint was verified"
+          }
+        },
+        "required": [
+          "verified",
+          "verified_at"
+        ]
+      },
+      "VerifyKladosFailureResponse": {
+        "type": "object",
+        "properties": {
+          "verified": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "no_token",
+              "token_expired",
+              "fetch_failed",
+              "invalid_response",
+              "token_mismatch",
+              "klados_id_mismatch"
+            ],
+            "description": "Verification error code"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable error description"
+          }
+        },
+        "required": [
+          "verified",
+          "error",
+          "message"
+        ]
+      },
+      "VerifyKladosRequest": {
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "type": "boolean",
+            "description": "Set to true to perform verification. Omit or false to generate verification token.",
+            "example": true
+          }
+        }
+      },
+      "RhizaResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EntityResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "rhiza"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "CreateRhizaRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "description": "Optional note describing this change",
+            "example": "Added Chapter 42: The Whiteness of the Whale"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Custom entity ID (generated if not provided)"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Rhiza display name",
+            "example": "Document Processing Pipeline"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "Semantic version",
+            "example": "1.0.0"
+          },
+          "entry": {
+            "type": "object",
+            "properties": {
+              "pi": {
+                "type": "string",
+                "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+              },
+              "type": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "pi"
+            ],
+            "description": "Entry point klados reference",
+            "title": "KladosRef",
+            "example": {
+              "pi": "01KEXAMPLE123456789012345",
+              "type": "klados",
+              "label": "OCR Processor"
+            }
+          },
+          "flow": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "then": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "done": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      },
+                      "required": [
+                        "done"
+                      ],
+                      "description": "Terminal - workflow ends"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "pass": {
+                          "type": "object",
+                          "properties": {
+                            "pi": {
+                              "type": "string",
+                              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "pi"
+                          ],
+                          "description": "Target klados/rhiza ref for 1:1 handoff",
+                          "title": "KladosRef",
+                          "example": {
+                            "pi": "01KEXAMPLE123456789012345",
+                            "type": "klados",
+                            "label": "OCR Processor"
+                          }
+                        },
+                        "route": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "where": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "nullable": true
+                                },
+                                "description": "Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR",
+                                "title": "WhereCondition",
+                                "example": {
+                                  "property": "status",
+                                  "equals": "approved"
+                                }
+                              },
+                              "target": {
+                                "type": "object",
+                                "properties": {
+                                  "pi": {
+                                    "type": "string",
+                                    "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                                  },
+                                  "type": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "description": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "pi"
+                                ],
+                                "description": "Target klados/rhiza ref if condition matches",
+                                "title": "KladosRef",
+                                "example": {
+                                  "pi": "01KEXAMPLE123456789012345",
+                                  "type": "klados",
+                                  "label": "OCR Processor"
+                                }
+                              }
+                            },
+                            "required": [
+                              "where",
+                              "target"
+                            ],
+                            "description": "Conditional routing rule. First matching rule wins.",
+                            "title": "RouteRule"
+                          },
+                          "description": "Conditional routing rules"
+                        }
+                      },
+                      "required": [
+                        "pass"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "scatter": {
+                          "type": "object",
+                          "properties": {
+                            "pi": {
+                              "type": "string",
+                              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "pi"
+                          ],
+                          "description": "Target klados/rhiza ref for 1:N fan-out",
+                          "title": "KladosRef",
+                          "example": {
+                            "pi": "01KEXAMPLE123456789012345",
+                            "type": "klados",
+                            "label": "OCR Processor"
+                          }
+                        },
+                        "route": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "where": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "nullable": true
+                                },
+                                "description": "Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR",
+                                "title": "WhereCondition",
+                                "example": {
+                                  "property": "status",
+                                  "equals": "approved"
+                                }
+                              },
+                              "target": {
+                                "type": "object",
+                                "properties": {
+                                  "pi": {
+                                    "type": "string",
+                                    "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                                  },
+                                  "type": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "description": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "pi"
+                                ],
+                                "description": "Target klados/rhiza ref if condition matches",
+                                "title": "KladosRef",
+                                "example": {
+                                  "pi": "01KEXAMPLE123456789012345",
+                                  "type": "klados",
+                                  "label": "OCR Processor"
+                                }
+                              }
+                            },
+                            "required": [
+                              "where",
+                              "target"
+                            ],
+                            "description": "Conditional routing rule. First matching rule wins.",
+                            "title": "RouteRule"
+                          },
+                          "description": "Conditional routing rules"
+                        }
+                      },
+                      "required": [
+                        "scatter"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "gather": {
+                          "type": "object",
+                          "properties": {
+                            "pi": {
+                              "type": "string",
+                              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "pi"
+                          ],
+                          "description": "Target klados/rhiza ref for N:1 fan-in",
+                          "title": "KladosRef",
+                          "example": {
+                            "pi": "01KEXAMPLE123456789012345",
+                            "type": "klados",
+                            "label": "OCR Processor"
+                          }
+                        },
+                        "route": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "where": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "nullable": true
+                                },
+                                "description": "Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR",
+                                "title": "WhereCondition",
+                                "example": {
+                                  "property": "status",
+                                  "equals": "approved"
+                                }
+                              },
+                              "target": {
+                                "type": "object",
+                                "properties": {
+                                  "pi": {
+                                    "type": "string",
+                                    "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                                  },
+                                  "type": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "description": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "pi"
+                                ],
+                                "description": "Target klados/rhiza ref if condition matches",
+                                "title": "KladosRef",
+                                "example": {
+                                  "pi": "01KEXAMPLE123456789012345",
+                                  "type": "klados",
+                                  "label": "OCR Processor"
+                                }
+                              }
+                            },
+                            "required": [
+                              "where",
+                              "target"
+                            ],
+                            "description": "Conditional routing rule. First matching rule wins.",
+                            "title": "RouteRule"
+                          },
+                          "description": "Conditional routing rules"
+                        }
+                      },
+                      "required": [
+                        "gather"
+                      ]
+                    }
+                  ],
+                  "description": "What happens after this klados completes",
+                  "title": "ThenSpec"
+                }
+              },
+              "required": [
+                "then"
+              ],
+              "description": "Flow step defining what happens after a klados completes",
+              "title": "FlowStep"
+            },
+            "description": "Flow definition mapping klados IDs to their handoff specifications",
+            "title": "Flow",
+            "example": {
+              "01KKLADOSA12345678901234": {
+                "then": {
+                  "pass": {
+                    "pi": "01KKLADOSB12345678901234",
+                    "type": "klados"
+                  }
+                }
+              },
+              "01KKLADOSB12345678901234": {
+                "then": {
+                  "done": true
+                }
+              }
+            }
+          },
+          "collection": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Collection to place rhiza in"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Rhiza description",
+            "example": "Processes documents through OCR, classification, and extraction"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Additional properties to store"
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "peer": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "peer_type": {
+                  "type": "string"
+                },
+                "peer_label": {
+                  "type": "string"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "nullable": true
+                  }
+                }
+              },
+              "required": [
+                "predicate",
+                "peer"
+              ],
+              "description": "Entity relationship",
+              "example": {
+                "predicate": "crew",
+                "peer": "01KDETYWYWM0MJVKM8DK3AEXPY",
+                "peer_type": "collection"
+              }
+            },
+            "description": "Relationships to create"
+          }
+        },
+        "required": [
+          "label",
+          "version",
+          "entry",
+          "flow",
+          "collection"
+        ]
+      },
+      "RhizaUpdateResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RhizaResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "prev_cid": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Previous version CID",
+                "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+              }
+            },
+            "required": [
+              "prev_cid"
+            ]
+          }
+        ]
+      },
+      "UpdateRhizaRequest": {
+        "type": "object",
+        "properties": {
+          "expect_tip": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Current tip CID for CAS validation. Request fails with 409 if this does not match.",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional note describing this change",
+            "example": "Added Chapter 42: The Whiteness of the Whale"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Properties to add or update (deep merged)"
+          },
+          "properties_remove": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Top-level property keys to remove",
+                "example": [
+                  "deprecated_field",
+                  "old_field"
+                ]
+              },
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "nullable": true
+                },
+                "description": "Nested removal structure. Each key navigates into a nested object; leaf arrays specify keys to delete at that level.",
+                "example": {
+                  "settings": {
+                    "notifications": [
+                      "email",
+                      "slack"
+                    ]
+                  }
+                }
+              }
+            ],
+            "description": "Properties to remove. Use string[] for top-level keys (e.g., [\"old_field\"]), or nested objects for deep removal (e.g., { config: { options: [\"debug\"] } }). Dot notation like \"config.options.debug\" is NOT supported."
+          },
+          "relationships_add": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate (e.g., \"admin\", \"contains\", \"collection\")",
+                  "example": "admin"
+                },
+                "peer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Target entity ID",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                },
+                "peer_type": {
+                  "type": "string",
+                  "description": "Target entity type hint",
+                  "example": "user"
+                },
+                "peer_label": {
+                  "type": "string",
+                  "description": "Target entity label hint",
+                  "example": "Captain Ahab"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "nullable": true
+                  },
+                  "description": "Properties to add/update on this relationship (deep merged if relationship exists)",
+                  "example": {
+                    "expires_at": "2025-12-31T00:00:00Z"
+                  }
+                },
+                "properties_remove": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "nullable": true
+                      }
+                    }
+                  ],
+                  "description": "Properties to remove from this relationship (string array or nested object)"
+                }
+              },
+              "required": [
+                "predicate",
+                "peer"
+              ],
+              "description": "Relationship to add or update (upsert semantics)"
+            },
+            "description": "Relationships to add or update (upsert semantics)"
+          },
+          "relationships_remove": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate",
+                  "example": "viewer"
+                },
+                "peer": {
+                  "type": "string",
+                  "description": "Target entity ID. If omitted, removes ALL relationships with this predicate.",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                }
+              },
+              "required": [
+                "predicate"
+              ],
+              "description": "Relationship to remove"
+            },
+            "description": "Relationships to remove"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Updated rhiza display name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Updated rhiza description"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "Updated semantic version"
+          },
+          "entry": {
+            "type": "object",
+            "properties": {
+              "pi": {
+                "type": "string",
+                "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+              },
+              "type": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "pi"
+            ],
+            "description": "Updated entry point klados reference",
+            "title": "KladosRef",
+            "example": {
+              "pi": "01KEXAMPLE123456789012345",
+              "type": "klados",
+              "label": "OCR Processor"
+            }
+          },
+          "flow": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "then": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "done": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      },
+                      "required": [
+                        "done"
+                      ],
+                      "description": "Terminal - workflow ends"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "pass": {
+                          "type": "object",
+                          "properties": {
+                            "pi": {
+                              "type": "string",
+                              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "pi"
+                          ],
+                          "description": "Target klados/rhiza ref for 1:1 handoff",
+                          "title": "KladosRef",
+                          "example": {
+                            "pi": "01KEXAMPLE123456789012345",
+                            "type": "klados",
+                            "label": "OCR Processor"
+                          }
+                        },
+                        "route": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "where": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "nullable": true
+                                },
+                                "description": "Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR",
+                                "title": "WhereCondition",
+                                "example": {
+                                  "property": "status",
+                                  "equals": "approved"
+                                }
+                              },
+                              "target": {
+                                "type": "object",
+                                "properties": {
+                                  "pi": {
+                                    "type": "string",
+                                    "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                                  },
+                                  "type": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "description": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "pi"
+                                ],
+                                "description": "Target klados/rhiza ref if condition matches",
+                                "title": "KladosRef",
+                                "example": {
+                                  "pi": "01KEXAMPLE123456789012345",
+                                  "type": "klados",
+                                  "label": "OCR Processor"
+                                }
+                              }
+                            },
+                            "required": [
+                              "where",
+                              "target"
+                            ],
+                            "description": "Conditional routing rule. First matching rule wins.",
+                            "title": "RouteRule"
+                          },
+                          "description": "Conditional routing rules"
+                        }
+                      },
+                      "required": [
+                        "pass"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "scatter": {
+                          "type": "object",
+                          "properties": {
+                            "pi": {
+                              "type": "string",
+                              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "pi"
+                          ],
+                          "description": "Target klados/rhiza ref for 1:N fan-out",
+                          "title": "KladosRef",
+                          "example": {
+                            "pi": "01KEXAMPLE123456789012345",
+                            "type": "klados",
+                            "label": "OCR Processor"
+                          }
+                        },
+                        "route": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "where": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "nullable": true
+                                },
+                                "description": "Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR",
+                                "title": "WhereCondition",
+                                "example": {
+                                  "property": "status",
+                                  "equals": "approved"
+                                }
+                              },
+                              "target": {
+                                "type": "object",
+                                "properties": {
+                                  "pi": {
+                                    "type": "string",
+                                    "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                                  },
+                                  "type": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "description": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "pi"
+                                ],
+                                "description": "Target klados/rhiza ref if condition matches",
+                                "title": "KladosRef",
+                                "example": {
+                                  "pi": "01KEXAMPLE123456789012345",
+                                  "type": "klados",
+                                  "label": "OCR Processor"
+                                }
+                              }
+                            },
+                            "required": [
+                              "where",
+                              "target"
+                            ],
+                            "description": "Conditional routing rule. First matching rule wins.",
+                            "title": "RouteRule"
+                          },
+                          "description": "Conditional routing rules"
+                        }
+                      },
+                      "required": [
+                        "scatter"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "gather": {
+                          "type": "object",
+                          "properties": {
+                            "pi": {
+                              "type": "string",
+                              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "pi"
+                          ],
+                          "description": "Target klados/rhiza ref for N:1 fan-in",
+                          "title": "KladosRef",
+                          "example": {
+                            "pi": "01KEXAMPLE123456789012345",
+                            "type": "klados",
+                            "label": "OCR Processor"
+                          }
+                        },
+                        "route": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "where": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "nullable": true
+                                },
+                                "description": "Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR",
+                                "title": "WhereCondition",
+                                "example": {
+                                  "property": "status",
+                                  "equals": "approved"
+                                }
+                              },
+                              "target": {
+                                "type": "object",
+                                "properties": {
+                                  "pi": {
+                                    "type": "string",
+                                    "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                                  },
+                                  "type": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "description": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "pi"
+                                ],
+                                "description": "Target klados/rhiza ref if condition matches",
+                                "title": "KladosRef",
+                                "example": {
+                                  "pi": "01KEXAMPLE123456789012345",
+                                  "type": "klados",
+                                  "label": "OCR Processor"
+                                }
+                              }
+                            },
+                            "required": [
+                              "where",
+                              "target"
+                            ],
+                            "description": "Conditional routing rule. First matching rule wins.",
+                            "title": "RouteRule"
+                          },
+                          "description": "Conditional routing rules"
+                        }
+                      },
+                      "required": [
+                        "gather"
+                      ]
+                    }
+                  ],
+                  "description": "What happens after this klados completes",
+                  "title": "ThenSpec"
+                }
+              },
+              "required": [
+                "then"
+              ],
+              "description": "Flow step defining what happens after a klados completes",
+              "title": "FlowStep"
+            },
+            "description": "Flow definition mapping klados IDs to their handoff specifications",
+            "title": "Flow",
+            "example": {
+              "01KKLADOSA12345678901234": {
+                "then": {
+                  "pass": {
+                    "pi": "01KKLADOSB12345678901234",
+                    "type": "klados"
+                  }
+                }
+              },
+              "01KKLADOSB12345678901234": {
+                "then": {
+                  "done": true
+                }
+              }
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "development",
+              "active",
+              "disabled"
+            ],
+            "description": "Rhiza status",
+            "example": "development"
+          }
+        },
+        "required": [
+          "expect_tip"
+        ]
+      },
+      "InvokeRhizaGrant": {
+        "type": "object",
+        "properties": {
+          "klados": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "label"
+            ]
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "role": {
+            "type": "string"
+          },
+          "already_granted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "klados",
+          "actions",
+          "role",
+          "already_granted"
+        ]
+      },
+      "InvokeRhizaPreviewResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending_confirmation"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvokeRhizaGrant"
+            }
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "label"
+            ]
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "kladoi_count": {
+            "type": "integer",
+            "description": "Number of kladoi in the workflow"
+          },
+          "all_ready": {
+            "type": "boolean",
+            "description": "True if all kladoi are active and verified"
+          },
+          "klados_issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "reason"
+              ]
+            },
+            "description": "Issues with kladoi that prevent workflow execution"
+          }
+        },
+        "required": [
+          "status",
+          "message",
+          "grants",
+          "target",
+          "expires_at",
+          "kladoi_count",
+          "all_ready"
+        ]
+      },
+      "InvokeRhizaStartedResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "started"
+            ]
+          },
+          "job_id": {
+            "type": "string",
+            "description": "Unique job identifier",
+            "example": "job_01JEXAMPLEID12345678901"
+          },
+          "job_collection": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "The job collection where logs are written"
+          },
+          "rhiza_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Rhiza that was invoked"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "status",
+          "job_id",
+          "job_collection",
+          "rhiza_id",
+          "expires_at"
+        ]
+      },
+      "InvokeRhizaRejectedResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "rejected"
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message explaining why the entry klados rejected the job"
+          },
+          "retry_after": {
+            "type": "integer",
+            "description": "Suggested seconds to wait before retrying"
+          }
+        },
+        "required": [
+          "status",
+          "error"
+        ]
+      },
+      "InvokeRhizaConfirmedResponse": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InvokeRhizaStartedResponse"
+          },
+          {
+            "$ref": "#/components/schemas/InvokeRhizaRejectedResponse"
+          }
+        ]
+      },
+      "InvokeRhizaRequest": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity or collection ID to process"
+          },
+          "input": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Input data for the workflow"
+          },
+          "expires_in": {
+            "type": "integer",
+            "minimum": 60,
+            "maximum": 86400,
+            "default": 3600,
+            "description": "Permission duration in seconds (60-86400, default: 3600)",
+            "example": 3600
+          },
+          "confirm": {
+            "type": "boolean",
+            "default": false,
+            "description": "false = preview grants, true = execute workflow",
+            "example": false
+          }
+        },
+        "required": [
+          "target"
+        ]
+      },
+      "ProgressCounters": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total log entries"
+          },
+          "pending": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Pending entries"
+          },
+          "running": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Running entries"
+          },
+          "done": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Completed entries"
+          },
+          "error": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Failed entries"
+          }
+        },
+        "required": [
+          "total",
+          "pending",
+          "running",
+          "done",
+          "error"
+        ]
+      },
+      "ErrorSummary": {
+        "type": "object",
+        "properties": {
+          "klados_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Klados that failed"
+          },
+          "job_id": {
+            "type": "string",
+            "description": "Job ID"
+          },
+          "code": {
+            "type": "string",
+            "description": "Error code"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "retryable": {
+            "type": "boolean",
+            "description": "Whether error is retryable"
+          }
+        },
+        "required": [
+          "klados_id",
+          "job_id",
+          "code",
+          "message",
+          "retryable"
+        ]
+      },
+      "WorkflowStatusResponse": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "description": "Job ID"
+          },
+          "rhiza_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Rhiza ID"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "running",
+              "done",
+              "error"
+            ],
+            "description": "Overall workflow status"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/ProgressCounters"
+          },
+          "current_kladoi": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+            },
+            "description": "Currently running kladoi"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErrorSummary"
+            },
+            "description": "Error summaries"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When workflow started"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When workflow completed"
+          }
+        },
+        "required": [
+          "job_id",
+          "rhiza_id",
+          "status",
+          "progress",
+          "started_at"
+        ]
+      },
+      "ResumedJob": {
+        "type": "object",
+        "properties": {
+          "original_job_id": {
+            "type": "string",
+            "description": "Original job ID that was resumed"
+          },
+          "klados_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Klados that was re-invoked"
+          },
+          "new_job_id": {
+            "type": "string",
+            "description": "New job ID"
+          }
+        },
+        "required": [
+          "original_job_id",
+          "klados_id",
+          "new_job_id"
+        ]
+      },
+      "ResumeWorkflowResponse": {
+        "type": "object",
+        "properties": {
+          "resumed": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of jobs resumed"
+          },
+          "skipped": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of jobs skipped (non-retryable)"
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumedJob"
+            },
+            "description": "Details of resumed jobs"
+          }
+        },
+        "required": [
+          "resumed",
+          "skipped",
+          "jobs"
+        ]
+      },
+      "ResumeWorkflowRequest": {
+        "type": "object",
+        "properties": {
+          "error_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Only resume jobs with these error codes (all retryable if not specified)"
+          }
+        }
+      },
       "Event": {
         "type": "object",
         "properties": {
@@ -8073,6 +10485,202 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RegisterResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Internal server error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/alpha/invite": {
+      "post": {
+        "tags": [
+          "Alpha"
+        ],
+        "summary": "Invite a user to the alpha",
+        "description": "Creates an alpha invite and sends a Supabase invite email. Requires X-Alpha-Secret header.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAlphaInviteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Invite created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateAlphaInviteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Invite already exists for this email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Internal server error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/alpha/invites": {
+      "get": {
+        "tags": [
+          "Alpha"
+        ],
+        "summary": "List all alpha invites",
+        "description": "Returns all invites with their current status. Requires X-Alpha-Secret header.",
+        "responses": {
+          "200": {
+            "description": "Invite list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAlphaInvitesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Internal server error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/alpha/invite/{email}": {
+      "delete": {
+        "tags": [
+          "Alpha"
+        ],
+        "summary": "Revoke an alpha invite",
+        "description": "Revokes an invite by email. Requires X-Alpha-Secret header.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "email"
+            },
+            "required": true,
+            "name": "email",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invite revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "revoked": {
+                      "type": "boolean"
+                    },
+                    "email": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "revoked",
+                    "email"
+                  ]
                 }
               }
             }
@@ -14433,6 +17041,1155 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AgentUnreachableError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kladoi": {
+      "post": {
+        "tags": [
+          "Kladoi"
+        ],
+        "summary": "Create a klados",
+        "description": "Creates a new klados entity. Requires klados:create permission in the target collection.\n\n---\n**Permission:** `klados:create`  \n**Auth:** required",
+        "x-arke-action": "klados:create",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateKladosRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Klados created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KladosResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kladoi/{id}": {
+      "get": {
+        "tags": [
+          "Kladoi"
+        ],
+        "summary": "Get klados by ID",
+        "description": "Returns a klados entity by ID.\n\n---\n**Permission:** `klados:view`  \n**Auth:** optional",
+        "x-arke-action": "klados:view",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Klados found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KladosResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Kladoi"
+        ],
+        "summary": "Update klados",
+        "description": "Updates a klados. Requires klados:update permission.\n\n**Endpoint verification rules:**\n- Changing `endpoint` clears `endpoint_verified_at` and resets status to 'development'\n- Setting `status: 'active'` requires `endpoint_verified_at` to be set\n\n---\n**Permission:** `klados:update`  \n**Auth:** required",
+        "x-arke-action": "klados:update",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateKladosRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Klados updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KladosUpdateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - CAS validation failed (entity was modified)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CASErrorResponse"
+                },
+                "example": {
+                  "error": "Conflict: entity was modified",
+                  "details": {
+                    "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                    "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kladoi/{id}/invoke": {
+      "post": {
+        "tags": [
+          "Kladoi"
+        ],
+        "summary": "Invoke a klados",
+        "description": "Invoke a klados to perform work on a target entity.\n\n**Two-phase interaction:**\n1. `confirm: false` (default) - preview permissions that will be granted\n2. `confirm: true` - execute the klados\n\nThe klados receives temporal (time-limited) permissions on the target collection.\n\n---\n**Permission:** `klados:invoke`  \n**Auth:** required",
+        "x-arke-action": "klados:invoke",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvokeKladosRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Invoke preview (confirm: false)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvokeKladosPreviewResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Klados execution started (confirm: true)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvokeKladosConfirmedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kladoi/{id}/verify": {
+      "post": {
+        "tags": [
+          "Kladoi"
+        ],
+        "summary": "Verify klados endpoint ownership",
+        "description": "Verify that you control the klados's endpoint URL. This is required before activating a klados.\n\n**Two-phase flow:**\n1. Call without `confirm` to get a verification token\n2. Deploy `/.well-known/arke-verification` endpoint returning the token\n3. Call with `confirm: true` to complete verification\n\n**Verification endpoint format:**\nYour endpoint must return JSON:\n```json\n{\n  \"verification_token\": \"vt_xxx...\",\n  \"klados_id\": \"01xxx...\"\n}\n```\n\n---\n**Permission:** `klados:manage`  \n**Auth:** required",
+        "x-arke-action": "klados:manage",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyKladosRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification token (when confirm is false) or verification result (when confirm is true)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/VerifyKladosTokenResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/VerifyKladosSuccessResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/VerifyKladosFailureResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rhizai": {
+      "post": {
+        "tags": [
+          "Rhizai"
+        ],
+        "summary": "Create a rhiza workflow",
+        "description": "Creates a new rhiza workflow entity. Requires rhiza:create permission in the target collection.\n\n**Flow validation:**\n- Entry klados must be in flow\n- All flow targets must be in flow (or external rhiza refs)\n- All paths must terminate (done: true or external target)\n- No cycles allowed\n\n---\n**Permission:** `rhiza:create`  \n**Auth:** required",
+        "x-arke-action": "rhiza:create",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRhizaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Rhiza created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RhizaResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rhizai/{id}": {
+      "get": {
+        "tags": [
+          "Rhizai"
+        ],
+        "summary": "Get rhiza by ID",
+        "description": "Returns a rhiza entity by ID.\n\n---\n**Permission:** `rhiza:view`  \n**Auth:** optional",
+        "x-arke-action": "rhiza:view",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rhiza found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RhizaResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Rhizai"
+        ],
+        "summary": "Update rhiza",
+        "description": "Updates a rhiza. Requires rhiza:update permission.\n\n---\n**Permission:** `rhiza:update`  \n**Auth:** required",
+        "x-arke-action": "rhiza:update",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRhizaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rhiza updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RhizaUpdateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - CAS validation failed (entity was modified)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CASErrorResponse"
+                },
+                "example": {
+                  "error": "Conflict: entity was modified",
+                  "details": {
+                    "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                    "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rhizai/{id}/invoke": {
+      "post": {
+        "tags": [
+          "Rhizai"
+        ],
+        "summary": "Invoke a rhiza workflow",
+        "description": "Invoke a rhiza workflow to process a target entity.\n\n**Two-phase interaction:**\n1. `confirm: false` (default) - preview permissions for all kladoi\n2. `confirm: true` - execute the workflow\n\nAll kladoi in the workflow receive temporal (time-limited) permissions.\n\n---\n**Permission:** `rhiza:invoke`  \n**Auth:** required",
+        "x-arke-action": "rhiza:invoke",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvokeRhizaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Invoke preview (confirm: false)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvokeRhizaPreviewResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Workflow execution started (confirm: true)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvokeRhizaConfirmedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rhizai/{id}/jobs/{job_id}/status": {
+      "get": {
+        "tags": [
+          "Rhizai"
+        ],
+        "summary": "Get workflow job status",
+        "description": "Returns the status of a workflow job.\n\nReads klados_log entries from the job collection to compute:\n- Overall status (pending/running/done/error)\n- Progress counters\n- Current running kladoi\n- Error summaries\n\n---\n**Permission:** `rhiza:view`  \n**Auth:** optional",
+        "x-arke-action": "rhiza:view",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Rhiza entity ID"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Job ID returned from rhiza invocation",
+              "example": "job_01KFXPQ3ABCDEFGHIJKLMN"
+            },
+            "required": true,
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Workflow status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowStatusResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rhizai/{id}/jobs/{job_id}/resume": {
+      "post": {
+        "tags": [
+          "Rhizai"
+        ],
+        "summary": "Resume failed workflow",
+        "description": "Resume a workflow by re-invoking failed kladoi that have retryable errors.\n\nOnly retryable errors are resumed. Non-retryable errors are skipped.\n\n---\n**Permission:** `rhiza:invoke`  \n**Auth:** required",
+        "x-arke-action": "rhiza:invoke",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Rhiza entity ID"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Job ID returned from rhiza invocation",
+              "example": "job_01KFXPQ3ABCDEFGHIJKLMN"
+            },
+            "required": true,
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResumeWorkflowRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resume result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumeWorkflowResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
                 }
               }
             }

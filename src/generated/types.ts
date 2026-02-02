@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-01-26T22:08:41.056Z
+ * Generated: 2026-02-02T20:20:34.342Z
  */
 
 export type paths = {
@@ -125,6 +125,20 @@ export type paths = {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Internal Server Error */
                 500: {
                     headers: {
@@ -142,6 +156,225 @@ export type paths = {
             };
         };
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/alpha/invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Invite a user to the alpha
+         * @description Creates an alpha invite and sends a Supabase invite email. Requires X-Alpha-Secret header.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateAlphaInviteRequest"];
+                };
+            };
+            responses: {
+                /** @description Invite created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CreateAlphaInviteResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Invite already exists for this email */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Internal server error"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/alpha/invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all alpha invites
+         * @description Returns all invites with their current status. Requires X-Alpha-Secret header.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Invite list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListAlphaInvitesResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Internal server error"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/alpha/invite/{email}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke an alpha invite
+         * @description Revokes an invite by email. Requires X-Alpha-Secret header.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    email: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Invite revoked */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            revoked: boolean;
+                            email: string;
+                        };
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Internal server error"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -2055,6 +2288,121 @@ export type paths = {
                          *     }
                          */
                         "application/json": components["schemas"]["CASErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entities/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Batch create entities
+         * @description Creates multiple entities in a single request with bounded internal concurrency.
+         *
+         *     Entities are created in chunks of 10 internally. Each entity follows the same permission model as single creates.
+         *
+         *     Returns per-entity results. HTTP 201 if all succeed, 207 if some fail.
+         *
+         *     **Max batch size:** 100 entities.
+         *
+         *     ---
+         *     **Permission:** `entity:create`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["BatchCreateEntityRequest"];
+                };
+            };
+            responses: {
+                /** @description All entities created successfully */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BatchCreateEntityResponse"];
+                    };
+                };
+                /** @description Partial success - some entities failed */
+                207: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BatchCreateEntityResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
             };
@@ -6740,6 +7088,1210 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/kladoi": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a klados
+         * @description Creates a new klados entity. Requires klados:create permission in the target collection.
+         *
+         *     ---
+         *     **Permission:** `klados:create`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateKladosRequest"];
+                };
+            };
+            responses: {
+                /** @description Klados created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["KladosResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kladoi/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get klados by ID
+         * @description Returns a klados entity by ID.
+         *
+         *     ---
+         *     **Permission:** `klados:view`
+         *     **Auth:** optional
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Klados found */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["KladosResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        /**
+         * Update klados
+         * @description Updates a klados. Requires klados:update permission.
+         *
+         *     **Endpoint verification rules:**
+         *     - Changing `endpoint` clears `endpoint_verified_at` and resets status to 'development'
+         *     - Setting `status: 'active'` requires `endpoint_verified_at` to be set
+         *
+         *     ---
+         *     **Permission:** `klados:update`
+         *     **Auth:** required
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateKladosRequest"];
+                };
+            };
+            responses: {
+                /** @description Klados updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["KladosUpdateResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict - CAS validation failed (entity was modified) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Conflict: entity was modified",
+                         *       "details": {
+                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["CASErrorResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kladoi/{id}/invoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Invoke a klados
+         * @description Invoke a klados to perform work on a target entity.
+         *
+         *     **Two-phase interaction:**
+         *     1. `confirm: false` (default) - preview permissions that will be granted
+         *     2. `confirm: true` - execute the klados
+         *
+         *     The klados receives temporal (time-limited) permissions on the target collection.
+         *
+         *     ---
+         *     **Permission:** `klados:invoke`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["InvokeKladosRequest"];
+                };
+            };
+            responses: {
+                /** @description Invoke preview (confirm: false) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InvokeKladosPreviewResponse"];
+                    };
+                };
+                /** @description Klados execution started (confirm: true) */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InvokeKladosConfirmedResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kladoi/{id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify klados endpoint ownership
+         * @description Verify that you control the klados's endpoint URL. This is required before activating a klados.
+         *
+         *     **Two-phase flow:**
+         *     1. Call without `confirm` to get a verification token
+         *     2. Deploy `/.well-known/arke-verification` endpoint returning the token
+         *     3. Call with `confirm: true` to complete verification
+         *
+         *     **Verification endpoint format:**
+         *     Your endpoint must return JSON:
+         *     ```json
+         *     {
+         *       "verification_token": "vt_xxx...",
+         *       "klados_id": "01xxx..."
+         *     }
+         *     ```
+         *
+         *     ---
+         *     **Permission:** `klados:manage`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["VerifyKladosRequest"];
+                };
+            };
+            responses: {
+                /** @description Verification token (when confirm is false) or verification result (when confirm is true) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["VerifyKladosTokenResponse"] | components["schemas"]["VerifyKladosSuccessResponse"] | components["schemas"]["VerifyKladosFailureResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rhizai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a rhiza workflow
+         * @description Creates a new rhiza workflow entity. Requires rhiza:create permission in the target collection.
+         *
+         *     **Flow validation:**
+         *     - Entry klados must be in flow
+         *     - All flow targets must be in flow (or external rhiza refs)
+         *     - All paths must terminate (done: true or external target)
+         *     - No cycles allowed
+         *
+         *     ---
+         *     **Permission:** `rhiza:create`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateRhizaRequest"];
+                };
+            };
+            responses: {
+                /** @description Rhiza created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RhizaResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rhizai/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get rhiza by ID
+         * @description Returns a rhiza entity by ID.
+         *
+         *     ---
+         *     **Permission:** `rhiza:view`
+         *     **Auth:** optional
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Rhiza found */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RhizaResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        /**
+         * Update rhiza
+         * @description Updates a rhiza. Requires rhiza:update permission.
+         *
+         *     ---
+         *     **Permission:** `rhiza:update`
+         *     **Auth:** required
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateRhizaRequest"];
+                };
+            };
+            responses: {
+                /** @description Rhiza updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RhizaUpdateResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict - CAS validation failed (entity was modified) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Conflict: entity was modified",
+                         *       "details": {
+                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["CASErrorResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rhizai/{id}/invoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Invoke a rhiza workflow
+         * @description Invoke a rhiza workflow to process a target entity.
+         *
+         *     **Two-phase interaction:**
+         *     1. `confirm: false` (default) - preview permissions for all kladoi
+         *     2. `confirm: true` - execute the workflow
+         *
+         *     All kladoi in the workflow receive temporal (time-limited) permissions.
+         *
+         *     ---
+         *     **Permission:** `rhiza:invoke`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["InvokeRhizaRequest"];
+                };
+            };
+            responses: {
+                /** @description Invoke preview (confirm: false) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InvokeRhizaPreviewResponse"];
+                    };
+                };
+                /** @description Workflow execution started (confirm: true) */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InvokeRhizaConfirmedResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rhizai/{id}/jobs/{job_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get workflow job status
+         * @description Returns the status of a workflow job.
+         *
+         *     Reads klados_log entries from the job collection to compute:
+         *     - Overall status (pending/running/done/error)
+         *     - Progress counters
+         *     - Current running kladoi
+         *     - Error summaries
+         *
+         *     ---
+         *     **Permission:** `rhiza:view`
+         *     **Auth:** optional
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    job_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Workflow status */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WorkflowStatusResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rhizai/{id}/jobs/{job_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resume failed workflow
+         * @description Resume a workflow by re-invoking failed kladoi that have retryable errors.
+         *
+         *     Only retryable errors are resumed. Non-retryable errors are skipped.
+         *
+         *     ---
+         *     **Permission:** `rhiza:invoke`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    job_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ResumeWorkflowRequest"];
+                };
+            };
+            responses: {
+                /** @description Resume result */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ResumeWorkflowResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events": {
         parameters: {
             query?: never;
@@ -7670,18 +9222,19 @@ export type paths = {
          * Search agents by text
          * @description Search for agents using semantic text search.
          *
-         *     Use this endpoint to discover agents across the network. Only active agents are returned. Results are ranked by semantic similarity to your query based on agent descriptions and capabilities.
+         *     **Official Agents (Default):** By default, this endpoint searches only the official Arke agents collection (`01KFF0H1KSR4SHHDQ7T2HXQEK6`). These agents are pre-approved, actively maintained, and tested for security and reliability.
+         *
+         *     **All Agents:** Set `scope: "all"` to search network-wide. This is not recommended as results may include duplicates, outdated agents, or unapproved implementations.
+         *
+         *     Results are ranked by semantic similarity to your query based on agent descriptions and capabilities.
          *
          *     **Entity Expansion:**
          *
-         *     Use `expand` in the request body to fetch entity data inline with search results:
+         *     By default, agent search returns **full entity manifests** (including `endpoint`, `input_schema`, `actions_required`, etc.) to make discovery results immediately useful.
          *
-         *     - **`expand: "preview"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)
-         *     - **`expand: "full"`**: Adds `entity` with complete manifest including all properties and relationships
-         *     - **`expand: "none"`**: Returns search metadata only (fastest, lowest bandwidth)
-         *
-         *     Preview mode is recommended for most use cases. Full expansion can result in large payloads.
-         *     Gracefully handles deleted or inaccessible entities (returns results without expansion data).
+         *     - **`expand: "full"` (default)**: Complete agent manifests with all properties
+         *     - **`expand: "preview"`**: Lightweight previews (id, type, label, description_preview, timestamps)
+         *     - **`expand: "none"`**: Search metadata only (fastest)
          *
          *     ---
          *     **Permission:** `search:query`
@@ -7710,6 +9263,12 @@ export type paths = {
                          * @enum {string}
                          */
                         expand?: "preview" | "full" | "none";
+                        /**
+                         * @description Search scope. "official" (default) searches only the pre-approved Arke agents collection. "all" searches all agents network-wide (not recommended - may include duplicates, outdated, or unapproved agents).
+                         * @default official
+                         * @enum {string}
+                         */
+                        scope?: "official" | "all";
                     };
                 };
             };
@@ -8114,6 +9673,12 @@ export type paths = {
          *     {"type":"message_delta","delta":{"usage":{"input_tokens":123,"output_tokens":456}}}
          *     ```
          *
+         *     ## Storage Limits
+         *
+         *     - **Single message**: 2 MB max (returns 413 with code `MESSAGE_TOO_LARGE`)
+         *     - **Chat database**: 10 GB max (returns 507 with code `CHAT_STORAGE_FULL`)
+         *     - **LLM context**: ~128K tokens (returns stream error)
+         *
          *
          *     ---
          *     **Permission:** `chat:send`
@@ -8169,8 +9734,89 @@ export type paths = {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description Message exceeds 2MB storage limit */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MessageTooLargeError"];
+                    };
+                };
+                /** @description Chat storage full (10GB limit) */
+                507: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChatStorageFullError"];
+                    };
+                };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/chat/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List user chats
+         * @description Returns a paginated list of the authenticated user's chats, sorted newest-first.
+         *
+         *     Only returns chats owned by the authenticated user. Anonymous chats are not indexed.
+         *
+         *     Query parameters:
+         *     - `limit`: Max chats to return (1-100, default 20)
+         *     - `offset`: Number of chats to skip for pagination (default 0)
+         *
+         *     ---
+         *     **Permission:** `chat:view`
+         *     **Auth:** required
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description List of user chats */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListChatsResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -8188,11 +9834,11 @@ export type paths = {
          * Get chat session
          * @description Get information about a chat session including message history.
          *
-         *     Sessions are publicly viewable for sharing purposes. Only the owner can send messages or delete the session.
+         *     Only the session owner can view their chat sessions.
          *
          *     ---
          *     **Permission:** `chat:view`
-         *     **Auth:** optional
+         *     **Auth:** required
          */
         get: {
             parameters: {
@@ -8210,6 +9856,34 @@ export type paths = {
                     };
                     content: {
                         "application/json": components["schemas"]["ChatSession"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
                 /** @description Not Found - Resource does not exist */
@@ -8631,6 +10305,50 @@ export type components = {
                 [key: string]: unknown;
             };
         };
+        AlphaInvite: {
+            /**
+             * Format: uuid
+             * @example a1b2c3d4-e5f6-7890-abcd-ef1234567890
+             */
+            id: string;
+            /**
+             * Format: email
+             * @example ishmael@pequod.ship
+             */
+            email: string;
+            /** @example admin */
+            invited_by: string;
+            /**
+             * @example pending
+             * @enum {string}
+             */
+            status: "pending" | "accepted" | "revoked" | "waitlisted";
+            /** @example 2026-01-28T12:00:00.000Z */
+            created_at: string;
+            /** @example null */
+            accepted_at: string | null;
+        };
+        CreateAlphaInviteResponse: {
+            invite: components["schemas"]["AlphaInvite"];
+        };
+        CreateAlphaInviteRequest: {
+            /**
+             * Format: email
+             * @description Email address to invite
+             * @example ishmael@pequod.ship
+             */
+            email: string;
+            /**
+             * @description Who is sending the invite (defaults to "admin")
+             * @example admin
+             */
+            invited_by?: string;
+        };
+        ListAlphaInvitesResponse: {
+            invites: components["schemas"]["AlphaInvite"][];
+            /** @example 5 */
+            count: number;
+        };
         EntityResponse: {
             /**
              * @description Entity ID (ULID format)
@@ -8679,17 +10397,28 @@ export type components = {
              */
             ts: number;
             /**
-             * @description Audit trail for edits
+             * @description Audit trail for edits. Label fields are populated when ?expand=relationships is used.
              * @example {
              *       "user_id": "01JCAPTAINAHAB000000000000",
+             *       "user_label": "Captain Ahab",
              *       "method": "manual"
              *     }
              */
             edited_by: {
                 user_id: string;
+                /**
+                 * @description Display name of the user/agent (populated during expansion)
+                 * @example Captain Ahab
+                 */
+                user_label?: string;
                 /** @enum {string} */
                 method: "manual" | "ai_generated" | "system" | "import";
                 on_behalf_of?: string;
+                /**
+                 * @description Display name of the on_behalf_of user/agent (populated during expansion)
+                 * @example Research Assistant
+                 */
+                on_behalf_of_label?: string;
             };
             /**
              * @description Previous version CID (present on updates)
@@ -9511,17 +11240,28 @@ export type components = {
              */
             ts: number;
             /**
-             * @description Audit trail for edits
+             * @description Audit trail for edits. Label fields are populated when ?expand=relationships is used.
              * @example {
              *       "user_id": "01JCAPTAINAHAB000000000000",
+             *       "user_label": "Captain Ahab",
              *       "method": "manual"
              *     }
              */
             edited_by: {
                 user_id: string;
+                /**
+                 * @description Display name of the user/agent (populated during expansion)
+                 * @example Captain Ahab
+                 */
+                user_label?: string;
                 /** @enum {string} */
                 method: "manual" | "ai_generated" | "system" | "import";
                 on_behalf_of?: string;
+                /**
+                 * @description Display name of the on_behalf_of user/agent (populated during expansion)
+                 * @example Research Assistant
+                 */
+                on_behalf_of_label?: string;
             };
             /**
              * @description Previous version CID (present on updates)
@@ -9570,6 +11310,79 @@ export type components = {
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
             collection?: string;
+        };
+        BatchCreateSuccess: {
+            /** @enum {boolean} */
+            success: true;
+            index: number;
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            id: string;
+            /**
+             * @description Content Identifier (CID) - content-addressed hash
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            cid: string;
+            type: string;
+            /**
+             * @description Entity version number
+             * @example 1
+             */
+            ver: number;
+        };
+        BatchCreateFailure: {
+            /** @enum {boolean} */
+            success: false;
+            index: number;
+            error: string;
+            code: string;
+        };
+        BatchCreateEntityResponse: {
+            results: (components["schemas"]["BatchCreateSuccess"] | components["schemas"]["BatchCreateFailure"])[];
+            summary: {
+                total: number;
+                succeeded: number;
+                failed: number;
+            };
+        };
+        BatchCreateEntityItem: {
+            /**
+             * @description Optional note describing this change
+             * @example Added Chapter 42: The Whiteness of the Whale
+             */
+            note?: string;
+            /** @description Entity type identifier */
+            type: string;
+            /** @description Entity properties */
+            properties?: {
+                [key: string]: unknown;
+            };
+            /** @description Entity relationships */
+            relationships?: {
+                predicate: string;
+                peer: string;
+                peer_type?: string;
+                peer_label?: string;
+                properties?: {
+                    [key: string]: unknown;
+                };
+            }[];
+            /**
+             * @description Parent collection ID (creates collection relationship)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            collection?: string;
+        };
+        BatchCreateEntityRequest: {
+            /** @description Array of entities to create (1-100) */
+            entities: components["schemas"]["BatchCreateEntityItem"][];
+            /**
+             * @description Default collection for entities that do not specify one
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            default_collection?: string;
         };
         TipResponse: {
             /**
@@ -10237,17 +12050,28 @@ export type components = {
              */
             ts: number;
             /**
-             * @description Audit trail for edits
+             * @description Audit trail for edits. Label fields are populated when ?expand=relationships is used.
              * @example {
              *       "user_id": "01JCAPTAINAHAB000000000000",
+             *       "user_label": "Captain Ahab",
              *       "method": "manual"
              *     }
              */
             edited_by: {
                 user_id: string;
+                /**
+                 * @description Display name of the user/agent (populated during expansion)
+                 * @example Captain Ahab
+                 */
+                user_label?: string;
                 /** @enum {string} */
                 method: "manual" | "ai_generated" | "system" | "import";
                 on_behalf_of?: string;
+                /**
+                 * @description Display name of the on_behalf_of user/agent (populated during expansion)
+                 * @example Research Assistant
+                 */
+                on_behalf_of_label?: string;
             };
         };
         CreateFileRequest: {
@@ -10496,17 +12320,28 @@ export type components = {
              */
             ts: number;
             /**
-             * @description Audit trail for edits
+             * @description Audit trail for edits. Label fields are populated when ?expand=relationships is used.
              * @example {
              *       "user_id": "01JCAPTAINAHAB000000000000",
+             *       "user_label": "Captain Ahab",
              *       "method": "manual"
              *     }
              */
             edited_by: {
                 user_id: string;
+                /**
+                 * @description Display name of the user/agent (populated during expansion)
+                 * @example Captain Ahab
+                 */
+                user_label?: string;
                 /** @enum {string} */
                 method: "manual" | "ai_generated" | "system" | "import";
                 on_behalf_of?: string;
+                /**
+                 * @description Display name of the on_behalf_of user/agent (populated during expansion)
+                 * @example Research Assistant
+                 */
+                on_behalf_of_label?: string;
             };
         };
         CreateFolderRequest: {
@@ -10829,17 +12664,28 @@ export type components = {
              */
             ts: string;
             /**
-             * @description Audit trail for edits
+             * @description Audit trail for edits. Label fields are populated when ?expand=relationships is used.
              * @example {
              *       "user_id": "01JCAPTAINAHAB000000000000",
+             *       "user_label": "Captain Ahab",
              *       "method": "manual"
              *     }
              */
             edited_by: {
                 user_id: string;
+                /**
+                 * @description Display name of the user/agent (populated during expansion)
+                 * @example Captain Ahab
+                 */
+                user_label?: string;
                 /** @enum {string} */
                 method: "manual" | "ai_generated" | "system" | "import";
                 on_behalf_of?: string;
+                /**
+                 * @description Display name of the on_behalf_of user/agent (populated during expansion)
+                 * @example Research Assistant
+                 */
+                on_behalf_of_label?: string;
             };
             /** @description Optional note describing this version */
             note?: string;
@@ -10928,17 +12774,28 @@ export type components = {
                     };
                 }[];
                 /**
-                 * @description Audit trail for edits
+                 * @description Audit trail for edits. Label fields are populated when ?expand=relationships is used.
                  * @example {
                  *       "user_id": "01JCAPTAINAHAB000000000000",
+                 *       "user_label": "Captain Ahab",
                  *       "method": "manual"
                  *     }
                  */
                 edited_by: {
                     user_id: string;
+                    /**
+                     * @description Display name of the user/agent (populated during expansion)
+                     * @example Captain Ahab
+                     */
+                    user_label?: string;
                     /** @enum {string} */
                     method: "manual" | "ai_generated" | "system" | "import";
                     on_behalf_of?: string;
+                    /**
+                     * @description Display name of the on_behalf_of user/agent (populated during expansion)
+                     * @example Research Assistant
+                     */
+                    on_behalf_of_label?: string;
                 };
                 note?: string;
             };
@@ -11511,6 +13368,1050 @@ export type components = {
              */
             error: string;
         };
+        KladosResponse: components["schemas"]["EntityResponse"] & {
+            /** @enum {string} */
+            type?: "klados";
+        };
+        CreateKladosRequest: {
+            /**
+             * @description Optional note describing this change
+             * @example Added Chapter 42: The Whiteness of the Whale
+             */
+            note?: string;
+            /** @description Custom entity ID (generated if not provided) */
+            id?: string;
+            /**
+             * @description Klados display name
+             * @example PDF Text Extractor
+             */
+            label: string;
+            /**
+             * Format: uri
+             * @description Klados service base URL
+             * @example https://pdf-extractor.example.com/v1
+             */
+            endpoint: string;
+            /**
+             * @description Actions this klados requires on target collections
+             * @example [
+             *       "entity:view",
+             *       "entity:update",
+             *       "file:create"
+             *     ]
+             */
+            actions_required: string[];
+            /**
+             * ContractSpec
+             * @description What this klados accepts as input
+             */
+            accepts: {
+                /**
+                 * @description Content types (use ["*"] for any)
+                 * @example [
+                 *       "file/pdf",
+                 *       "file/png"
+                 *     ]
+                 */
+                types: string[];
+                /**
+                 * @description Cardinality: one for single entity, many for multiple
+                 * @example one
+                 * @enum {string}
+                 */
+                cardinality: "one" | "many";
+            };
+            /**
+             * ContractSpec
+             * @description What this klados produces as output
+             */
+            produces: {
+                /**
+                 * @description Content types (use ["*"] for any)
+                 * @example [
+                 *       "file/pdf",
+                 *       "file/png"
+                 *     ]
+                 */
+                types: string[];
+                /**
+                 * @description Cardinality: one for single entity, many for multiple
+                 * @example one
+                 * @enum {string}
+                 */
+                cardinality: "one" | "many";
+            };
+            /** @description Collection to place klados in */
+            collection: string;
+            /**
+             * @description Klados description
+             * @example Extracts text content from PDF files
+             */
+            description?: string;
+            /** @description JSON Schema for input validation */
+            input_schema?: {
+                [key: string]: unknown;
+            };
+            /** @description Additional properties to store */
+            properties?: {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to create */
+            relationships?: {
+                predicate: string;
+                peer: string;
+                peer_type?: string;
+                peer_label?: string;
+                properties?: {
+                    [key: string]: unknown;
+                };
+            }[];
+        };
+        KladosUpdateResponse: components["schemas"]["KladosResponse"] & {
+            /**
+             * @description Previous version CID
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            prev_cid: string;
+        };
+        UpdateKladosRequest: {
+            /**
+             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            expect_tip: string;
+            /**
+             * @description Optional note describing this change
+             * @example Added Chapter 42: The Whiteness of the Whale
+             */
+            note?: string;
+            /** @description Properties to add or update (deep merged) */
+            properties?: {
+                [key: string]: unknown;
+            };
+            /** @description Properties to remove. Use string[] for top-level keys (e.g., ["old_field"]), or nested objects for deep removal (e.g., { config: { options: ["debug"] } }). Dot notation like "config.options.debug" is NOT supported. */
+            properties_remove?: string[] | {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to add or update (upsert semantics) */
+            relationships_add?: {
+                /**
+                 * @description Relationship predicate (e.g., "admin", "contains", "collection")
+                 * @example admin
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer: string;
+                /**
+                 * @description Target entity type hint
+                 * @example user
+                 */
+                peer_type?: string;
+                /**
+                 * @description Target entity label hint
+                 * @example Captain Ahab
+                 */
+                peer_label?: string;
+                /**
+                 * @description Properties to add/update on this relationship (deep merged if relationship exists)
+                 * @example {
+                 *       "expires_at": "2025-12-31T00:00:00Z"
+                 *     }
+                 */
+                properties?: {
+                    [key: string]: unknown;
+                };
+                /** @description Properties to remove from this relationship (string array or nested object) */
+                properties_remove?: string[] | {
+                    [key: string]: unknown;
+                };
+            }[];
+            /** @description Relationships to remove */
+            relationships_remove?: {
+                /**
+                 * @description Relationship predicate
+                 * @example viewer
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID. If omitted, removes ALL relationships with this predicate.
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer?: string;
+            }[];
+            /** @description Updated klados display name */
+            label?: string;
+            /** @description Updated klados description */
+            description?: string;
+            /**
+             * Format: uri
+             * @description Updated klados service URL. Changing this clears endpoint_verified_at.
+             */
+            endpoint?: string;
+            /**
+             * @description Actions this klados requires on target collections
+             * @example [
+             *       "entity:view",
+             *       "entity:update",
+             *       "file:create"
+             *     ]
+             */
+            actions_required?: string[];
+            /**
+             * @description Klados status
+             * @example development
+             * @enum {string}
+             */
+            status?: "development" | "active" | "disabled";
+            /**
+             * ContractSpec
+             * @description Input/output contract specification for klados
+             */
+            accepts?: {
+                /**
+                 * @description Content types (use ["*"] for any)
+                 * @example [
+                 *       "file/pdf",
+                 *       "file/png"
+                 *     ]
+                 */
+                types: string[];
+                /**
+                 * @description Cardinality: one for single entity, many for multiple
+                 * @example one
+                 * @enum {string}
+                 */
+                cardinality: "one" | "many";
+            };
+            /**
+             * ContractSpec
+             * @description Input/output contract specification for klados
+             */
+            produces?: {
+                /**
+                 * @description Content types (use ["*"] for any)
+                 * @example [
+                 *       "file/pdf",
+                 *       "file/png"
+                 *     ]
+                 */
+                types: string[];
+                /**
+                 * @description Cardinality: one for single entity, many for multiple
+                 * @example one
+                 * @enum {string}
+                 */
+                cardinality: "one" | "many";
+            };
+            /** @description Updated input schema */
+            input_schema?: {
+                [key: string]: unknown;
+            };
+        };
+        InvokeKladosGrant: {
+            klados: {
+                id: string;
+                label: string;
+            };
+            actions: string[];
+            role: string;
+            already_granted: boolean;
+            expired?: boolean;
+            /** Format: date-time */
+            current_expires_at?: string;
+        };
+        InvokeKladosPreviewResponse: {
+            /** @enum {string} */
+            status: "pending_confirmation";
+            message: string;
+            grants: components["schemas"]["InvokeKladosGrant"][];
+            target: {
+                id: string;
+                label: string;
+            };
+            /** Format: date-time */
+            expires_at: string;
+            /** @description True if all grants exist or user can create them */
+            can_proceed: boolean;
+            /** @description True if klados needs permission grants */
+            grants_needed: boolean;
+        };
+        InvokeKladosGrantResult: {
+            klados_id: string;
+            role: string;
+            /** Format: date-time */
+            expires_at: string;
+            was_update: boolean;
+        };
+        InvokeKladosStartedResponse: {
+            /** @enum {string} */
+            status: "started";
+            /**
+             * @description Unique job identifier
+             * @example job_01JEXAMPLEID12345678901
+             */
+            job_id: string;
+            /** @description The job collection where klados writes logs */
+            job_collection: string;
+            /** @description Klados that was invoked */
+            klados_id: string;
+            grants: components["schemas"]["InvokeKladosGrantResult"][];
+            /**
+             * @description Content Identifier (CID) - content-addressed hash
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            target_cid: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        InvokeKladosRejectedResponse: {
+            /** @enum {string} */
+            status: "rejected";
+            /** @description Error message explaining why the klados rejected the job */
+            error: string;
+            /** @description Suggested seconds to wait before retrying */
+            retry_after?: number;
+            grants: components["schemas"]["InvokeKladosGrantResult"][];
+            /**
+             * @description Content Identifier (CID) - content-addressed hash
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            target_cid: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        InvokeKladosConfirmedResponse: components["schemas"]["InvokeKladosStartedResponse"] | components["schemas"]["InvokeKladosRejectedResponse"];
+        InvokeKladosRequest: {
+            /** @description Entity or collection ID to process */
+            target: string;
+            /** @description Job collection where klados should write logs. If not provided, creates new collection. */
+            job_collection?: string;
+            /** @description Input data for the klados (validated against input_schema) */
+            input?: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description Permission duration in seconds (60-86400, default: 3600)
+             * @default 3600
+             * @example 3600
+             */
+            expires_in: number;
+            /**
+             * @description false = preview grants, true = execute klados
+             * @default false
+             * @example false
+             */
+            confirm: boolean;
+            /**
+             * RhizaContext
+             * @description Rhiza context for workflow invocations
+             */
+            rhiza_context?: {
+                /** @description Rhiza workflow ID */
+                id: string;
+                /** @description Path of klados IDs from entry to current */
+                path: string[];
+                /** @description Parent log IDs for chain traversal */
+                parent_logs: string[];
+                /** @description Batch context if part of scatter operation */
+                batch?: {
+                    /** @description Batch entity ID */
+                    id: string;
+                    /** @description Slot index (0-based) */
+                    index: number;
+                    /** @description Total slots in batch */
+                    total: number;
+                };
+            };
+        };
+        VerifyKladosTokenResponse: {
+            /**
+             * @description Token to deploy at your endpoint
+             * @example vt_abc123def456...
+             */
+            verification_token: string;
+            /** @description Klados ID to include in verification response */
+            klados_id: string;
+            /**
+             * Format: uri
+             * @description Your klados endpoint URL
+             */
+            endpoint: string;
+            /** @description How to complete verification */
+            instructions: string;
+            /**
+             * Format: date-time
+             * @description Token expiration time
+             */
+            expires_at: string;
+        };
+        VerifyKladosSuccessResponse: {
+            /** @enum {boolean} */
+            verified: true;
+            /**
+             * Format: date-time
+             * @description When the endpoint was verified
+             */
+            verified_at: string;
+        };
+        VerifyKladosFailureResponse: {
+            /** @enum {boolean} */
+            verified: false;
+            /**
+             * @description Verification error code
+             * @enum {string}
+             */
+            error: "no_token" | "token_expired" | "fetch_failed" | "invalid_response" | "token_mismatch" | "klados_id_mismatch";
+            /** @description Human-readable error description */
+            message: string;
+        };
+        VerifyKladosRequest: {
+            /**
+             * @description Set to true to perform verification. Omit or false to generate verification token.
+             * @example true
+             */
+            confirm?: boolean;
+        };
+        RhizaResponse: components["schemas"]["EntityResponse"] & {
+            /** @enum {string} */
+            type?: "rhiza";
+        };
+        CreateRhizaRequest: {
+            /**
+             * @description Optional note describing this change
+             * @example Added Chapter 42: The Whiteness of the Whale
+             */
+            note?: string;
+            /** @description Custom entity ID (generated if not provided) */
+            id?: string;
+            /**
+             * @description Rhiza display name
+             * @example Document Processing Pipeline
+             */
+            label: string;
+            /**
+             * @description Semantic version
+             * @example 1.0.0
+             */
+            version: string;
+            /**
+             * KladosRef
+             * @description Entry point klados reference
+             * @example {
+             *       "pi": "01KEXAMPLE123456789012345",
+             *       "type": "klados",
+             *       "label": "OCR Processor"
+             *     }
+             */
+            entry: {
+                pi: string;
+                type?: string;
+                label?: string;
+                description?: string;
+            };
+            /**
+             * Flow
+             * @description Flow definition mapping klados IDs to their handoff specifications
+             * @example {
+             *       "01KKLADOSA12345678901234": {
+             *         "then": {
+             *           "pass": {
+             *             "pi": "01KKLADOSB12345678901234",
+             *             "type": "klados"
+             *           }
+             *         }
+             *       },
+             *       "01KKLADOSB12345678901234": {
+             *         "then": {
+             *           "done": true
+             *         }
+             *       }
+             *     }
+             */
+            flow: {
+                [key: string]: {
+                    /**
+                     * ThenSpec
+                     * @description What happens after this klados completes
+                     */
+                    then: {
+                        /** @enum {boolean} */
+                        done: true;
+                    } | {
+                        /**
+                         * KladosRef
+                         * @description Target klados/rhiza ref for 1:1 handoff
+                         * @example {
+                         *       "pi": "01KEXAMPLE123456789012345",
+                         *       "type": "klados",
+                         *       "label": "OCR Processor"
+                         *     }
+                         */
+                        pass: {
+                            pi: string;
+                            type?: string;
+                            label?: string;
+                            description?: string;
+                        };
+                        /** @description Conditional routing rules */
+                        route?: {
+                            /**
+                             * WhereCondition
+                             * @description Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR
+                             * @example {
+                             *       "property": "status",
+                             *       "equals": "approved"
+                             *     }
+                             */
+                            where: {
+                                [key: string]: unknown;
+                            };
+                            /**
+                             * KladosRef
+                             * @description Target klados/rhiza ref if condition matches
+                             * @example {
+                             *       "pi": "01KEXAMPLE123456789012345",
+                             *       "type": "klados",
+                             *       "label": "OCR Processor"
+                             *     }
+                             */
+                            target: {
+                                pi: string;
+                                type?: string;
+                                label?: string;
+                                description?: string;
+                            };
+                        }[];
+                    } | {
+                        /**
+                         * KladosRef
+                         * @description Target klados/rhiza ref for 1:N fan-out
+                         * @example {
+                         *       "pi": "01KEXAMPLE123456789012345",
+                         *       "type": "klados",
+                         *       "label": "OCR Processor"
+                         *     }
+                         */
+                        scatter: {
+                            pi: string;
+                            type?: string;
+                            label?: string;
+                            description?: string;
+                        };
+                        /** @description Conditional routing rules */
+                        route?: {
+                            /**
+                             * WhereCondition
+                             * @description Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR
+                             * @example {
+                             *       "property": "status",
+                             *       "equals": "approved"
+                             *     }
+                             */
+                            where: {
+                                [key: string]: unknown;
+                            };
+                            /**
+                             * KladosRef
+                             * @description Target klados/rhiza ref if condition matches
+                             * @example {
+                             *       "pi": "01KEXAMPLE123456789012345",
+                             *       "type": "klados",
+                             *       "label": "OCR Processor"
+                             *     }
+                             */
+                            target: {
+                                pi: string;
+                                type?: string;
+                                label?: string;
+                                description?: string;
+                            };
+                        }[];
+                    } | {
+                        /**
+                         * KladosRef
+                         * @description Target klados/rhiza ref for N:1 fan-in
+                         * @example {
+                         *       "pi": "01KEXAMPLE123456789012345",
+                         *       "type": "klados",
+                         *       "label": "OCR Processor"
+                         *     }
+                         */
+                        gather: {
+                            pi: string;
+                            type?: string;
+                            label?: string;
+                            description?: string;
+                        };
+                        /** @description Conditional routing rules */
+                        route?: {
+                            /**
+                             * WhereCondition
+                             * @description Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR
+                             * @example {
+                             *       "property": "status",
+                             *       "equals": "approved"
+                             *     }
+                             */
+                            where: {
+                                [key: string]: unknown;
+                            };
+                            /**
+                             * KladosRef
+                             * @description Target klados/rhiza ref if condition matches
+                             * @example {
+                             *       "pi": "01KEXAMPLE123456789012345",
+                             *       "type": "klados",
+                             *       "label": "OCR Processor"
+                             *     }
+                             */
+                            target: {
+                                pi: string;
+                                type?: string;
+                                label?: string;
+                                description?: string;
+                            };
+                        }[];
+                    };
+                };
+            };
+            /** @description Collection to place rhiza in */
+            collection: string;
+            /**
+             * @description Rhiza description
+             * @example Processes documents through OCR, classification, and extraction
+             */
+            description?: string;
+            /** @description Additional properties to store */
+            properties?: {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to create */
+            relationships?: {
+                predicate: string;
+                peer: string;
+                peer_type?: string;
+                peer_label?: string;
+                properties?: {
+                    [key: string]: unknown;
+                };
+            }[];
+        };
+        RhizaUpdateResponse: components["schemas"]["RhizaResponse"] & {
+            /**
+             * @description Previous version CID
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            prev_cid: string;
+        };
+        UpdateRhizaRequest: {
+            /**
+             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            expect_tip: string;
+            /**
+             * @description Optional note describing this change
+             * @example Added Chapter 42: The Whiteness of the Whale
+             */
+            note?: string;
+            /** @description Properties to add or update (deep merged) */
+            properties?: {
+                [key: string]: unknown;
+            };
+            /** @description Properties to remove. Use string[] for top-level keys (e.g., ["old_field"]), or nested objects for deep removal (e.g., { config: { options: ["debug"] } }). Dot notation like "config.options.debug" is NOT supported. */
+            properties_remove?: string[] | {
+                [key: string]: unknown;
+            };
+            /** @description Relationships to add or update (upsert semantics) */
+            relationships_add?: {
+                /**
+                 * @description Relationship predicate (e.g., "admin", "contains", "collection")
+                 * @example admin
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer: string;
+                /**
+                 * @description Target entity type hint
+                 * @example user
+                 */
+                peer_type?: string;
+                /**
+                 * @description Target entity label hint
+                 * @example Captain Ahab
+                 */
+                peer_label?: string;
+                /**
+                 * @description Properties to add/update on this relationship (deep merged if relationship exists)
+                 * @example {
+                 *       "expires_at": "2025-12-31T00:00:00Z"
+                 *     }
+                 */
+                properties?: {
+                    [key: string]: unknown;
+                };
+                /** @description Properties to remove from this relationship (string array or nested object) */
+                properties_remove?: string[] | {
+                    [key: string]: unknown;
+                };
+            }[];
+            /** @description Relationships to remove */
+            relationships_remove?: {
+                /**
+                 * @description Relationship predicate
+                 * @example viewer
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID. If omitted, removes ALL relationships with this predicate.
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer?: string;
+            }[];
+            /** @description Updated rhiza display name */
+            label?: string;
+            /** @description Updated rhiza description */
+            description?: string;
+            /** @description Updated semantic version */
+            version?: string;
+            /**
+             * KladosRef
+             * @description Updated entry point klados reference
+             * @example {
+             *       "pi": "01KEXAMPLE123456789012345",
+             *       "type": "klados",
+             *       "label": "OCR Processor"
+             *     }
+             */
+            entry?: {
+                pi: string;
+                type?: string;
+                label?: string;
+                description?: string;
+            };
+            /**
+             * Flow
+             * @description Flow definition mapping klados IDs to their handoff specifications
+             * @example {
+             *       "01KKLADOSA12345678901234": {
+             *         "then": {
+             *           "pass": {
+             *             "pi": "01KKLADOSB12345678901234",
+             *             "type": "klados"
+             *           }
+             *         }
+             *       },
+             *       "01KKLADOSB12345678901234": {
+             *         "then": {
+             *           "done": true
+             *         }
+             *       }
+             *     }
+             */
+            flow?: {
+                [key: string]: {
+                    /**
+                     * ThenSpec
+                     * @description What happens after this klados completes
+                     */
+                    then: {
+                        /** @enum {boolean} */
+                        done: true;
+                    } | {
+                        /**
+                         * KladosRef
+                         * @description Target klados/rhiza ref for 1:1 handoff
+                         * @example {
+                         *       "pi": "01KEXAMPLE123456789012345",
+                         *       "type": "klados",
+                         *       "label": "OCR Processor"
+                         *     }
+                         */
+                        pass: {
+                            pi: string;
+                            type?: string;
+                            label?: string;
+                            description?: string;
+                        };
+                        /** @description Conditional routing rules */
+                        route?: {
+                            /**
+                             * WhereCondition
+                             * @description Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR
+                             * @example {
+                             *       "property": "status",
+                             *       "equals": "approved"
+                             *     }
+                             */
+                            where: {
+                                [key: string]: unknown;
+                            };
+                            /**
+                             * KladosRef
+                             * @description Target klados/rhiza ref if condition matches
+                             * @example {
+                             *       "pi": "01KEXAMPLE123456789012345",
+                             *       "type": "klados",
+                             *       "label": "OCR Processor"
+                             *     }
+                             */
+                            target: {
+                                pi: string;
+                                type?: string;
+                                label?: string;
+                                description?: string;
+                            };
+                        }[];
+                    } | {
+                        /**
+                         * KladosRef
+                         * @description Target klados/rhiza ref for 1:N fan-out
+                         * @example {
+                         *       "pi": "01KEXAMPLE123456789012345",
+                         *       "type": "klados",
+                         *       "label": "OCR Processor"
+                         *     }
+                         */
+                        scatter: {
+                            pi: string;
+                            type?: string;
+                            label?: string;
+                            description?: string;
+                        };
+                        /** @description Conditional routing rules */
+                        route?: {
+                            /**
+                             * WhereCondition
+                             * @description Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR
+                             * @example {
+                             *       "property": "status",
+                             *       "equals": "approved"
+                             *     }
+                             */
+                            where: {
+                                [key: string]: unknown;
+                            };
+                            /**
+                             * KladosRef
+                             * @description Target klados/rhiza ref if condition matches
+                             * @example {
+                             *       "pi": "01KEXAMPLE123456789012345",
+                             *       "type": "klados",
+                             *       "label": "OCR Processor"
+                             *     }
+                             */
+                            target: {
+                                pi: string;
+                                type?: string;
+                                label?: string;
+                                description?: string;
+                            };
+                        }[];
+                    } | {
+                        /**
+                         * KladosRef
+                         * @description Target klados/rhiza ref for N:1 fan-in
+                         * @example {
+                         *       "pi": "01KEXAMPLE123456789012345",
+                         *       "type": "klados",
+                         *       "label": "OCR Processor"
+                         *     }
+                         */
+                        gather: {
+                            pi: string;
+                            type?: string;
+                            label?: string;
+                            description?: string;
+                        };
+                        /** @description Conditional routing rules */
+                        route?: {
+                            /**
+                             * WhereCondition
+                             * @description Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR
+                             * @example {
+                             *       "property": "status",
+                             *       "equals": "approved"
+                             *     }
+                             */
+                            where: {
+                                [key: string]: unknown;
+                            };
+                            /**
+                             * KladosRef
+                             * @description Target klados/rhiza ref if condition matches
+                             * @example {
+                             *       "pi": "01KEXAMPLE123456789012345",
+                             *       "type": "klados",
+                             *       "label": "OCR Processor"
+                             *     }
+                             */
+                            target: {
+                                pi: string;
+                                type?: string;
+                                label?: string;
+                                description?: string;
+                            };
+                        }[];
+                    };
+                };
+            };
+            /**
+             * @description Rhiza status
+             * @example development
+             * @enum {string}
+             */
+            status?: "development" | "active" | "disabled";
+        };
+        InvokeRhizaGrant: {
+            klados: {
+                id: string;
+                label: string;
+            };
+            actions: string[];
+            role: string;
+            already_granted: boolean;
+        };
+        InvokeRhizaPreviewResponse: {
+            /** @enum {string} */
+            status: "pending_confirmation";
+            message: string;
+            grants: components["schemas"]["InvokeRhizaGrant"][];
+            target: {
+                id: string;
+                label: string;
+            };
+            /** Format: date-time */
+            expires_at: string;
+            /** @description Number of kladoi in the workflow */
+            kladoi_count: number;
+            /** @description True if all kladoi are active and verified */
+            all_ready: boolean;
+            /** @description Issues with kladoi that prevent workflow execution */
+            klados_issues?: {
+                id: string;
+                reason: string;
+            }[];
+        };
+        InvokeRhizaStartedResponse: {
+            /** @enum {string} */
+            status: "started";
+            /**
+             * @description Unique job identifier
+             * @example job_01JEXAMPLEID12345678901
+             */
+            job_id: string;
+            /** @description The job collection where logs are written */
+            job_collection: string;
+            /** @description Rhiza that was invoked */
+            rhiza_id: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        InvokeRhizaRejectedResponse: {
+            /** @enum {string} */
+            status: "rejected";
+            /** @description Error message explaining why the entry klados rejected the job */
+            error: string;
+            /** @description Suggested seconds to wait before retrying */
+            retry_after?: number;
+        };
+        InvokeRhizaConfirmedResponse: components["schemas"]["InvokeRhizaStartedResponse"] | components["schemas"]["InvokeRhizaRejectedResponse"];
+        InvokeRhizaRequest: {
+            /** @description Entity or collection ID to process */
+            target: string;
+            /** @description Input data for the workflow */
+            input?: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description Permission duration in seconds (60-86400, default: 3600)
+             * @default 3600
+             * @example 3600
+             */
+            expires_in: number;
+            /**
+             * @description false = preview grants, true = execute workflow
+             * @default false
+             * @example false
+             */
+            confirm: boolean;
+        };
+        ProgressCounters: {
+            /** @description Total log entries */
+            total: number;
+            /** @description Pending entries */
+            pending: number;
+            /** @description Running entries */
+            running: number;
+            /** @description Completed entries */
+            done: number;
+            /** @description Failed entries */
+            error: number;
+        };
+        ErrorSummary: {
+            /** @description Klados that failed */
+            klados_id: string;
+            /** @description Job ID */
+            job_id: string;
+            /** @description Error code */
+            code: string;
+            /** @description Error message */
+            message: string;
+            /** @description Whether error is retryable */
+            retryable: boolean;
+        };
+        WorkflowStatusResponse: {
+            /** @description Job ID */
+            job_id: string;
+            /** @description Rhiza ID */
+            rhiza_id: string;
+            /**
+             * @description Overall workflow status
+             * @enum {string}
+             */
+            status: "pending" | "running" | "done" | "error";
+            progress: components["schemas"]["ProgressCounters"];
+            /** @description Currently running kladoi */
+            current_kladoi?: string[];
+            /** @description Error summaries */
+            errors?: components["schemas"]["ErrorSummary"][];
+            /**
+             * Format: date-time
+             * @description When workflow started
+             */
+            started_at: string;
+            /**
+             * Format: date-time
+             * @description When workflow completed
+             */
+            completed_at?: string;
+        };
+        ResumedJob: {
+            /** @description Original job ID that was resumed */
+            original_job_id: string;
+            /** @description Klados that was re-invoked */
+            klados_id: string;
+            /** @description New job ID */
+            new_job_id: string;
+        };
+        ResumeWorkflowResponse: {
+            /** @description Number of jobs resumed */
+            resumed: number;
+            /** @description Number of jobs skipped (non-retryable) */
+            skipped: number;
+            /** @description Details of resumed jobs */
+            jobs: components["schemas"]["ResumedJob"][];
+        };
+        ResumeWorkflowRequest: {
+            /** @description Only resume jobs with these error codes (all retryable if not specified) */
+            error_codes?: string[];
+        };
         Event: {
             /**
              * @description Auto-increment event ID (use as cursor)
@@ -11927,6 +14828,48 @@ export type components = {
              */
             expand?: "none" | "preview" | "full";
         };
+        MessageTooLargeDetails: {
+            /** @enum {string} */
+            code: "MESSAGE_TOO_LARGE";
+            message: string;
+            /** @example 2MB */
+            limit: string;
+            /** @example 2.48MB */
+            actual?: string;
+        };
+        MessageTooLargeError: {
+            /**
+             * @description Human-readable error message
+             * @example Message exceeds maximum size limit. Please shorten your message.
+             */
+            error: string;
+            /**
+             * @description Error code for client handling
+             * @enum {string}
+             */
+            code: "MESSAGE_TOO_LARGE";
+            details?: components["schemas"]["MessageTooLargeDetails"];
+        };
+        ChatStorageFullDetails: {
+            /** @enum {string} */
+            code: "CHAT_STORAGE_FULL";
+            message: string;
+            /** @example 10GB */
+            limit: string;
+        };
+        ChatStorageFullError: {
+            /**
+             * @description Human-readable error message
+             * @example This conversation has reached its maximum storage capacity. Please start a new conversation.
+             */
+            error: string;
+            /**
+             * @description Error code for client handling
+             * @enum {string}
+             */
+            code: "CHAT_STORAGE_FULL";
+            details?: components["schemas"]["ChatStorageFullDetails"];
+        };
         TextPart: {
             /** @enum {string} */
             type: "text";
@@ -11956,6 +14899,47 @@ export type components = {
         SendChatRequest: {
             /** @description Array of chat messages in AI SDK v5 UIMessage format */
             messages: components["schemas"]["ChatMessage"][];
+        };
+        ChatListItem: {
+            /**
+             * @description Chat UUID (use with X-Chat-ID header)
+             * @example 550e8400-e29b-41d4-a716-446655440000
+             */
+            id: string;
+            /**
+             * @description Auto-generated from first message (50 chars)
+             * @example Help me understand the Arke API...
+             */
+            title: string | null;
+            /**
+             * @description ISO8601 timestamp of chat creation
+             * @example 2026-01-26T14:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description ISO8601 timestamp of last message
+             * @example 2026-01-26T15:45:00.000Z
+             */
+            updatedAt: string;
+            /**
+             * @description Last assistant response (100 chars, markdown stripped)
+             * @example I found 3 entities matching your query. The first one is...
+             */
+            lastMessagePreview: string | null;
+        };
+        ListChatsResponse: {
+            /** @description Array of chat metadata objects */
+            chats: components["schemas"]["ChatListItem"][];
+            /**
+             * @description Total number of chats for this user
+             * @example 42
+             */
+            total: number;
+            /**
+             * @description True if more chats exist beyond current page
+             * @example true
+             */
+            hasMore: boolean;
         };
         ChatSession: {
             /**
