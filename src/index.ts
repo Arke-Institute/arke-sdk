@@ -65,3 +65,16 @@ export {
   type KeyPair,
   type SignedPayload,
 } from './operations/index.js';
+
+// CAS retry utility
+export {
+  withCasRetry,
+  calculateMaxAttempts,
+  calculateCasDelay,
+  isCasConflictError,
+  CasRetryExhaustedError,
+  DEFAULT_CAS_RETRY_CONFIG,
+  type CasRetryOptions,
+  type CasRetryResult,
+  type CasRetryCallbacks,
+} from './operations/cas.js';

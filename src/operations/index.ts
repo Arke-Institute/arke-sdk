@@ -31,3 +31,16 @@ export { BatchOperations, type BatchCreateOptions, type BatchResult } from './ba
 
 // Crypto operations (placeholder)
 export { CryptoOperations, type KeyPair, type SignedPayload } from './crypto.js';
+
+// CAS retry utility
+export {
+  withCasRetry,
+  calculateMaxAttempts,
+  calculateCasDelay,
+  isCasConflictError,
+  CasRetryExhaustedError,
+  DEFAULT_CAS_RETRY_CONFIG,
+  type CasRetryOptions,
+  type CasRetryResult,
+  type CasRetryCallbacks,
+} from './cas.js';
