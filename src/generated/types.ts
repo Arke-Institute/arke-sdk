@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-02-02T20:20:34.342Z
+ * Generated: 2026-02-03T20:58:28.373Z
  */
 
 export type paths = {
@@ -2403,6 +2403,87 @@ export type paths = {
                          *     }
                          */
                         "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entities/batch-get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Batch get entities by ID
+         * @description Fetches multiple entities by ID in a single request.
+         *
+         *     Permission is checked per-entity. Entities the caller cannot access are excluded from results and listed in `not_found`.
+         *
+         *     **Use cases:**
+         *     - Tree traversal: Expand multiple nodes at once
+         *     - Workflow status: Fetch all log entries in a job
+         *     - Relationship hydration: Fetch all peers of an entity
+         *
+         *     **Max batch size:** 100 entities.
+         *
+         *     ---
+         *     **Permission:** `entity:view`
+         *     **Auth:** optional
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["BatchGetRequest"];
+                };
+            };
+            responses: {
+                /** @description Entities fetched */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BatchGetResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
                     };
                 };
             };
@@ -7662,6 +7743,145 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/kladoi/{id}/reinvoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reinvoke a failed klados job
+         * @description Retry a failed klados job by extracting the original invocation from the error log and re-invoking.
+         *
+         *     **Requirements:**
+         *     - The log file must be a klados_log with `status: error`
+         *     - The log must contain `received.invocation` with the original request
+         *     - The klados ID in the log must match the route parameter
+         *
+         *     **What happens:**
+         *     1. Extracts the original `KladosRequest` from `received.invocation.request`
+         *     2. Generates a new `job_id`
+         *     3. Updates `rhiza_context.parent_logs` to point to the failed log (for audit trail)
+         *     4. Invokes the klados with fresh `expires_at`
+         *
+         *     The new job's log will point back to the failed log, preserving the complete retry history.
+         *
+         *     ---
+         *     **Permission:** `klados:invoke`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ReinvokeKladosRequest"];
+                };
+            };
+            responses: {
+                /** @description Reinvoke result (rejected by klados) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReinvokeKladosResponse"];
+                    };
+                };
+                /** @description Reinvoke started (klados accepted) */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReinvokeKladosResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rhizai": {
         parameters: {
             query?: never;
@@ -11384,6 +11604,22 @@ export type components = {
              */
             default_collection?: string;
         };
+        BatchGetResponse: {
+            /** @description Entities that were found and accessible */
+            entities: components["schemas"]["EntityResponse"][];
+            /** @description IDs that were not found or not accessible */
+            not_found: string[];
+        };
+        BatchGetRequest: {
+            /**
+             * @description Entity IDs to fetch (max 100)
+             * @example [
+             *       "01JENTITY123456789012345",
+             *       "01JENTITY234567890123456"
+             *     ]
+             */
+            ids: string[];
+        };
         TipResponse: {
             /**
              * @description Entity ID (ULID format)
@@ -13684,8 +13920,12 @@ export type components = {
         };
         InvokeKladosConfirmedResponse: components["schemas"]["InvokeKladosStartedResponse"] | components["schemas"]["InvokeKladosRejectedResponse"];
         InvokeKladosRequest: {
-            /** @description Entity or collection ID to process */
-            target: string;
+            /** @description Single entity to process (required when klados.accepts.cardinality = "one") */
+            target_entity?: string;
+            /** @description Multiple entities to process (required when klados.accepts.cardinality = "many") */
+            target_entities?: string[];
+            /** @description Collection for permission grant. Klados receives temporal permissions on this collection. */
+            target_collection: string;
             /** @description Job collection where klados should write logs. If not provided, creates new collection. */
             job_collection?: string;
             /** @description Input data for the klados (validated against input_schema) */
@@ -13708,7 +13948,7 @@ export type components = {
              * RhizaContext
              * @description Rhiza context for workflow invocations
              */
-            rhiza_context?: {
+            rhiza?: {
                 /** @description Rhiza workflow ID */
                 id: string;
                 /** @description Path of klados IDs from entry to current */
@@ -13773,6 +14013,34 @@ export type components = {
              * @example true
              */
             confirm?: boolean;
+        };
+        ReinvokeKladosResponse: {
+            /** @description Whether the klados accepted the retry */
+            accepted: boolean;
+            /**
+             * @description New job ID for the retry (only if accepted)
+             * @example job_01JEXAMPLEID12345678901
+             */
+            job_id?: string;
+            /** @description The log ID that was retried */
+            original_log_id?: string;
+            /** @description Error message if rejected or invocation failed */
+            error?: string;
+            /** @description Suggested seconds to wait before retrying again */
+            retry_after?: number;
+        };
+        ReinvokeKladosRequest: {
+            /**
+             * @description Log file entity ID containing the failed invocation to retry
+             * @example 01JLOGFILE1234567890123456
+             */
+            log_id: string;
+            /**
+             * @description Permission duration in seconds (60-86400, default: 3600)
+             * @default 3600
+             * @example 3600
+             */
+            expires_in: number;
         };
         RhizaResponse: components["schemas"]["EntityResponse"] & {
             /** @enum {string} */
@@ -14323,8 +14591,12 @@ export type components = {
         };
         InvokeRhizaConfirmedResponse: components["schemas"]["InvokeRhizaStartedResponse"] | components["schemas"]["InvokeRhizaRejectedResponse"];
         InvokeRhizaRequest: {
-            /** @description Entity or collection ID to process */
-            target: string;
+            /** @description Single entity to process (required when entry klados.accepts.cardinality = "one") */
+            target_entity?: string;
+            /** @description Multiple entities to process (required when entry klados.accepts.cardinality = "many") */
+            target_entities?: string[];
+            /** @description Collection for permission grant. All kladoi in workflow receive temporal permissions on this collection. */
+            target_collection: string;
             /** @description Input data for the workflow */
             input?: {
                 [key: string]: unknown;

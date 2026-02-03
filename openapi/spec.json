@@ -2390,6 +2390,56 @@
           "entities"
         ]
       },
+      "BatchGetResponse": {
+        "type": "object",
+        "properties": {
+          "entities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntityResponse"
+            },
+            "description": "Entities that were found and accessible"
+          },
+          "not_found": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "description": "IDs that were not found or not accessible"
+          }
+        },
+        "required": [
+          "entities",
+          "not_found"
+        ]
+      },
+      "BatchGetRequest": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "minItems": 1,
+            "maxItems": 100,
+            "description": "Entity IDs to fetch (max 100)",
+            "example": [
+              "01JENTITY123456789012345",
+              "01JENTITY234567890123456"
+            ]
+          }
+        },
+        "required": [
+          "ids"
+        ]
+      },
       "TipResponse": {
         "type": "object",
         "properties": {
@@ -7298,10 +7348,24 @@
       "InvokeKladosRequest": {
         "type": "object",
         "properties": {
-          "target": {
+          "target_entity": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Entity or collection ID to process"
+            "description": "Single entity to process (required when klados.accepts.cardinality = \"one\")"
+          },
+          "target_entities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+            },
+            "minItems": 1,
+            "description": "Multiple entities to process (required when klados.accepts.cardinality = \"many\")"
+          },
+          "target_collection": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Collection for permission grant. Klados receives temporal permissions on this collection."
           },
           "job_collection": {
             "type": "string",
@@ -7329,7 +7393,7 @@
             "description": "false = preview grants, true = execute klados",
             "example": false
           },
-          "rhiza_context": {
+          "rhiza": {
             "type": "object",
             "properties": {
               "id": {
@@ -7390,7 +7454,7 @@
           }
         },
         "required": [
-          "target"
+          "target_collection"
         ]
       },
       "VerifyKladosTokenResponse": {
@@ -7490,6 +7554,58 @@
             "example": true
           }
         }
+      },
+      "ReinvokeKladosResponse": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "description": "Whether the klados accepted the retry"
+          },
+          "job_id": {
+            "type": "string",
+            "description": "New job ID for the retry (only if accepted)",
+            "example": "job_01JEXAMPLEID12345678901"
+          },
+          "original_log_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "The log ID that was retried"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if rejected or invocation failed"
+          },
+          "retry_after": {
+            "type": "integer",
+            "description": "Suggested seconds to wait before retrying again"
+          }
+        },
+        "required": [
+          "accepted"
+        ]
+      },
+      "ReinvokeKladosRequest": {
+        "type": "object",
+        "properties": {
+          "log_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Log file entity ID containing the failed invocation to retry",
+            "example": "01JLOGFILE1234567890123456"
+          },
+          "expires_in": {
+            "type": "integer",
+            "minimum": 60,
+            "maximum": 86400,
+            "default": 3600,
+            "description": "Permission duration in seconds (60-86400, default: 3600)",
+            "example": 3600
+          }
+        },
+        "required": [
+          "log_id"
+        ]
       },
       "RhizaResponse": {
         "allOf": [
@@ -8687,10 +8803,24 @@
       "InvokeRhizaRequest": {
         "type": "object",
         "properties": {
-          "target": {
+          "target_entity": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Entity or collection ID to process"
+            "description": "Single entity to process (required when entry klados.accepts.cardinality = \"one\")"
+          },
+          "target_entities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+            },
+            "minItems": 1,
+            "description": "Multiple entities to process (required when entry klados.accepts.cardinality = \"many\")"
+          },
+          "target_collection": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Collection for permission grant. All kladoi in workflow receive temporal permissions on this collection."
           },
           "input": {
             "type": "object",
@@ -8715,7 +8845,7 @@
           }
         },
         "required": [
-          "target"
+          "target_collection"
         ]
       },
       "ProgressCounters": {
@@ -12679,6 +12809,63 @@
                 },
                 "example": {
                   "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entities/batch-get": {
+      "post": {
+        "tags": [
+          "Entities"
+        ],
+        "summary": "Batch get entities by ID",
+        "description": "Fetches multiple entities by ID in a single request.\n\nPermission is checked per-entity. Entities the caller cannot access are excluded from results and listed in `not_found`.\n\n**Use cases:**\n- Tree traversal: Expand multiple nodes at once\n- Workflow status: Fetch all log entries in a job\n- Relationship hydration: Fetch all peers of an entity\n\n**Max batch size:** 100 entities.\n\n---\n**Permission:** `entity:view`  \n**Auth:** optional",
+        "x-arke-action": "entity:view",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchGetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Entities fetched",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchGetResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
                 }
               }
             }
@@ -17523,6 +17710,131 @@
                       "$ref": "#/components/schemas/VerifyKladosFailureResponse"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kladoi/{id}/reinvoke": {
+      "post": {
+        "tags": [
+          "Kladoi"
+        ],
+        "summary": "Reinvoke a failed klados job",
+        "description": "Retry a failed klados job by extracting the original invocation from the error log and re-invoking.\n\n**Requirements:**\n- The log file must be a klados_log with `status: error`\n- The log must contain `received.invocation` with the original request\n- The klados ID in the log must match the route parameter\n\n**What happens:**\n1. Extracts the original `KladosRequest` from `received.invocation.request`\n2. Generates a new `job_id`\n3. Updates `rhiza_context.parent_logs` to point to the failed log (for audit trail)\n4. Invokes the klados with fresh `expires_at`\n\nThe new job's log will point back to the failed log, preserving the complete retry history.\n\n---\n**Permission:** `klados:invoke`  \n**Auth:** required",
+        "x-arke-action": "klados:invoke",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReinvokeKladosRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reinvoke result (rejected by klados)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReinvokeKladosResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Reinvoke started (klados accepted)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReinvokeKladosResponse"
                 }
               }
             }
