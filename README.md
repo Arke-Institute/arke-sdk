@@ -123,6 +123,44 @@ if (error) {
 }
 ```
 
+## CAS Retry for Concurrent Updates
+
+When multiple clients update the same entity simultaneously, use `withCasRetry` for automatic retry with backoff:
+
+```typescript
+import { ArkeClient, withCasRetry } from '@arke-institute/sdk';
+
+const client = new ArkeClient({ authToken: 'xxx' });
+
+const { data, attempts } = await withCasRetry({
+  getTip: async () => {
+    // Lightweight endpoint - single DO lookup, no manifest fetch
+    const { data } = await client.api.GET('/entities/{id}/tip', {
+      params: { path: { id: entityId } }
+    });
+    return data!.cid;
+  },
+  update: async (tip) => {
+    return client.api.PUT('/entities/{id}', {
+      params: { path: { id: entityId } },
+      body: {
+        expect_tip: tip,
+        relationships_add: [{ predicate: 'contains', peer: childId }]
+      }
+    });
+  }
+}, { concurrency: 100 }); // Expected number of concurrent writers
+
+console.log(`Updated in ${attempts} attempt(s)`);
+```
+
+Set `concurrency` based on expected parallel updates. The utility automatically:
+- Staggers initial requests to reduce collisions
+- Applies exponential backoff with jitter on conflicts
+- Scales retry attempts based on concurrency level
+
+See [docs/cas-retry.md](./docs/cas-retry.md) for best practices.
+
 ## Authentication Management
 
 ```typescript
@@ -292,12 +330,14 @@ npm run publish-all:dry
 npm run publish-all
 ```
 
-## Future Operations
+## High-Level Operations
 
-The SDK includes placeholder modules for additional high-level operations:
+The SDK includes modules for common workflows:
 
-- **BatchOperations**: Bulk entity/relationship creation
-- **CryptoOperations**: Ed25519 key generation
+- **CAS Retry**: Concurrent update handling with automatic retry ([docs](./docs/cas-retry.md))
+- **Folder Upload**: Upload entire directory structures with CID computation
+- **BatchOperations**: Bulk entity/relationship creation *(planned)*
+- **CryptoOperations**: Ed25519 key generation *(planned)*
 
 ## License
 
