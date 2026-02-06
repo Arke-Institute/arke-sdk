@@ -37,9 +37,8 @@ import type {
 } from './types.js';
 
 type CreateCollectionRequest = components['schemas']['CreateCollectionRequest'];
-type CreateFolderRequest = components['schemas']['CreateFolderRequest'];
-type CreateFileRequest = components['schemas']['CreateFileRequest'];
-type UpdateFolderRequest = components['schemas']['UpdateFolderRequest'];
+type CreateEntityRequest = components['schemas']['CreateEntityRequest'];
+type UpdateEntityRequest = components['schemas']['UpdateEntityRequest'];
 type UpdateCollectionRequest = components['schemas']['UpdateCollectionRequest'];
 
 // Phase constants
@@ -276,7 +275,7 @@ export async function uploadTree(
 
     // If a specific parent folder is provided, fetch its label
     if (target.parentId && target.parentId !== collectionId) {
-      const { data: parentData, error: parentError } = await client.api.GET('/folders/{id}', {
+      const { data: parentData, error: parentError } = await client.api.GET('/entities/{id}', {
         params: { path: { id: target.parentId } },
       });
       if (parentError || !parentData) {
@@ -308,14 +307,15 @@ export async function uploadTree(
             const parentType = parentInfo ? 'folder' : rootParentType;
             const parentLabel = parentInfo ? parentInfo.label : rootParentLabel;
 
-            const folderBody: CreateFolderRequest = {
-              label: folder.name,
+            const folderBody: CreateEntityRequest = {
+              type: 'folder',
+              properties: { label: folder.name },
               collection: collectionId,
               note,
               relationships: [{ predicate: 'in', peer: parentId, peer_type: parentType, peer_label: parentLabel }],
             };
 
-            const { data, error } = await client.api.POST('/folders', {
+            const { data, error } = await client.api.POST('/entities', {
               body: folderBody,
             });
 
@@ -365,17 +365,20 @@ export async function uploadTree(
 
         // Create file entity with 'in' relationship (include peer_label for display)
         // Server computes CID when content is uploaded
-        const fileBody: CreateFileRequest = {
-          key: crypto.randomUUID(), // Generate unique storage key
-          filename: file.name,
-          label: file.name, // Display label for the file
-          content_type: file.mimeType,
-          size: file.size,
+        const fileBody: CreateEntityRequest = {
+          type: 'file',
+          properties: {
+            label: file.name,
+            filename: file.name,
+            content_type: file.mimeType,
+            size: file.size,
+          },
           collection: collectionId,
+          note,
           relationships: [{ predicate: 'in', peer: parentId, peer_type: parentType, peer_label: parentLabel }],
         };
 
-        const { data, error } = await client.api.POST('/files', {
+        const { data, error } = await client.api.POST('/entities', {
           body: fileBody,
         });
 
@@ -478,7 +481,7 @@ export async function uploadTree(
           }
         } else {
           // Get current folder CID for CAS
-          const { data: folderData, error: getError } = await client.api.GET('/folders/{id}', {
+          const { data: folderData, error: getError } = await client.api.GET('/entities/{id}', {
             params: { path: { id: parentId } },
           });
           if (getError || !folderData) {
@@ -486,13 +489,13 @@ export async function uploadTree(
           }
 
           // Update folder with relationships_add
-          const updateBody: UpdateFolderRequest = {
+          const updateBody: UpdateEntityRequest = {
             expect_tip: folderData.cid,
             relationships_add: relationshipsAdd,
             note: note ? `${note} (backlink)` : 'Upload backlink',
           };
 
-          const { error } = await client.api.PUT('/folders/{id}', {
+          const { error } = await client.api.PUT('/entities/{id}', {
             params: { path: { id: parentId } },
             body: updateBody,
           });
@@ -549,8 +552,8 @@ export async function uploadTree(
 
             // Upload content directly to API endpoint
             // The API streams to R2, computes CID, and updates the entity atomically
-            const { error: uploadError } = await client.api.POST('/files/{id}/content', {
-              params: { path: { id: file.id } },
+            const { error: uploadError } = await client.api.POST('/entities/{id}/content', {
+              params: { path: { id: file.id }, query: { key: 'v1', filename: file.name } },
               body: body as unknown as Record<string, never>,
               bodySerializer: (b: unknown) => b as BodyInit,
               headers: { 'Content-Type': file.mimeType },

@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-02-03T20:58:28.373Z
+ * Generated: 2026-02-06T01:10:39.896Z
  */
 
 export type paths = {
@@ -437,199 +437,6 @@ export type paths = {
             };
         };
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/users/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get user by ID
-         * @description Returns a user entity by ID. May require authentication depending on permissions.
-         *
-         *     ---
-         *     **Permission:** `user:view`
-         *     **Auth:** optional
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description User found */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UserResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        /**
-         * Update user profile
-         * @description Updates a user's profile. Requires user:update permission (typically self-ownership).
-         *
-         *     ---
-         *     **Permission:** `user:update`
-         *     **Auth:** required
-         */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["UserUpdateRequest"];
-                };
-            };
-            responses: {
-                /** @description User updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UserUpdateResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-            };
-        };
         post?: never;
         delete?: never;
         options?: never;
@@ -2193,13 +2000,21 @@ export type paths = {
          * Create a new entity
          * @description Creates a generic entity of any type. For type-specific validation, use type-specific endpoints.
          *
+         *     **Relationship Target Validation:**
+         *     By default, all relationship targets are validated to ensure they exist. Use `?validate_relationships=false` to skip this validation (useful for migrations or when targets will be created shortly after).
+         *
+         *     Requests with more than 500 unique relationship targets are rejected when validation is enabled.
+         *
          *     ---
          *     **Permission:** `entity:create`
          *     **Auth:** required
          */
         post: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Validate that relationship targets exist. Defaults to true for single entity operations, false for batch. When true, requests with >500 unique relationship targets are rejected. */
+                    validate_relationships?: "true" | "false";
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -2317,13 +2132,19 @@ export type paths = {
          *
          *     **Max batch size:** 100 entities.
          *
+         *     **Relationship Target Validation:**
+         *     By default, relationship targets are NOT validated for batch creates. This is because intra-batch references are common (entity A references entity B, both created in the same batch). Use `?validate_relationships=true` to enable validation if needed.
+         *
          *     ---
          *     **Permission:** `entity:create`
          *     **Auth:** required
          */
         post: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Validate that relationship targets exist. Defaults to true for single entity operations, false for batch. When true, requests with >500 unique relationship targets are rejected. */
+                    validate_relationships?: "true" | "false";
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -2637,6 +2458,11 @@ export type paths = {
          *
          *     Use `/relationships` only for bidirectional links updating two entities atomically.
          *
+         *     **Relationship Target Validation:**
+         *     By default, new relationship targets in `relationships_add` are validated to ensure they exist. Use `?validate_relationships=false` to skip this validation.
+         *
+         *     Requests with more than 500 unique relationship targets are rejected when validation is enabled.
+         *
          *     Note: entity:update on a collection requires collection:update permission.
          *
          *     ---
@@ -2645,7 +2471,10 @@ export type paths = {
          */
         put: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Validate that relationship targets exist. Defaults to true for single entity operations, false for batch. When true, requests with >500 unique relationship targets are rejected. */
+                    validate_relationships?: "true" | "false";
+                };
                 header?: never;
                 path: {
                     /** @description Entity ID (ULID) */
@@ -3708,683 +3537,7 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
-    "/relationships": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add relationship between entities
-         * @description Creates a relationship from source to target entity.
-         *
-         *     **⚠️ For single-entity updates, prefer `PUT /entities/:id` with `relationships_add` - simpler API, one CAS guard, can update properties too.**
-         *
-         *     Use this endpoint only for **bidirectional** relationships requiring atomic updates to TWO entities.
-         *
-         *     If `target_predicate` is provided (bidirectional):
-         *     - Updates both source and target entities
-         *     - Requires `entity:update` on both, plus two CAS guards
-         *
-         *     If `target_predicate` is omitted (unidirectional):
-         *     - Use `PUT /entities/:id` instead
-         *
-         *     ---
-         *     **Permission:** `entity:update`
-         *     **Auth:** required
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["AddRelationshipRequest"];
-                };
-            };
-            responses: {
-                /** @description Relationship created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AddRelationshipResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-            };
-        };
-        /**
-         * Remove relationship between entities
-         * @description Removes a relationship from source to target entity.
-         *
-         *     **⚠️ For single-entity updates, prefer `PUT /entities/:id` with `relationships_remove` - simpler API, one CAS guard, can update properties too.**
-         *
-         *     Use this endpoint only for **bidirectional** relationships requiring atomic updates to TWO entities.
-         *
-         *     If `target_predicate` is provided (bidirectional):
-         *     - Updates both source and target entities
-         *     - Requires `entity:update` on both, plus two CAS guards
-         *
-         *     If `target_predicate` is omitted (unidirectional):
-         *     - Use `PUT /entities/:id` instead
-         *
-         *     ---
-         *     **Permission:** `entity:update`
-         *     **Auth:** required
-         */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["RemoveRelationshipRequest"];
-                };
-            };
-            responses: {
-                /** @description Relationship removed */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RemoveRelationshipResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/connect": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Connect two entities
-         * @description Creates a unidirectional relationship from source to target entity.
-         *
-         *     This is a shorthand for adding a relationship with sensible defaults:
-         *     - Default predicate: `connects_to` (customizable)
-         *     - Optional label and description stored in relationship properties
-         *     - Only requires `entity:update` permission on source entity
-         *
-         *     Use this for simple entity linking. For bidirectional relationships or
-         *     advanced options, use the `/relationships` endpoint.
-         *
-         *     ---
-         *     **Permission:** `entity:update`
-         *     **Auth:** required
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["ConnectRequest"];
-                };
-            };
-            responses: {
-                /** @description Connection created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ConnectResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/connect/disconnect": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Disconnect two entities
-         * @description Removes a unidirectional relationship from source to target entity.
-         *
-         *     This is a shorthand for removing a relationship:
-         *     - Default predicate: `connects_to` (customizable)
-         *     - Only requires `entity:update` permission on source entity
-         *
-         *     For bidirectional removal, use the `/relationships` endpoint.
-         *
-         *     ---
-         *     **Permission:** `entity:update`
-         *     **Auth:** required
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["DisconnectRequest"];
-                };
-            };
-            responses: {
-                /** @description Connection removed */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DisconnectResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create file entity
-         * @description Creates a new file entity.
-         *
-         *     ## Flow
-         *     1. Call this endpoint with file metadata (key, filename, content_type, size)
-         *     2. Receive entity data (uploaded: false)
-         *     3. POST the file content to /{id}/content
-         *     4. Entity will be updated with uploaded: true and verified CID
-         *
-         *     ## Key Best Practice
-         *     Use a unique identifier as the key (e.g., version number, timestamp).
-         *     The actual CID is computed during upload.
-         *
-         *     ---
-         *     **Permission:** `file:create`
-         *     **Auth:** required
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["CreateFileRequest"];
-                };
-            };
-            responses: {
-                /** @description File entity created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CreateFileResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Internal server error"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/files/{id}": {
+    "/entities/{id}/content": {
         parameters: {
             query?: never;
             header?: never;
@@ -4392,16 +3545,29 @@ export type paths = {
             cookie?: never;
         };
         /**
-         * Get file metadata
-         * @description Returns file entity metadata. Use /{id}/content to download the file content.
+         * Download content for any entity
+         * @description Downloads binary content for any entity type.
+         *
+         *     **Query Parameters:**
+         *     - `key` (optional): Specific version key to download. Default: current content key from entity
+         *
+         *     **Response Headers:**
+         *     - `Content-Type`: MIME type of the content
+         *     - `Content-Length`: Content size in bytes
+         *     - `Content-Disposition`: attachment; filename="..." (if filename was set)
+         *
+         *     **Streaming:**
+         *     Response is streamed directly from R2 storage for efficient large file handling.
          *
          *     ---
-         *     **Permission:** `file:view`
+         *     **Permission:** `entity:view`
          *     **Auth:** optional
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    key?: string;
+                };
                 header?: never;
                 path: {
                     /** @description Entity ID (ULID) */
@@ -4411,214 +3577,7 @@ export type paths = {
             };
             requestBody?: never;
             responses: {
-                /** @description File found */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["FileResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        /**
-         * Update file metadata
-         * @description Updates file metadata without changing the file content.
-         *
-         *     ## Key Changes
-         *     The key can be changed, but ONLY to a key that already exists in R2.
-         *     This allows "regressing" to a previous file version.
-         *
-         *     To upload a new file, use POST /{id}/reupload instead.
-         *
-         *     ---
-         *     **Permission:** `file:update`
-         *     **Auth:** required
-         */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["UpdateFileRequest"];
-                };
-            };
-            responses: {
-                /** @description File updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UpdateFileResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-            };
-        };
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/files/{id}/content": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download file content
-         * @description Downloads the binary content of a file entity.
-         *
-         *     ## Response Headers
-         *     - Content-Type: The MIME type of the file
-         *     - Content-Length: File size in bytes
-         *     - Content-Disposition: attachment; filename="original_filename"
-         *
-         *     ## Streaming
-         *     Response is streamed directly from R2 storage.
-         *
-         *     ---
-         *     **Permission:** `file:download`
-         *     **Auth:** optional
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description File content */
+                /** @description Content downloaded */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -4659,33 +3618,36 @@ export type paths = {
         };
         put?: never;
         /**
-         * Upload file content
-         * @description Uploads the binary content for a file entity.
+         * Upload content for any entity
+         * @description Uploads binary content for any entity type. Any entity can have content attached.
          *
-         *     ## Request
-         *     - Content-Type: The MIME type of the file (must match entity's content_type)
-         *     - Body: Binary file content (streaming supported)
+         *     **Request:**
+         *     - Query param `key` (required): Version key for this content (e.g., "v1", "original", "thumbnail")
+         *     - Query param `filename` (optional): Filename for Content-Disposition header on download
+         *     - Header `Content-Type`: MIME type of the content (required)
+         *     - Header `Content-Length`: Size for pre-upload validation (optional, max 500MB)
+         *     - Body: Binary content (streaming supported)
          *
-         *     ## Limits
-         *     - Maximum file size: 500 MB
+         *     **Behavior:**
+         *     - Streams content directly to R2 storage
+         *     - Computes CID from content bytes
+         *     - Updates entity with `properties.content` metadata
+         *     - Re-uploading with same key overwrites the content
+         *     - Creates a new entity version on each upload
          *
-         *     ## Behavior
-         *     - Streams content directly to R2
-         *     - Computes CID from file bytes
-         *     - Updates entity with uploaded: true, verified size, and computed CID
-         *     - Atomic operation - either fully succeeds or fails
-         *
-         *     ## Idempotency
-         *     Re-uploading content for an already-uploaded file will fail with 409 Conflict.
-         *     Use POST /{id}/reupload first to create a new version.
+         *     **Storage:**
+         *     Content is stored at `{entity_id}/{key}` in R2, enabling multiple versions per entity.
          *
          *     ---
-         *     **Permission:** `file:upload`
+         *     **Permission:** `entity:update`
          *     **Auth:** required
          */
         post: {
             parameters: {
-                query?: never;
+                query: {
+                    key: string;
+                    filename?: string;
+                };
                 header?: never;
                 path: {
                     /** @description Entity ID (ULID) */
@@ -4695,7 +3657,7 @@ export type paths = {
             };
             requestBody?: never;
             responses: {
-                /** @description File content uploaded */
+                /** @description Content uploaded */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -4789,7 +3751,7 @@ export type paths = {
                         "application/json": components["schemas"]["CASErrorResponse"];
                     };
                 };
-                /** @description File too large (max 500 MB) */
+                /** @description Content too large (max 500 MB) */
                 413: {
                     headers: {
                         [name: string]: unknown;
@@ -4798,1166 +3760,9 @@ export type paths = {
                         "application/json": components["schemas"]["ValidationErrorResponse"];
                     };
                 };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Internal server error"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
             };
         };
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/files/{id}/reupload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Prepare for new file version
-         * @description Prepares the entity for uploading a new file version.
-         *
-         *     ## Flow
-         *     1. Call this endpoint with new key and file metadata
-         *     2. Receive updated entity (uploaded: false)
-         *     3. POST the new file content to /{id}/content
-         *     4. Entity will be updated with uploaded: true and verified CID
-         *
-         *     ## Key Requirement
-         *     The new key must NOT already exist in R2 (no overwrites).
-         *     Previous file versions remain accessible via manifest history.
-         *
-         *     ---
-         *     **Permission:** `file:reupload`
-         *     **Auth:** required
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["ReuploadFileRequest"];
-                };
-            };
-            responses: {
-                /** @description Ready for new file version upload */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ReuploadFileResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/folders": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create folder
-         * @description Creates a new folder entity. Optionally sets parent for immediate hierarchy.
-         *
-         *     If a parent folder is specified, a bidirectional relationship is created:
-         *     - Parent folder contains this folder
-         *     - This folder is in parent folder
-         *
-         *     ---
-         *     **Permission:** `folder:create`
-         *     **Auth:** required
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["CreateFolderRequest"];
-                };
-            };
-            responses: {
-                /** @description Folder created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CreateFolderResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Internal server error"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/folders/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get folder
-         * @description Returns folder metadata including children and parent relationships.
-         *
-         *     ---
-         *     **Permission:** `folder:view`
-         *     **Auth:** optional
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Folder found */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["FolderResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        /**
-         * Update folder
-         * @description Updates folder properties (label, description, metadata). Properties are merged.
-         *
-         *     ---
-         *     **Permission:** `folder:update`
-         *     **Auth:** required
-         */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["UpdateFolderRequest"];
-                };
-            };
-            responses: {
-                /** @description Folder updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UpdateFolderResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-            };
-        };
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/folders/{id}/children": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add child to folder
-         * @description Adds a child entity (file or folder) to this folder.
-         *
-         *     Creates bidirectional relationship:
-         *     - Folder contains child
-         *     - Child is in folder
-         *
-         *     **Idempotent**: if relationship already exists, returns current state without error.
-         *
-         *     ---
-         *     **Permission:** `folder:update`
-         *     **Auth:** required
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["AddChildRequest"];
-                };
-            };
-            responses: {
-                /** @description Child added */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AddChildResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/folders/{id}/children/{childId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Remove child from folder
-         * @description Removes a child entity from this folder (bidirectional).
-         *
-         *     ---
-         *     **Permission:** `folder:update`
-         *     **Auth:** required
-         */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                    /** @description Child entity ID */
-                    childId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["RemoveChildRequest"];
-                };
-            };
-            responses: {
-                /** @description Child removed */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RemoveChildResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/folders/{id}/children/bulk": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk add children to folder
-         * @description Efficiently adds multiple children to a folder.
-         *
-         *     **Limit**: Maximum 50 children per request. For larger batches, make multiple
-         *     requests, refetching the folder's CID between each to satisfy the CAS guard.
-         *
-         *     **Strategy**:
-         *     1. Updates folder once with all 'contains' relationships
-         *     2. Updates each child in parallel with 'in' back-link
-         *
-         *     **Idempotent**: skips children that already have the relationship.
-         *     Returns both added and skipped children in the response.
-         *
-         *     ---
-         *     **Permission:** `folder:update`
-         *     **Auth:** required
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["BulkAddChildrenRequest"];
-                };
-            };
-            responses: {
-                /** @description Children added */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["BulkAddChildrenResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/folders/{id}/parents": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add parent to folder
-         * @description Adds this folder to a parent folder.
-         *
-         *     Creates bidirectional relationship:
-         *     - Parent contains this folder
-         *     - This folder is in parent
-         *
-         *     **Idempotent**: if relationship already exists, returns current state without error.
-         *
-         *     ---
-         *     **Permission:** `folder:update`
-         *     **Auth:** required
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["AddParentRequest"];
-                };
-            };
-            responses: {
-                /** @description Parent added */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AddParentResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/folders/{id}/parents/{parentId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Remove parent from folder
-         * @description Removes this folder from a parent folder (bidirectional).
-         *
-         *     ---
-         *     **Permission:** `folder:update`
-         *     **Auth:** required
-         */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                    /** @description Parent folder ID */
-                    parentId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["RemoveParentRequest"];
-                };
-            };
-            responses: {
-                /** @description Parent removed */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RemoveParentResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-            };
-        };
         options?: never;
         head?: never;
         patch?: never;
@@ -7877,6 +5682,282 @@ export type paths = {
             };
         };
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kladoi/{id}/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List API keys for klados
+         * @description Lists all active API keys for the klados (without the actual key values).
+         *
+         *     ---
+         *     **Permission:** `klados:manage`
+         *     **Auth:** required
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description API keys listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListKladosApiKeysResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Create API key for klados
+         * @description Creates an API key for the klados. The full key is only returned once.
+         *
+         *     ---
+         *     **Permission:** `klados:manage`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateKladosApiKeyRequest"];
+                };
+            };
+            responses: {
+                /** @description API key created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CreateKladosApiKeyResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kladoi/{id}/keys/{prefix}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke API key
+         * @description Revokes an API key for the klados.
+         *
+         *     ---
+         *     **Permission:** `klados:manage`
+         *     **Auth:** required
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                    prefix: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description API key revoked */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -10650,107 +8731,6 @@ export type components = {
             /** @enum {string} */
             type?: "user";
         };
-        UserUpdateResponse: components["schemas"]["UserResponse"] & {
-            /**
-             * @description Previous version CID
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            prev_cid: string;
-        };
-        ValidationErrorResponse: {
-            /** @example Validation failed */
-            error: string;
-            details?: {
-                issues: {
-                    path: (string | number)[];
-                    message: string;
-                }[];
-            };
-        };
-        CASErrorResponse: {
-            /** @enum {string} */
-            error: "Conflict: entity was modified";
-            details: {
-                /** @description Expected tip CID */
-                expected: string;
-                /** @description Actual current tip CID */
-                actual: string;
-            };
-        };
-        UserUpdateRequest: {
-            /**
-             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_tip: string;
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /** @description Properties to add or update (deep merged) */
-            properties?: {
-                [key: string]: unknown;
-            };
-            /** @description Properties to remove. Use string[] for top-level keys (e.g., ["old_field"]), or nested objects for deep removal (e.g., { config: { options: ["debug"] } }). Dot notation like "config.options.debug" is NOT supported. */
-            properties_remove?: string[] | {
-                [key: string]: unknown;
-            };
-            /** @description Relationships to add or update (upsert semantics) */
-            relationships_add?: {
-                /**
-                 * @description Relationship predicate (e.g., "admin", "contains", "collection")
-                 * @example admin
-                 */
-                predicate: string;
-                /**
-                 * @description Target entity ID
-                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-                 */
-                peer: string;
-                /**
-                 * @description Target entity type hint
-                 * @example user
-                 */
-                peer_type?: string;
-                /**
-                 * @description Target entity label hint
-                 * @example Captain Ahab
-                 */
-                peer_label?: string;
-                /**
-                 * @description Properties to add/update on this relationship (deep merged if relationship exists)
-                 * @example {
-                 *       "expires_at": "2025-12-31T00:00:00Z"
-                 *     }
-                 */
-                properties?: {
-                    [key: string]: unknown;
-                };
-                /** @description Properties to remove from this relationship (string array or nested object) */
-                properties_remove?: string[] | {
-                    [key: string]: unknown;
-                };
-            }[];
-            /** @description Relationships to remove */
-            relationships_remove?: {
-                /**
-                 * @description Relationship predicate
-                 * @example viewer
-                 */
-                predicate: string;
-                /**
-                 * @description Target entity ID. If omitted, removes ALL relationships with this predicate.
-                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-                 */
-                peer?: string;
-            }[];
-            /**
-             * @description Updated display name
-             * @example Captain Ahab
-             */
-            label?: string;
-        };
         CreateApiKeyResponse: {
             /**
              * @description Full API key - store this securely, it will not be shown again
@@ -10970,6 +8950,16 @@ export type components = {
             results: components["schemas"]["SearchResultItem"][];
             metadata: components["schemas"]["SearchMetadata"];
         };
+        ValidationErrorResponse: {
+            /** @example Validation failed */
+            error: string;
+            details?: {
+                issues: {
+                    path: (string | number)[];
+                    message: string;
+                }[];
+            };
+        };
         CrossCollectionSearchRequest: {
             /**
              * @description Search query text for semantic matching
@@ -11081,6 +9071,16 @@ export type components = {
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             prev_cid: string;
+        };
+        CASErrorResponse: {
+            /** @enum {string} */
+            error: "Conflict: entity was modified";
+            details: {
+                /** @description Expected tip CID */
+                expected: string;
+                /** @description Actual current tip CID */
+                actual: string;
+            };
         };
         UpdateCollectionRequest: {
             /**
@@ -12079,808 +10079,62 @@ export type components = {
              * @description Actions the user can perform on this entity
              * @example [
              *       "entity:view",
-             *       "entity:update",
-             *       "file:download"
+             *       "entity:update"
              *     ]
              */
             allowed_actions: string[];
             resolution: components["schemas"]["PermissionResolution"];
         };
-        AddRelationshipResponse: {
-            source: components["schemas"]["EntityResponse"] & unknown;
-            target?: components["schemas"]["EntityResponse"] & unknown;
-        };
-        AddRelationshipRequest: {
+        /** @description Content metadata */
+        ContentMetadata: {
             /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /**
-             * @description Source entity ID
-             * @example 01JFKY3XQWM0MJVKM8DK3AEXPY
-             */
-            source_id: string;
-            /**
-             * @description Target entity ID
-             * @example 01JFKY3XQWM0MJVKM8DK3AEXQZ
-             */
-            target_id: string;
-            /**
-             * @description Predicate on source entity pointing to target
-             * @example collection
-             */
-            source_predicate: string;
-            /**
-             * @description Predicate on target entity pointing to source. If provided, creates bidirectional relationship.
-             * @example root
-             */
-            target_predicate?: string;
-            /**
-             * @description Expected current tip CID of source entity
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_source_tip: string;
-            /**
-             * @description Expected current tip CID of target entity. Required for bidirectional relationships if target is protected.
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_target_tip?: string;
-        };
-        RemoveRelationshipResponse: {
-            source: components["schemas"]["EntityResponse"] & unknown;
-            target?: components["schemas"]["EntityResponse"] & unknown;
-        };
-        RemoveRelationshipRequest: {
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /**
-             * @description Source entity ID
-             * @example 01JFKY3XQWM0MJVKM8DK3AEXPY
-             */
-            source_id: string;
-            /**
-             * @description Target entity ID (peer of the relationship to remove)
-             * @example 01JFKY3XQWM0MJVKM8DK3AEXQZ
-             */
-            target_id: string;
-            /**
-             * @description Predicate on source entity to remove
-             * @example collection
-             */
-            source_predicate: string;
-            /**
-             * @description Predicate on target entity to remove. If provided, removes bidirectional relationship.
-             * @example root
-             */
-            target_predicate?: string;
-            /**
-             * @description Expected current tip CID of source entity
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_source_tip: string;
-            /**
-             * @description Expected current tip CID of target entity. Required for bidirectional relationships.
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_target_tip?: string;
-        };
-        ConnectResponse: {
-            source: components["schemas"]["EntityResponse"] & unknown;
-        };
-        ConnectRequest: {
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /**
-             * @description Source entity ID (the entity you're connecting FROM)
-             * @example 01JFKY3XQWM0MJVKM8DK3AEXPY
-             */
-            source_id: string;
-            /**
-             * @description Target entity ID (the entity you're connecting TO)
-             * @example 01JFKY3XQWM0MJVKM8DK3AEXQZ
-             */
-            target_id: string;
-            /**
-             * @description Expected current tip CID of source entity
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_tip: string;
-            /**
-             * @description Relationship predicate. Defaults to "connects_to".
-             * @example connects_to
-             */
-            predicate?: string;
-            /**
-             * @description Optional display label for this connection
-             * @example Related document
-             */
-            label?: string;
-            /**
-             * @description Optional description explaining why this connection exists
-             * @example Links to the supporting research paper
-             */
-            description?: string;
-        };
-        DisconnectResponse: {
-            source: components["schemas"]["EntityResponse"] & unknown;
-        };
-        DisconnectRequest: {
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /**
-             * @description Source entity ID
-             * @example 01JFKY3XQWM0MJVKM8DK3AEXPY
-             */
-            source_id: string;
-            /**
-             * @description Target entity ID (peer of the connection to remove)
-             * @example 01JFKY3XQWM0MJVKM8DK3AEXQZ
-             */
-            target_id: string;
-            /**
-             * @description Expected current tip CID of source entity
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_tip: string;
-            /**
-             * @description Relationship predicate to remove. Defaults to "connects_to".
-             * @example connects_to
-             */
-            predicate?: string;
-        };
-        CreateFileResponse: {
-            /**
-             * @description Entity ID (ULID format)
-             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-             */
-            id: string;
-            /**
-             * @description Content Identifier (CID) - content-addressed hash
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            cid: string;
-            /** @enum {string} */
-            type: "file";
-            /**
-             * @example {
-             *       "label": "The Pequod's Archive",
-             *       "description": "A collection of whaling documents"
-             *     }
-             */
-            properties: {
-                [key: string]: unknown;
-            };
-            relationships: {
-                predicate: string;
-                peer: string;
-                peer_type?: string;
-                peer_label?: string;
-                properties?: {
-                    [key: string]: unknown;
-                };
-            }[];
-            /**
-             * @description Entity version number
-             * @example 1
-             */
-            ver: number;
-            /**
-             * Format: date-time
-             * @description ISO 8601 datetime
-             * @example 2025-12-26T12:00:00.000Z
-             */
-            created_at: string;
-            /**
-             * @description Unix timestamp in milliseconds
-             * @example 1735214400000
-             */
-            ts: number;
-            /**
-             * @description Audit trail for edits. Label fields are populated when ?expand=relationships is used.
-             * @example {
-             *       "user_id": "01JCAPTAINAHAB000000000000",
-             *       "user_label": "Captain Ahab",
-             *       "method": "manual"
-             *     }
-             */
-            edited_by: {
-                user_id: string;
-                /**
-                 * @description Display name of the user/agent (populated during expansion)
-                 * @example Captain Ahab
-                 */
-                user_label?: string;
-                /** @enum {string} */
-                method: "manual" | "ai_generated" | "system" | "import";
-                on_behalf_of?: string;
-                /**
-                 * @description Display name of the on_behalf_of user/agent (populated during expansion)
-                 * @example Research Assistant
-                 */
-                on_behalf_of_label?: string;
-            };
-        };
-        CreateFileRequest: {
-            /**
-             * @description Storage key in R2. Best practice: use the CID.
-             * @example bafkreiabc123...
+             * @description Version key for this content
+             * @example v1
              */
             key: string;
+            /**
+             * @description Content-addressed identifier (CID) of the content
+             * @example bafyreih5iy6dqwbcslkqpx6bxwj7qy3z5x...
+             */
+            cid: string;
+            /**
+             * @description Content size in bytes
+             * @example 12345
+             */
+            size: number;
+            /**
+             * @description MIME type of the content
+             * @example application/pdf
+             */
+            content_type: string;
             /**
              * @description Original filename
              * @example document.pdf
              */
-            filename: string;
-            /**
-             * @description MIME type of the file
-             * @example application/pdf
-             */
-            content_type: string;
-            /**
-             * @description Expected file size in bytes (verified on upload)
-             * @example 1048576
-             */
-            size: number;
-            /**
-             * @description Display label for the file. Defaults to filename if not provided.
-             * @example Q4 Financial Report
-             */
-            label?: string;
-            /**
-             * @description Description of the file
-             * @example Quarterly financial report for Q4 2024
-             */
-            description?: string;
-            /**
-             * @description Additional properties to store
-             * @example {
-             *       "source": "upload",
-             *       "category": "financial"
-             *     }
-             */
-            properties?: {
-                [key: string]: unknown;
-            };
-            /** @description Relationships to create */
-            relationships?: {
-                predicate: string;
-                peer: string;
-                peer_type?: string;
-                peer_label?: string;
-                properties?: {
-                    [key: string]: unknown;
-                };
-            }[];
-            /**
-             * @description Collection to add this file to (for permissions). Shortcut for adding a collection relationship.
-             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-             */
-            collection?: string;
-        };
-        FileResponse: components["schemas"]["EntityResponse"] & {
-            /** @enum {string} */
-            type?: "file";
-        };
-        UploadContentResponse: components["schemas"]["EntityResponse"] & {
-            /** @enum {string} */
-            type?: "file";
-            /**
-             * @description Previous version CID
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            prev_cid: string;
-        };
-        UpdateFileResponse: components["schemas"]["FileResponse"] & {
-            /**
-             * @description Previous version CID
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            prev_cid: string;
-        };
-        UpdateFileRequest: {
-            /**
-             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_tip: string;
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /** @description Properties to add or update (deep merged) */
-            properties?: {
-                [key: string]: unknown;
-            };
-            /** @description Properties to remove. Use string[] for top-level keys (e.g., ["old_field"]), or nested objects for deep removal (e.g., { config: { options: ["debug"] } }). Dot notation like "config.options.debug" is NOT supported. */
-            properties_remove?: string[] | {
-                [key: string]: unknown;
-            };
-            /** @description Relationships to add or update (upsert semantics) */
-            relationships_add?: {
-                /**
-                 * @description Relationship predicate (e.g., "admin", "contains", "collection")
-                 * @example admin
-                 */
-                predicate: string;
-                /**
-                 * @description Target entity ID
-                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-                 */
-                peer: string;
-                /**
-                 * @description Target entity type hint
-                 * @example user
-                 */
-                peer_type?: string;
-                /**
-                 * @description Target entity label hint
-                 * @example Captain Ahab
-                 */
-                peer_label?: string;
-                /**
-                 * @description Properties to add/update on this relationship (deep merged if relationship exists)
-                 * @example {
-                 *       "expires_at": "2025-12-31T00:00:00Z"
-                 *     }
-                 */
-                properties?: {
-                    [key: string]: unknown;
-                };
-                /** @description Properties to remove from this relationship (string array or nested object) */
-                properties_remove?: string[] | {
-                    [key: string]: unknown;
-                };
-            }[];
-            /** @description Relationships to remove */
-            relationships_remove?: {
-                /**
-                 * @description Relationship predicate
-                 * @example viewer
-                 */
-                predicate: string;
-                /**
-                 * @description Target entity ID. If omitted, removes ALL relationships with this predicate.
-                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-                 */
-                peer?: string;
-            }[];
-            /** @description New storage key. Must already exist in R2 (for regression to old version). */
-            key?: string;
-            /** @description New filename */
             filename?: string;
-            /** @description New MIME type */
-            content_type?: string;
-            /** @description New file size in bytes */
-            size?: number;
-            /** @description New display label */
-            label?: string;
-            /** @description New description */
-            description?: string;
+            /**
+             * @description ISO 8601 timestamp when content was uploaded
+             * @example 2025-01-15T10:00:00Z
+             */
+            uploaded_at: string;
         };
-        ReuploadFileResponse: components["schemas"]["FileResponse"] & {
+        UploadContentResponse: {
             /**
-             * @description Previous version CID
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            prev_cid: string;
-        };
-        ReuploadFileRequest: {
-            /**
-             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_tip: string;
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /**
-             * @description New storage key. Must NOT already exist in R2.
-             * @example v2
-             */
-            key: string;
-            /**
-             * @description MIME type of the new file
-             * @example application/pdf
-             */
-            content_type: string;
-            /**
-             * @description Expected size of the new file in bytes (verified on upload)
-             * @example 2097152
-             */
-            size: number;
-            /** @description New filename (optional, keeps current if not provided) */
-            filename?: string;
-            /** @description New display label (optional, keeps current if not provided) */
-            label?: string;
-            /** @description New description */
-            description?: string;
-        };
-        CreateFolderResponse: {
-            /**
-             * @description Entity ID (ULID format)
-             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             * @description Entity ID
+             * @example 01KABC123...
              */
             id: string;
             /**
-             * @description Content Identifier (CID) - content-addressed hash
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             * @description New entity manifest CID after update
+             * @example bafyrei...
              */
             cid: string;
-            /** @enum {string} */
-            type: "folder";
+            content: components["schemas"]["ContentMetadata"];
             /**
-             * @example {
-             *       "label": "The Pequod's Archive",
-             *       "description": "A collection of whaling documents"
-             *     }
-             */
-            properties: {
-                [key: string]: unknown;
-            };
-            relationships: {
-                predicate: string;
-                peer: string;
-                peer_type?: string;
-                peer_label?: string;
-                properties?: {
-                    [key: string]: unknown;
-                };
-            }[];
-            /**
-             * @description Entity version number
-             * @example 1
-             */
-            ver: number;
-            /**
-             * Format: date-time
-             * @description ISO 8601 datetime
-             * @example 2025-12-26T12:00:00.000Z
-             */
-            created_at: string;
-            /**
-             * @description Unix timestamp in milliseconds
-             * @example 1735214400000
-             */
-            ts: number;
-            /**
-             * @description Audit trail for edits. Label fields are populated when ?expand=relationships is used.
-             * @example {
-             *       "user_id": "01JCAPTAINAHAB000000000000",
-             *       "user_label": "Captain Ahab",
-             *       "method": "manual"
-             *     }
-             */
-            edited_by: {
-                user_id: string;
-                /**
-                 * @description Display name of the user/agent (populated during expansion)
-                 * @example Captain Ahab
-                 */
-                user_label?: string;
-                /** @enum {string} */
-                method: "manual" | "ai_generated" | "system" | "import";
-                on_behalf_of?: string;
-                /**
-                 * @description Display name of the on_behalf_of user/agent (populated during expansion)
-                 * @example Research Assistant
-                 */
-                on_behalf_of_label?: string;
-            };
-        };
-        CreateFolderRequest: {
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /**
-             * @description Display name for the folder
-             * @example Research Documents
-             */
-            label: string;
-            /** @description Short description */
-            description?: string;
-            /** @description Rich content description (markdown) */
-            rich_description?: string;
-            /** @description Flexible metadata */
-            metadata?: {
-                [key: string]: unknown;
-            };
-            /** @description Additional properties to store */
-            properties?: {
-                [key: string]: unknown;
-            };
-            /** @description Relationships to create */
-            relationships?: {
-                predicate: string;
-                peer: string;
-                peer_type?: string;
-                peer_label?: string;
-                properties?: {
-                    [key: string]: unknown;
-                };
-            }[];
-            /**
-             * @description Collection to add folder to (for permissions). Shortcut for adding a collection relationship.
-             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-             */
-            collection?: string;
-            /**
-             * @description Parent folder ID (creates bidirectional relationship)
-             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-             */
-            parent?: string;
-        };
-        FolderResponse: components["schemas"]["EntityResponse"] & {
-            /** @enum {string} */
-            type?: "folder";
-        };
-        UpdateFolderResponse: components["schemas"]["FolderResponse"] & {
-            /**
-             * @description Previous version CID
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             * @description Previous entity manifest CID
+             * @example bafyrei...
              */
             prev_cid: string;
-        };
-        UpdateFolderRequest: {
-            /**
-             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_tip: string;
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /** @description Properties to add or update (deep merged) */
-            properties?: {
-                [key: string]: unknown;
-            };
-            /** @description Properties to remove. Use string[] for top-level keys (e.g., ["old_field"]), or nested objects for deep removal (e.g., { config: { options: ["debug"] } }). Dot notation like "config.options.debug" is NOT supported. */
-            properties_remove?: string[] | {
-                [key: string]: unknown;
-            };
-            /** @description Relationships to add or update (upsert semantics) */
-            relationships_add?: {
-                /**
-                 * @description Relationship predicate (e.g., "admin", "contains", "collection")
-                 * @example admin
-                 */
-                predicate: string;
-                /**
-                 * @description Target entity ID
-                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-                 */
-                peer: string;
-                /**
-                 * @description Target entity type hint
-                 * @example user
-                 */
-                peer_type?: string;
-                /**
-                 * @description Target entity label hint
-                 * @example Captain Ahab
-                 */
-                peer_label?: string;
-                /**
-                 * @description Properties to add/update on this relationship (deep merged if relationship exists)
-                 * @example {
-                 *       "expires_at": "2025-12-31T00:00:00Z"
-                 *     }
-                 */
-                properties?: {
-                    [key: string]: unknown;
-                };
-                /** @description Properties to remove from this relationship (string array or nested object) */
-                properties_remove?: string[] | {
-                    [key: string]: unknown;
-                };
-            }[];
-            /** @description Relationships to remove */
-            relationships_remove?: {
-                /**
-                 * @description Relationship predicate
-                 * @example viewer
-                 */
-                predicate: string;
-                /**
-                 * @description Target entity ID. If omitted, removes ALL relationships with this predicate.
-                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-                 */
-                peer?: string;
-            }[];
-            /** @description New display name */
-            label?: string;
-            /** @description New description */
-            description?: string;
-            /** @description New rich description */
-            rich_description?: string;
-            /** @description New metadata (deep merged) */
-            metadata?: {
-                [key: string]: unknown;
-            };
-        };
-        AddChildResponse: {
-            folder: components["schemas"]["FolderResponse"] & unknown;
-            /** @description Updated child info */
-            child: {
-                /**
-                 * @description Entity ID (ULID format)
-                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-                 */
-                id: string;
-                /**
-                 * @description Content Identifier (CID) - content-addressed hash
-                 * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-                 */
-                cid: string;
-            };
-        };
-        AddChildRequest: {
-            /**
-             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_tip: string;
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /**
-             * @description Child entity ID to add (file or folder)
-             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-             */
-            child_id: string;
-            /**
-             * @description Expected CID of child (CAS guard, optional if child in open season)
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_child_tip?: string;
-        };
-        RemoveChildResponse: {
-            folder: components["schemas"]["FolderResponse"] & unknown;
-            /** @description Updated child info */
-            child: {
-                /**
-                 * @description Entity ID (ULID format)
-                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-                 */
-                id: string;
-                /**
-                 * @description Content Identifier (CID) - content-addressed hash
-                 * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-                 */
-                cid: string;
-            };
-        };
-        RemoveChildRequest: {
-            /**
-             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_tip: string;
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /**
-             * @description Expected CID of child (CAS guard)
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_child_tip: string;
-        };
-        BulkAddChildrenResponse: {
-            folder: components["schemas"]["FolderResponse"] & unknown;
-            /** @description Children that were added */
-            added: {
-                /**
-                 * @description Entity ID (ULID format)
-                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-                 */
-                id: string;
-                /**
-                 * @description Content Identifier (CID) - content-addressed hash
-                 * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-                 */
-                cid: string;
-            }[];
-            /** @description Children that were skipped (already existed) */
-            skipped: string[];
-        };
-        BulkAddChildrenRequest: {
-            /**
-             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_tip: string;
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /**
-             * @description Children to add (max 50 per request)
-             * @example [
-             *       {
-             *         "id": "01JFILE123ABCDEFGHJKMNPQRS"
-             *       },
-             *       {
-             *         "id": "01JFOLDER456ABCDEFGHJKMNPQ",
-             *         "type": "folder"
-             *       }
-             *     ]
-             */
-            children: {
-                /**
-                 * @description Entity ID (ULID format)
-                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-                 */
-                id: string;
-                type?: string;
-            }[];
-        };
-        AddParentResponse: {
-            folder: components["schemas"]["FolderResponse"] & unknown;
-            parent: components["schemas"]["FolderResponse"] & unknown;
-        };
-        AddParentRequest: {
-            /**
-             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_tip: string;
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /**
-             * @description Parent folder or collection ID to add
-             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-             */
-            parent_id: string;
-            /**
-             * @description Expected CID of parent (CAS guard, optional if parent in open season)
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_parent_tip?: string;
-        };
-        RemoveParentResponse: {
-            folder: components["schemas"]["FolderResponse"] & unknown;
-            parent: components["schemas"]["FolderResponse"] & unknown;
-        };
-        RemoveParentRequest: {
-            /**
-             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_tip: string;
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /**
-             * @description Expected CID of parent (CAS guard)
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_parent_tip: string;
         };
         VersionInfo: {
             /**
@@ -13085,7 +10339,7 @@ export type components = {
              * @example [
              *       "entity:view",
              *       "entity:create",
-             *       "file:download"
+             *       "entity:update"
              *     ]
              */
             actions: string[];
@@ -13095,8 +10349,7 @@ export type components = {
              *       "view",
              *       "create",
              *       "update",
-             *       "delete",
-             *       "download"
+             *       "delete"
              *     ]
              */
             verbs: string[];
@@ -13105,19 +10358,21 @@ export type components = {
              * @example [
              *       "entity",
              *       "user",
-             *       "collection",
-             *       "file"
+             *       "collection"
              *     ]
              */
             types: string[];
             /**
-             * @description Verb implications. If you have a verb, you also have its implied verbs. Example: view implies download.
+             * @description Verb implications. If you have a verb, you also have its implied verbs. Example: update implies delete.
              * @example {
-             *       "view": [
-             *         "download"
-             *       ],
              *       "update": [
-             *         "reupload"
+             *         "delete"
+             *       ],
+             *       "manage": [
+             *         "view",
+             *         "create",
+             *         "update",
+             *         "delete"
              *       ]
              *     }
              */
@@ -13195,7 +10450,7 @@ export type components = {
              * @example [
              *       "entity:view",
              *       "entity:update",
-             *       "file:create"
+             *       "entity:create"
              *     ]
              */
             actions_required: string[];
@@ -13327,7 +10582,7 @@ export type components = {
              * @example [
              *       "entity:view",
              *       "entity:update",
-             *       "file:create"
+             *       "entity:create"
              *     ]
              */
             actions_required?: string[];
@@ -13632,7 +10887,7 @@ export type components = {
              * @example [
              *       "entity:view",
              *       "entity:update",
-             *       "file:create"
+             *       "entity:create"
              *     ]
              */
             actions_required: string[];
@@ -13791,7 +11046,7 @@ export type components = {
              * @example [
              *       "entity:view",
              *       "entity:update",
-             *       "file:create"
+             *       "entity:create"
              *     ]
              */
             actions_required?: string[];
@@ -13951,9 +11206,9 @@ export type components = {
             rhiza?: {
                 /** @description Rhiza workflow ID */
                 id: string;
-                /** @description Path of klados IDs from entry to current */
+                /** @description Path of step names from entry to current */
                 path: string[];
-                /** @description Parent log IDs for chain traversal */
+                /** @description Parent log IDs for chain traversal (e.g., "log_abc123") */
                 parent_logs: string[];
                 /** @description Batch context if part of scatter operation */
                 batch?: {
@@ -14042,10 +11297,83 @@ export type components = {
              */
             expires_in: number;
         };
+        CreateKladosApiKeyResponse: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * @description Full API key - store securely, shown only once
+             * @example ak_abc123...
+             */
+            key: string;
+            /**
+             * @description Key prefix for identification
+             * @example ak_abc1
+             */
+            prefix: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            label: string | null;
+        };
+        CreateKladosApiKeyRequest: {
+            /**
+             * @description Human-readable label for the key
+             * @example Production key
+             */
+            label?: string;
+            /**
+             * @description Key expiration in days (1-365, default: 365)
+             * @default 365
+             * @example 90
+             */
+            expires_in_days: number;
+        };
+        KladosApiKeyInfo: {
+            /** Format: uuid */
+            id: string;
+            prefix: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            last_used_at: string | null;
+            label: string | null;
+        };
+        ListKladosApiKeysResponse: {
+            keys: components["schemas"]["KladosApiKeyInfo"][];
+        };
         RhizaResponse: components["schemas"]["EntityResponse"] & {
             /** @enum {string} */
             type?: "rhiza";
         };
+        /**
+         * @description Condition for routing decisions. Supports three forms:
+         *     - Simple match: `{ property: "status", equals: "approved" }`
+         *     - AND: `{ and: [condition1, condition2, ...] }`
+         *     - OR: `{ or: [condition1, condition2, ...] }`
+         *
+         *     Conditions can be nested arbitrarily deep.
+         * @example {
+         *       "property": "status",
+         *       "equals": "approved"
+         *     }
+         */
+        WhereCondition: {
+            [key: string]: unknown;
+        } & ({
+            /** @description Property path to check (e.g., "status", "metadata.category") */
+            property: string;
+            /** @description Value to compare against */
+            equals: string | number | boolean | null;
+        } | {
+            /** @description All conditions must match */
+            and: components["schemas"]["WhereCondition"][];
+        } | {
+            /** @description At least one condition must match */
+            or: components["schemas"]["WhereCondition"][];
+        });
         CreateRhizaRequest: {
             /**
              * @description Optional note describing this change
@@ -14065,33 +11393,28 @@ export type components = {
              */
             version: string;
             /**
-             * KladosRef
-             * @description Entry point klados reference
-             * @example {
-             *       "pi": "01KEXAMPLE123456789012345",
-             *       "type": "klados",
-             *       "label": "OCR Processor"
-             *     }
+             * @description Entry point step name (must exist as a key in flow)
+             * @example extract
              */
-            entry: {
-                pi: string;
-                type?: string;
-                label?: string;
-                description?: string;
-            };
+            entry: string;
             /**
              * Flow
-             * @description Flow definition mapping klados IDs to their handoff specifications
+             * @description Flow definition mapping step names to their klados references and handoff specifications. Step names are arbitrary strings that identify each step in the workflow.
              * @example {
-             *       "01KKLADOSA12345678901234": {
+             *       "extract": {
+             *         "klados": {
+             *           "pi": "01KKLADOSA12345678901234",
+             *           "type": "klados"
+             *         },
              *         "then": {
-             *           "pass": {
-             *             "pi": "01KKLADOSB12345678901234",
-             *             "type": "klados"
-             *           }
+             *           "pass": "summarize"
              *         }
              *       },
-             *       "01KKLADOSB12345678901234": {
+             *       "summarize": {
+             *         "klados": {
+             *           "pi": "01KKLADOSB12345678901234",
+             *           "type": "klados"
+             *         },
              *         "then": {
              *           "done": true
              *         }
@@ -14101,6 +11424,21 @@ export type components = {
             flow: {
                 [key: string]: {
                     /**
+                     * KladosRef
+                     * @description Reference to the klados entity to invoke for this step
+                     * @example {
+                     *       "pi": "01KEXAMPLE123456789012345",
+                     *       "type": "klados",
+                     *       "label": "OCR Processor"
+                     *     }
+                     */
+                    klados: {
+                        pi: string;
+                        type?: string;
+                        label?: string;
+                        description?: string;
+                    };
+                    /**
                      * ThenSpec
                      * @description What happens after this klados completes
                      */
@@ -14108,139 +11446,31 @@ export type components = {
                         /** @enum {boolean} */
                         done: true;
                     } | {
-                        /**
-                         * KladosRef
-                         * @description Target klados/rhiza ref for 1:1 handoff
-                         * @example {
-                         *       "pi": "01KEXAMPLE123456789012345",
-                         *       "type": "klados",
-                         *       "label": "OCR Processor"
-                         *     }
-                         */
-                        pass: {
-                            pi: string;
-                            type?: string;
-                            label?: string;
-                            description?: string;
-                        };
+                        /** @description Target step name for 1:1 handoff */
+                        pass: string;
                         /** @description Conditional routing rules */
                         route?: {
-                            /**
-                             * WhereCondition
-                             * @description Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR
-                             * @example {
-                             *       "property": "status",
-                             *       "equals": "approved"
-                             *     }
-                             */
-                            where: {
-                                [key: string]: unknown;
-                            };
-                            /**
-                             * KladosRef
-                             * @description Target klados/rhiza ref if condition matches
-                             * @example {
-                             *       "pi": "01KEXAMPLE123456789012345",
-                             *       "type": "klados",
-                             *       "label": "OCR Processor"
-                             *     }
-                             */
-                            target: {
-                                pi: string;
-                                type?: string;
-                                label?: string;
-                                description?: string;
-                            };
+                            where: components["schemas"]["WhereCondition"];
+                            /** @description Target step name if condition matches */
+                            target: string;
                         }[];
                     } | {
-                        /**
-                         * KladosRef
-                         * @description Target klados/rhiza ref for 1:N fan-out
-                         * @example {
-                         *       "pi": "01KEXAMPLE123456789012345",
-                         *       "type": "klados",
-                         *       "label": "OCR Processor"
-                         *     }
-                         */
-                        scatter: {
-                            pi: string;
-                            type?: string;
-                            label?: string;
-                            description?: string;
-                        };
+                        /** @description Target step name for 1:N fan-out */
+                        scatter: string;
                         /** @description Conditional routing rules */
                         route?: {
-                            /**
-                             * WhereCondition
-                             * @description Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR
-                             * @example {
-                             *       "property": "status",
-                             *       "equals": "approved"
-                             *     }
-                             */
-                            where: {
-                                [key: string]: unknown;
-                            };
-                            /**
-                             * KladosRef
-                             * @description Target klados/rhiza ref if condition matches
-                             * @example {
-                             *       "pi": "01KEXAMPLE123456789012345",
-                             *       "type": "klados",
-                             *       "label": "OCR Processor"
-                             *     }
-                             */
-                            target: {
-                                pi: string;
-                                type?: string;
-                                label?: string;
-                                description?: string;
-                            };
+                            where: components["schemas"]["WhereCondition"];
+                            /** @description Target step name if condition matches */
+                            target: string;
                         }[];
                     } | {
-                        /**
-                         * KladosRef
-                         * @description Target klados/rhiza ref for N:1 fan-in
-                         * @example {
-                         *       "pi": "01KEXAMPLE123456789012345",
-                         *       "type": "klados",
-                         *       "label": "OCR Processor"
-                         *     }
-                         */
-                        gather: {
-                            pi: string;
-                            type?: string;
-                            label?: string;
-                            description?: string;
-                        };
+                        /** @description Target step name for N:1 fan-in */
+                        gather: string;
                         /** @description Conditional routing rules */
                         route?: {
-                            /**
-                             * WhereCondition
-                             * @description Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR
-                             * @example {
-                             *       "property": "status",
-                             *       "equals": "approved"
-                             *     }
-                             */
-                            where: {
-                                [key: string]: unknown;
-                            };
-                            /**
-                             * KladosRef
-                             * @description Target klados/rhiza ref if condition matches
-                             * @example {
-                             *       "pi": "01KEXAMPLE123456789012345",
-                             *       "type": "klados",
-                             *       "label": "OCR Processor"
-                             *     }
-                             */
-                            target: {
-                                pi: string;
-                                type?: string;
-                                label?: string;
-                                description?: string;
-                            };
+                            where: components["schemas"]["WhereCondition"];
+                            /** @description Target step name if condition matches */
+                            target: string;
                         }[];
                     };
                 };
@@ -14348,34 +11578,26 @@ export type components = {
             description?: string;
             /** @description Updated semantic version */
             version?: string;
-            /**
-             * KladosRef
-             * @description Updated entry point klados reference
-             * @example {
-             *       "pi": "01KEXAMPLE123456789012345",
-             *       "type": "klados",
-             *       "label": "OCR Processor"
-             *     }
-             */
-            entry?: {
-                pi: string;
-                type?: string;
-                label?: string;
-                description?: string;
-            };
+            /** @description Updated entry point step name (must exist as a key in flow) */
+            entry?: string;
             /**
              * Flow
-             * @description Flow definition mapping klados IDs to their handoff specifications
+             * @description Flow definition mapping step names to their klados references and handoff specifications. Step names are arbitrary strings that identify each step in the workflow.
              * @example {
-             *       "01KKLADOSA12345678901234": {
+             *       "extract": {
+             *         "klados": {
+             *           "pi": "01KKLADOSA12345678901234",
+             *           "type": "klados"
+             *         },
              *         "then": {
-             *           "pass": {
-             *             "pi": "01KKLADOSB12345678901234",
-             *             "type": "klados"
-             *           }
+             *           "pass": "summarize"
              *         }
              *       },
-             *       "01KKLADOSB12345678901234": {
+             *       "summarize": {
+             *         "klados": {
+             *           "pi": "01KKLADOSB12345678901234",
+             *           "type": "klados"
+             *         },
              *         "then": {
              *           "done": true
              *         }
@@ -14385,6 +11607,21 @@ export type components = {
             flow?: {
                 [key: string]: {
                     /**
+                     * KladosRef
+                     * @description Reference to the klados entity to invoke for this step
+                     * @example {
+                     *       "pi": "01KEXAMPLE123456789012345",
+                     *       "type": "klados",
+                     *       "label": "OCR Processor"
+                     *     }
+                     */
+                    klados: {
+                        pi: string;
+                        type?: string;
+                        label?: string;
+                        description?: string;
+                    };
+                    /**
                      * ThenSpec
                      * @description What happens after this klados completes
                      */
@@ -14392,139 +11629,31 @@ export type components = {
                         /** @enum {boolean} */
                         done: true;
                     } | {
-                        /**
-                         * KladosRef
-                         * @description Target klados/rhiza ref for 1:1 handoff
-                         * @example {
-                         *       "pi": "01KEXAMPLE123456789012345",
-                         *       "type": "klados",
-                         *       "label": "OCR Processor"
-                         *     }
-                         */
-                        pass: {
-                            pi: string;
-                            type?: string;
-                            label?: string;
-                            description?: string;
-                        };
+                        /** @description Target step name for 1:1 handoff */
+                        pass: string;
                         /** @description Conditional routing rules */
                         route?: {
-                            /**
-                             * WhereCondition
-                             * @description Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR
-                             * @example {
-                             *       "property": "status",
-                             *       "equals": "approved"
-                             *     }
-                             */
-                            where: {
-                                [key: string]: unknown;
-                            };
-                            /**
-                             * KladosRef
-                             * @description Target klados/rhiza ref if condition matches
-                             * @example {
-                             *       "pi": "01KEXAMPLE123456789012345",
-                             *       "type": "klados",
-                             *       "label": "OCR Processor"
-                             *     }
-                             */
-                            target: {
-                                pi: string;
-                                type?: string;
-                                label?: string;
-                                description?: string;
-                            };
+                            where: components["schemas"]["WhereCondition"];
+                            /** @description Target step name if condition matches */
+                            target: string;
                         }[];
                     } | {
-                        /**
-                         * KladosRef
-                         * @description Target klados/rhiza ref for 1:N fan-out
-                         * @example {
-                         *       "pi": "01KEXAMPLE123456789012345",
-                         *       "type": "klados",
-                         *       "label": "OCR Processor"
-                         *     }
-                         */
-                        scatter: {
-                            pi: string;
-                            type?: string;
-                            label?: string;
-                            description?: string;
-                        };
+                        /** @description Target step name for 1:N fan-out */
+                        scatter: string;
                         /** @description Conditional routing rules */
                         route?: {
-                            /**
-                             * WhereCondition
-                             * @description Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR
-                             * @example {
-                             *       "property": "status",
-                             *       "equals": "approved"
-                             *     }
-                             */
-                            where: {
-                                [key: string]: unknown;
-                            };
-                            /**
-                             * KladosRef
-                             * @description Target klados/rhiza ref if condition matches
-                             * @example {
-                             *       "pi": "01KEXAMPLE123456789012345",
-                             *       "type": "klados",
-                             *       "label": "OCR Processor"
-                             *     }
-                             */
-                            target: {
-                                pi: string;
-                                type?: string;
-                                label?: string;
-                                description?: string;
-                            };
+                            where: components["schemas"]["WhereCondition"];
+                            /** @description Target step name if condition matches */
+                            target: string;
                         }[];
                     } | {
-                        /**
-                         * KladosRef
-                         * @description Target klados/rhiza ref for N:1 fan-in
-                         * @example {
-                         *       "pi": "01KEXAMPLE123456789012345",
-                         *       "type": "klados",
-                         *       "label": "OCR Processor"
-                         *     }
-                         */
-                        gather: {
-                            pi: string;
-                            type?: string;
-                            label?: string;
-                            description?: string;
-                        };
+                        /** @description Target step name for N:1 fan-in */
+                        gather: string;
                         /** @description Conditional routing rules */
                         route?: {
-                            /**
-                             * WhereCondition
-                             * @description Condition for routing. Supports: { property, equals } for simple match, { and: [...] } for AND, { or: [...] } for OR
-                             * @example {
-                             *       "property": "status",
-                             *       "equals": "approved"
-                             *     }
-                             */
-                            where: {
-                                [key: string]: unknown;
-                            };
-                            /**
-                             * KladosRef
-                             * @description Target klados/rhiza ref if condition matches
-                             * @example {
-                             *       "pi": "01KEXAMPLE123456789012345",
-                             *       "type": "klados",
-                             *       "label": "OCR Processor"
-                             *     }
-                             */
-                            target: {
-                                pi: string;
-                                type?: string;
-                                label?: string;
-                                description?: string;
-                            };
+                            where: components["schemas"]["WhereCondition"];
+                            /** @description Target step name if condition matches */
+                            target: string;
                         }[];
                     };
                 };

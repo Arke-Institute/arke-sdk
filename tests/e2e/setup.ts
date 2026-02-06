@@ -2,6 +2,7 @@
  * E2E Test Setup for Arke SDK
  *
  * Adapted from arke_v1 test setup - provides JWT generation and API helpers.
+ * Supports both API key auth (preferred) and JWT auth (for user registration tests).
  */
 
 import * as jose from 'jose';
@@ -17,38 +18,26 @@ export const PROD_URL = 'https://api.arke.institute';
 
 export interface E2EConfig {
   baseUrl: string;
-  jwtSecret: string;
-  supabaseUrl: string;
+  jwtSecret?: string;
+  supabaseUrl?: string;
+  apiKey?: string;
 }
 
 let cachedConfig: E2EConfig | null = null;
 
 /**
- * Load configuration from .dev.vars in arke_v1 directory
- * (reuses the same credentials)
+ * Load an env file and return key-value pairs
  */
-export function loadConfig(): E2EConfig {
-  if (cachedConfig) return cachedConfig;
+function loadEnvFile(filePath: string): Record<string, string> {
+  if (!fs.existsSync(filePath)) return {};
 
-  // Look for .dev.vars in arke_v1 directory (sibling project)
-  const arkeV1Path = path.resolve(process.cwd(), '..', 'arke_v1', '.dev.vars');
-  const localPath = path.resolve(process.cwd(), '.dev.vars');
-
-  let devVarsPath: string;
-  if (fs.existsSync(localPath)) {
-    devVarsPath = localPath;
-  } else if (fs.existsSync(arkeV1Path)) {
-    devVarsPath = arkeV1Path;
-  } else {
-    throw new Error(
-      '.dev.vars file not found. Create one with SUPABASE_JWT_SECRET and SUPABASE_URL, or copy from arke_v1'
-    );
-  }
-
-  const content = fs.readFileSync(devVarsPath, 'utf-8');
+  const content = fs.readFileSync(filePath, 'utf-8');
   const vars: Record<string, string> = {};
 
   for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
     const eqIndex = line.indexOf('=');
     if (eqIndex > 0) {
       const key = line.slice(0, eqIndex).trim();
@@ -56,6 +45,48 @@ export function loadConfig(): E2EConfig {
       vars[key] = value;
     }
   }
+
+  return vars;
+}
+
+/**
+ * Load configuration from environment files
+ * Priority: .env.e2e (API key) > .dev.vars (JWT credentials)
+ */
+export function loadConfig(): E2EConfig {
+  if (cachedConfig) return cachedConfig;
+
+  // Check for API key in .env.e2e first
+  const envE2ePath = path.resolve(process.cwd(), '.env.e2e');
+  const envE2eVars = loadEnvFile(envE2ePath);
+
+  if (envE2eVars.ARKE_API_KEY) {
+    console.log('Using API key from .env.e2e');
+    cachedConfig = {
+      baseUrl: process.env.E2E_BASE_URL || PROD_URL,
+      apiKey: envE2eVars.ARKE_API_KEY,
+    };
+    return cachedConfig;
+  }
+
+  // Fall back to .dev.vars for JWT auth
+  const arkeV1Path = path.resolve(process.cwd(), '..', 'arke_v1', '.dev.vars');
+  const localPath = path.resolve(process.cwd(), '.dev.vars');
+
+  let devVarsPath: string | null = null;
+  if (fs.existsSync(localPath)) {
+    devVarsPath = localPath;
+  } else if (fs.existsSync(arkeV1Path)) {
+    devVarsPath = arkeV1Path;
+  }
+
+  if (!devVarsPath) {
+    throw new Error(
+      'No auth config found. Create .env.e2e with ARKE_API_KEY, or .dev.vars with SUPABASE_JWT_SECRET and SUPABASE_URL'
+    );
+  }
+
+  const vars = loadEnvFile(devVarsPath);
 
   const required = ['SUPABASE_JWT_SECRET', 'SUPABASE_URL'];
   for (const key of required) {
@@ -71,6 +102,15 @@ export function loadConfig(): E2EConfig {
   };
 
   return cachedConfig;
+
+}
+
+/**
+ * Check if config has an API key (vs JWT auth)
+ */
+export function hasApiKey(config?: E2EConfig): boolean {
+  const c = config || loadConfig();
+  return !!c.apiKey;
 }
 
 // =============================================================================

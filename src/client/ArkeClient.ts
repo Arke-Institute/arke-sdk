@@ -141,104 +141,124 @@ export class ArkeClient {
   }
 
   /**
-   * Get file content as a Blob
+   * Get entity content as a Blob
    *
    * This is a convenience method that handles the binary response parsing
    * that openapi-fetch doesn't handle automatically.
    *
+   * @param entityId - The entity ID
+   * @param key - Optional content version key (e.g., "v1", "original", "thumbnail"). Defaults to entity's current content key.
+   *
    * @example
    * ```typescript
-   * const { data, error } = await arke.getFileContent('01ABC...');
+   * const { data, error } = await arke.getEntityContent('01ABC...');
+   * // or with specific key
+   * const { data, error } = await arke.getEntityContent('01ABC...', 'thumbnail');
    * if (data) {
    *   const text = await data.text();
-   *   // or
-   *   const arrayBuffer = await data.arrayBuffer();
    * }
    * ```
    */
-  async getFileContent(
-    fileId: string
+  async getEntityContent(
+    entityId: string,
+    key?: string
   ): Promise<{ data: Blob | undefined; error: unknown }> {
-    const { data, error } = await this.api.GET('/files/{id}/content', {
-      params: { path: { id: fileId } },
+    const { data, error } = await this.api.GET('/entities/{id}/content', {
+      params: { path: { id: entityId }, query: key ? { key } : {} },
       parseAs: 'blob',
     });
     return { data: data as Blob | undefined, error };
   }
 
   /**
-   * Get file content as an ArrayBuffer
+   * Get entity content as an ArrayBuffer
    *
    * This is a convenience method that handles the binary response parsing
    * that openapi-fetch doesn't handle automatically.
    *
+   * @param entityId - The entity ID
+   * @param key - Content version key (e.g., "v1", "original", "thumbnail")
+   *
    * @example
    * ```typescript
-   * const { data, error } = await arke.getFileContentAsArrayBuffer('01ABC...');
+   * const { data, error } = await arke.getEntityContentAsArrayBuffer('01ABC...', 'v1');
    * if (data) {
    *   const bytes = new Uint8Array(data);
    * }
    * ```
    */
-  async getFileContentAsArrayBuffer(
-    fileId: string
+  async getEntityContentAsArrayBuffer(
+    entityId: string,
+    key?: string
   ): Promise<{ data: ArrayBuffer | undefined; error: unknown }> {
-    const { data, error } = await this.api.GET('/files/{id}/content', {
-      params: { path: { id: fileId } },
+    const { data, error } = await this.api.GET('/entities/{id}/content', {
+      params: { path: { id: entityId }, query: key ? { key } : {} },
       parseAs: 'arrayBuffer',
     });
     return { data: data as ArrayBuffer | undefined, error };
   }
 
   /**
-   * Get file content as a ReadableStream
+   * Get entity content as a ReadableStream
    *
    * This is a convenience method for streaming large files.
    *
+   * @param entityId - The entity ID
+   * @param key - Content version key (e.g., "v1", "original", "thumbnail")
+   *
    * @example
    * ```typescript
-   * const { data, error } = await arke.getFileContentAsStream('01ABC...');
+   * const { data, error } = await arke.getEntityContentAsStream('01ABC...', 'v1');
    * if (data) {
    *   const reader = data.getReader();
    *   // Process chunks...
    * }
    * ```
    */
-  async getFileContentAsStream(
-    fileId: string
+  async getEntityContentAsStream(
+    entityId: string,
+    key?: string
   ): Promise<{ data: ReadableStream<Uint8Array> | null | undefined; error: unknown }> {
-    const { data, error } = await this.api.GET('/files/{id}/content', {
-      params: { path: { id: fileId } },
+    const { data, error } = await this.api.GET('/entities/{id}/content', {
+      params: { path: { id: entityId }, query: key ? { key } : {} },
       parseAs: 'stream',
     });
     return { data: data as ReadableStream<Uint8Array> | null | undefined, error };
   }
 
   /**
-   * Upload file content
+   * Upload content to an entity
    *
    * This is a convenience method that handles the binary body serialization
    * that openapi-fetch doesn't handle automatically for non-JSON bodies.
+   *
+   * @param entityId - The entity ID
+   * @param key - Content version key (e.g., "v1", "original", "thumbnail")
+   * @param content - The content to upload
+   * @param contentType - MIME type of the content
+   * @param filename - Optional filename for Content-Disposition header on download
    *
    * @example
    * ```typescript
    * // Upload from a Blob
    * const blob = new Blob(['Hello, world!'], { type: 'text/plain' });
-   * const { data, error } = await arke.uploadFileContent('01ABC...', blob, 'text/plain');
+   * const { data, error } = await arke.uploadEntityContent('01ABC...', 'v1', blob, 'text/plain');
    *
    * // Upload from an ArrayBuffer
    * const buffer = new TextEncoder().encode('Hello, world!').buffer;
-   * const { data, error } = await arke.uploadFileContent('01ABC...', buffer, 'text/plain');
+   * const { data, error } = await arke.uploadEntityContent('01ABC...', 'v1', buffer, 'text/plain');
    *
-   * // Upload from a Uint8Array
+   * // Upload from a Uint8Array with filename
    * const bytes = new TextEncoder().encode('Hello, world!');
-   * const { data, error } = await arke.uploadFileContent('01ABC...', bytes, 'text/plain');
+   * const { data, error } = await arke.uploadEntityContent('01ABC...', 'v1', bytes, 'text/plain', 'hello.txt');
    * ```
    */
-  async uploadFileContent(
-    fileId: string,
+  async uploadEntityContent(
+    entityId: string,
+    key: string,
     content: Blob | ArrayBuffer | Uint8Array,
-    contentType: string
+    contentType: string,
+    filename?: string
   ): Promise<{
     data: components['schemas']['UploadContentResponse'] | undefined;
     error: unknown;
@@ -257,8 +277,8 @@ export class ArkeClient {
       body = new Blob([content], { type: contentType });
     }
 
-    const { data, error } = await this.api.POST('/files/{id}/content', {
-      params: { path: { id: fileId } },
+    const { data, error } = await this.api.POST('/entities/{id}/content', {
+      params: { path: { id: entityId }, query: { key, filename } },
       body: body as unknown as Record<string, never>,
       bodySerializer: (b: unknown) => b as BodyInit,
       headers: { 'Content-Type': contentType },

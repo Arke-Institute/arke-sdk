@@ -11,7 +11,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { ArkeClient } from '../../src/client/ArkeClient.js';
 import { uploadTree, type UploadResult } from '../../src/operations/upload/index.js';
-import { loadConfig, createTestUser, createJWT, registerUser, apiRequest, type E2EConfig } from './setup.js';
+import { loadConfig, createTestUser, createJWT, registerUser, apiRequest, hasApiKey, type E2EConfig } from './setup.js';
 import {
   createSimpleTestTree,
   createNestedTestTree,
@@ -30,21 +30,31 @@ describe('Upload E2E', () => {
   const createdCollections: string[] = [];
 
   beforeAll(async () => {
-    // Load config and create authenticated client
+    // Load config
     config = loadConfig();
-    const testUser = createTestUser();
-    token = await createJWT(testUser, config);
 
-    // Register user
-    const user = await registerUser(token, config);
-    userId = user.id;
-    console.log(`Registered test user: ${userId}`);
+    if (hasApiKey(config)) {
+      // Use API key directly (no registration needed)
+      console.log(`Using API key for authentication`);
+      client = new ArkeClient({
+        baseUrl: config.baseUrl,
+        authToken: config.apiKey,
+      });
+      userId = 'api-key-user';
+    } else {
+      // JWT flow - create and register user
+      const testUser = createTestUser();
+      token = await createJWT(testUser, config);
 
-    // Create SDK client
-    client = new ArkeClient({
-      baseUrl: config.baseUrl,
-      authToken: token,
-    });
+      const user = await registerUser(token, config);
+      userId = user.id;
+      console.log(`Registered test user: ${userId}`);
+
+      client = new ArkeClient({
+        baseUrl: config.baseUrl,
+        authToken: token,
+      });
+    }
   });
 
   afterAll(async () => {
@@ -90,7 +100,7 @@ describe('Upload E2E', () => {
 
       // Verify files are accessible via API
       for (const file of result.files) {
-        const { data, error } = await client.api.GET('/files/{id}', {
+        const { data, error } = await client.api.GET('/entities/{id}', {
           params: { path: { id: file.id } },
         });
 
@@ -140,7 +150,7 @@ describe('Upload E2E', () => {
       const docsFolder = result.folders.find((f) => f.relativePath === 'docs');
       expect(docsFolder).toBeDefined();
 
-      const { data: folderData } = await client.api.GET('/folders/{id}', {
+      const { data: folderData } = await client.api.GET('/entities/{id}', {
         params: { path: { id: docsFolder!.id } },
       });
 
@@ -175,7 +185,7 @@ describe('Upload E2E', () => {
       const deepestFolder = result.folders.find((f) => f.relativePath === 'a/b/c/d/e');
       expect(deepestFolder).toBeDefined();
 
-      const { data: deepFolderData } = await client.api.GET('/folders/{id}', {
+      const { data: deepFolderData } = await client.api.GET('/entities/{id}', {
         params: { path: { id: deepestFolder!.id } },
       });
 
@@ -226,7 +236,7 @@ describe('Upload E2E', () => {
 
       // Verify files are in the collection (have collection relationship)
       for (const file of result.files) {
-        const { data } = await client.api.GET('/files/{id}', {
+        const { data } = await client.api.GET('/entities/{id}', {
           params: { path: { id: file.id } },
         });
 
@@ -261,9 +271,9 @@ describe('Upload E2E', () => {
       expect(result.success).toBe(true);
       expect(result.files).toHaveLength(1);
 
-      // Download content directly using getFileContent helper
+      // Download content directly using getEntityContent helper
       const fileId = result.files[0]!.id;
-      const { data, error } = await client.getFileContent(fileId);
+      const { data, error } = await client.getEntityContent(fileId);
 
       expect(error).toBeUndefined();
       expect(data).toBeInstanceOf(Blob);
@@ -299,15 +309,15 @@ describe('Upload E2E', () => {
 
       const fileId = result.files[0]!.id;
 
-      // Test getFileContent (returns Blob)
-      const { data: blobData, error: blobError } = await client.getFileContent(fileId);
+      // Test getEntityContent (returns Blob)
+      const { data: blobData, error: blobError } = await client.getEntityContent(fileId);
       expect(blobError).toBeUndefined();
       expect(blobData).toBeInstanceOf(Blob);
       const blobText = await blobData!.text();
       expect(blobText).toBe(testContent);
 
-      // Test getFileContentAsArrayBuffer
-      const { data: bufferData, error: bufferError } = await client.getFileContentAsArrayBuffer(fileId);
+      // Test getEntityContentAsArrayBuffer
+      const { data: bufferData, error: bufferError } = await client.getEntityContentAsArrayBuffer(fileId);
       expect(bufferError).toBeUndefined();
       expect(bufferData).toBeInstanceOf(ArrayBuffer);
       const decoder = new TextDecoder();
