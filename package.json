@@ -1,6 +1,6 @@
 {
   "name": "@arke-institute/sdk",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "TypeScript SDK for the Arke API - auto-generated from OpenAPI spec",
   "type": "module",
   "main": "dist/index.cjs",
@@ -49,6 +49,7 @@
     "benchmark:detailed": "tsx tests/benchmark/upload-detailed-benchmark.ts",
     "benchmark:cid": "tsx tests/benchmark/cid-comparison.ts",
     "benchmark:presigned": "tsx tests/benchmark/presigned-test.ts",
+    "benchmark:stress": "tsx tests/benchmark/stress-test.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run build",

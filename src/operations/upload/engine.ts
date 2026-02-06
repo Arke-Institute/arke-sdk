@@ -53,6 +53,12 @@ const PHASE_INDEX: Record<string, number> = {
   error: -1,
 };
 
+// Batch creation constants
+const BATCH_SIZE = 100; // Entities per batch request
+const BATCH_CONCURRENCY = 25; // Concurrent batch requests
+const BACKLINK_CONCURRENCY = 100; // Concurrent backlink PUTs
+const MAX_UPLOAD_CONCURRENCY = 500; // Max concurrent upload requests
+
 // =============================================================================
 // Concurrency Utilities
 // =============================================================================
@@ -82,6 +88,17 @@ async function parallelLimit<T, R>(
   return results;
 }
 
+/**
+ * Split array into chunks of specified size.
+ */
+function chunk<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
+
 // =============================================================================
 // Byte-Based Pool
 // =============================================================================
@@ -93,33 +110,42 @@ const TARGET_BYTES_IN_FLIGHT = 200 * 1024 * 1024;
 const PRESIGNED_URL_THRESHOLD = 5 * 1024 * 1024;
 
 /**
- * Pool that maintains a target number of bytes in flight.
+ * Pool that maintains a target number of bytes in flight AND limits concurrent requests.
  *
  * When a file completes, its bytes are released and the next
  * waiting file can start immediately. This keeps the pipeline full.
  *
- * - Small files: Many run in parallel (up to ~200MB worth)
+ * - Small files: Many run in parallel (up to ~200MB worth or maxConcurrent)
  * - Large files: Fewer run in parallel
  * - Single file > 200MB: Runs alone (allowed when pool is empty)
  */
 class BytePool {
   private bytesInFlight = 0;
+  private activeCount = 0;
   private waitQueue: Array<() => void> = [];
 
-  constructor(private targetBytes: number = TARGET_BYTES_IN_FLIGHT) {}
+  constructor(
+    private targetBytes: number = TARGET_BYTES_IN_FLIGHT,
+    private maxConcurrent: number = MAX_UPLOAD_CONCURRENCY
+  ) {}
 
   async run<T>(size: number, fn: () => Promise<T>): Promise<T> {
-    // Wait until we have room
+    // Wait until we have room for BOTH bytes AND request count
     // Exception: if pool is empty, always allow (handles files > targetBytes)
-    while (this.bytesInFlight > 0 && this.bytesInFlight + size > this.targetBytes) {
+    while (
+      (this.bytesInFlight > 0 && this.bytesInFlight + size > this.targetBytes) ||
+      this.activeCount >= this.maxConcurrent
+    ) {
       await new Promise<void>((resolve) => this.waitQueue.push(resolve));
     }
 
     this.bytesInFlight += size;
+    this.activeCount++;
     try {
       return await fn();
     } finally {
       this.bytesInFlight -= size;
+      this.activeCount--;
       // Wake ALL waiting tasks so they can re-evaluate the condition.
       // wake-one is incorrect here: if a large file finishes, multiple
       // smaller files may now fit but only the first waiter would check.
@@ -299,52 +325,68 @@ export async function uploadTree(
     const foldersByDepth = groupFoldersByDepth(tree.folders);
     const sortedDepths = [...foldersByDepth.keys()].sort((a, b) => a - b);
 
-    // Create folders depth by depth (parents before children)
+    // Create folders depth by depth (parents before children) using batch endpoint
     for (const depth of sortedDepths) {
       const foldersAtDepth = foldersByDepth.get(depth)!;
 
-      await Promise.all(
-        foldersAtDepth.map(async (folder) => {
-          try {
-            const parentPath = getParentPath(folder.relativePath);
-            const parentInfo = parentPath ? foldersByPath.get(parentPath)! : null;
-            const parentId = parentInfo ? parentInfo.id : rootParentId;
-            const parentType = parentInfo ? 'folder' : rootParentType;
-            const parentLabel = parentInfo ? parentInfo.label : rootParentLabel;
+      // Build batch items for all folders at this depth
+      const batchItems = foldersAtDepth.map((folder) => {
+        const parentPath = getParentPath(folder.relativePath);
+        const parentInfo = parentPath ? foldersByPath.get(parentPath)! : null;
+        const parentId = parentInfo ? parentInfo.id : rootParentId;
+        const parentType = parentInfo ? 'folder' : rootParentType;
+        const parentLabel = parentInfo ? parentInfo.label : rootParentLabel;
 
-            const folderBody: CreateEntityRequest = {
-              type: 'folder',
-              properties: { label: folder.name },
-              collection: collectionId,
-              note,
-              relationships: [{ predicate: 'in', peer: parentId, peer_type: parentType, peer_label: parentLabel }],
-            };
+        return {
+          folder, // Track for result processing
+          entity: {
+            type: 'folder',
+            properties: { label: folder.name },
+            note,
+            relationships: [{ predicate: 'in', peer: parentId, peer_type: parentType, peer_label: parentLabel }],
+          },
+        };
+      });
 
-            const { data, error } = await client.api.POST('/entities', {
-              body: folderBody,
-            });
+      // Chunk into batches of BATCH_SIZE and create in parallel
+      const batches = chunk(batchItems, BATCH_SIZE);
 
-            if (error || !data) {
-              throw new Error(JSON.stringify(error));
-            }
+      await parallelLimit(batches, BATCH_CONCURRENCY, async (batch) => {
+        const { data, error } = await client.api.POST('/entities/batch', {
+          params: { query: { validate_relationships: 'false' } },
+          body: {
+            default_collection: collectionId,
+            entities: batch.map((item) => item.entity),
+          },
+        });
 
+        if (error || !data) {
+          throw new Error(`Batch folder creation failed: ${JSON.stringify(error)}`);
+        }
+
+        // Process results - map back to folders by index
+        for (const result of data.results) {
+          const batchItem = batch[result.index];
+          if (!batchItem) continue;
+          const folder = batchItem.folder;
+
+          if (result.success) {
             // Track folder (include label for peer_label in child relationships)
-            foldersByPath.set(folder.relativePath, { id: data.id, cid: data.cid, label: folder.name });
+            foldersByPath.set(folder.relativePath, {
+              id: result.id,
+              cid: result.cid,
+              label: folder.name,
+            });
             createdFolders.push({
               name: folder.name,
               relativePath: folder.relativePath,
-              id: data.id,
-              entityCid: data.cid,
+              id: result.id,
+              entityCid: result.cid,
             });
-
             completedEntities++;
-            reportProgress({
-              phase: 'creating',
-              completedEntities,
-              currentItem: folder.relativePath,
-            });
-          } catch (err) {
-            const errorMsg = err instanceof Error ? err.message : String(err);
+          } else {
+            // BatchCreateFailure
+            const errorMsg = result.error;
             if (continueOnError) {
               errors.push({ path: folder.relativePath, error: `Folder creation failed: ${errorMsg}` });
               completedEntities++;
@@ -352,25 +394,24 @@ export async function uploadTree(
               throw new Error(`Failed to create folder ${folder.relativePath}: ${errorMsg}`);
             }
           }
-        })
-      );
+        }
+
+        reportProgress({ phase: 'creating', completedEntities });
+      });
     }
 
-    // Create file entities (metadata only, no content upload yet)
-    // Use simple concurrency limit for API calls
-    const FILE_CREATION_CONCURRENCY = 50;
+    // Create file entities (metadata only, no content upload yet) using batch endpoint
+    // Build batch items for all files
+    const fileBatchItems = tree.files.map((file) => {
+      const parentPath = getParentPath(file.relativePath);
+      const parentInfo = parentPath ? foldersByPath.get(parentPath)! : null;
+      const parentId = parentInfo ? parentInfo.id : rootParentId;
+      const parentType = parentInfo ? 'folder' : rootParentType;
+      const parentLabel = parentInfo ? parentInfo.label : rootParentLabel;
 
-    await parallelLimit(tree.files, FILE_CREATION_CONCURRENCY, async (file) => {
-      try {
-        const parentPath = getParentPath(file.relativePath);
-        const parentInfo = parentPath ? foldersByPath.get(parentPath)! : null;
-        const parentId = parentInfo ? parentInfo.id : rootParentId;
-        const parentType = parentInfo ? 'folder' : rootParentType;
-        const parentLabel = parentInfo ? parentInfo.label : rootParentLabel;
-
-        // Create file entity with 'in' relationship (include peer_label for display)
-        // Server computes CID when content is uploaded
-        const fileBody: CreateEntityRequest = {
+      return {
+        file, // Track for result processing
+        entity: {
           type: 'file',
           properties: {
             label: file.name,
@@ -378,45 +419,60 @@ export async function uploadTree(
             content_type: file.mimeType,
             size: file.size,
           },
-          collection: collectionId,
           note,
           relationships: [{ predicate: 'in', peer: parentId, peer_type: parentType, peer_label: parentLabel }],
-        };
+        },
+      };
+    });
 
-        const { data, error } = await client.api.POST('/entities', {
-          body: fileBody,
-        });
+    // Chunk into batches of BATCH_SIZE and create in parallel
+    const fileBatches = chunk(fileBatchItems, BATCH_SIZE);
 
-        if (error || !data) {
-          throw new Error(`Entity creation failed: ${JSON.stringify(error)}`);
-        }
+    await parallelLimit(fileBatches, BATCH_CONCURRENCY, async (batch) => {
+      const { data, error } = await client.api.POST('/entities/batch', {
+        params: { query: { validate_relationships: 'false' } },
+        body: {
+          default_collection: collectionId,
+          entities: batch.map((item) => item.entity),
+        },
+      });
 
-        // Track file for later upload
-        createdFiles.push({
-          ...file,
-          id: data.id,
-          entityCid: data.cid,
-        });
+      if (error || !data) {
+        throw new Error(`Batch file creation failed: ${JSON.stringify(error)}`);
+      }
 
-        completedEntities++;
-        reportProgress({
-          phase: 'creating',
-          completedEntities,
-          currentItem: file.relativePath,
-        });
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        if (continueOnError) {
-          errors.push({ path: file.relativePath, error: errorMsg });
+      // Process results - map back to files by index
+      for (const result of data.results) {
+        const batchItem = batch[result.index];
+        if (!batchItem) continue;
+        const file = batchItem.file;
+
+        if (result.success) {
+          // Track file for later upload
+          createdFiles.push({
+            ...file,
+            id: result.id,
+            entityCid: result.cid,
+          });
           completedEntities++;
         } else {
-          throw new Error(`Failed to create file ${file.relativePath}: ${errorMsg}`);
+          // BatchCreateFailure
+          const errorMsg = result.error;
+          if (continueOnError) {
+            errors.push({ path: file.relativePath, error: errorMsg });
+            completedEntities++;
+          } else {
+            throw new Error(`Failed to create file ${file.relativePath}: ${errorMsg}`);
+          }
         }
       }
+
+      reportProgress({ phase: 'creating', completedEntities });
     });
 
     // ─────────────────────────────────────────────────────────────────────────
     // PHASE 2: Backlink - Update each parent with 'contains' relationships
+    // Uses cached CIDs to avoid GETs, with retry on 409 conflict
     // ─────────────────────────────────────────────────────────────────────────
 
     // Build parent -> children map (include label for peer_label)
@@ -446,9 +502,10 @@ export async function uploadTree(
     reportProgress({ phase: 'backlinking', totalParents, completedParents: 0 });
 
     // Update all parents in parallel - each parent gets one PUT with all its children
+    // Use cached CIDs from creation phase, only fetch fresh on 409 conflict
     const parentEntries = [...childrenByParent.entries()];
 
-    await parallelLimit(parentEntries, concurrency, async ([parentId, children]) => {
+    await parallelLimit(parentEntries, BACKLINK_CONCURRENCY, async ([parentId, children]) => {
       try {
         const isCollection = parentId === collectionId;
 
@@ -460,55 +517,76 @@ export async function uploadTree(
           peer_label: child.label,
         }));
 
+        // Get cached CID - no GET required for entities we created
+        let expectTip: string;
         if (isCollection) {
-          // Get current collection CID for CAS
-          const { data: collData, error: getError } = await client.api.GET('/collections/{id}', {
-            params: { path: { id: parentId } },
-          });
-          if (getError || !collData) {
-            throw new Error(`Failed to fetch collection: ${JSON.stringify(getError)}`);
-          }
-
-          // Update collection with relationships_add
-          const updateBody: UpdateCollectionRequest = {
-            expect_tip: collData.cid,
-            relationships_add: relationshipsAdd,
-            note: note ? `${note} (backlink)` : 'Upload backlink',
-          };
-
-          const { error } = await client.api.PUT('/collections/{id}', {
-            params: { path: { id: parentId } },
-            body: updateBody,
-          });
-
-          if (error) {
-            throw new Error(JSON.stringify(error));
-          }
+          expectTip = collectionCid; // From setup phase
         } else {
-          // Get current folder CID for CAS
-          const { data: folderData, error: getError } = await client.api.GET('/entities/{id}', {
-            params: { path: { id: parentId } },
-          });
-          if (getError || !folderData) {
-            throw new Error(`Failed to fetch folder: ${JSON.stringify(getError)}`);
-          }
-
-          // Update folder with relationships_add
-          const updateBody: UpdateEntityRequest = {
-            expect_tip: folderData.cid,
-            relationships_add: relationshipsAdd,
-            note: note ? `${note} (backlink)` : 'Upload backlink',
-          };
-
-          const { error } = await client.api.PUT('/entities/{id}', {
-            params: { path: { id: parentId } },
-            body: updateBody,
-          });
-
-          if (error) {
-            throw new Error(JSON.stringify(error));
+          // Check if it's a folder we created (have cached CID)
+          const folderInfo = [...foldersByPath.values()].find((f) => f.id === parentId);
+          if (folderInfo) {
+            expectTip = folderInfo.cid;
+          } else {
+            // Root parent provided by user - need to fetch tip
+            const { data: tipData, error: tipError } = await client.api.GET('/entities/{id}/tip', {
+              params: { path: { id: parentId } },
+            });
+            if (tipError || !tipData) {
+              throw new Error(`Failed to get tip: ${JSON.stringify(tipError)}`);
+            }
+            expectTip = tipData.cid;
           }
         }
+
+        // Attempt PUT with cached CID, retry once on 409 conflict
+        // Skip relationship validation - we just created these entities
+        const attemptPut = async (tip: string, isRetry: boolean): Promise<void> => {
+          if (isCollection) {
+            const { error, response } = await client.api.PUT('/collections/{id}', {
+              params: { path: { id: parentId }, query: { validate_relationships: 'false' } },
+              body: {
+                expect_tip: tip,
+                relationships_add: relationshipsAdd,
+                note: note ? `${note} (backlink${isRetry ? ' retry' : ''})` : `Upload backlink${isRetry ? ' retry' : ''}`,
+              },
+            });
+
+            if (error) {
+              // Check for CAS conflict (409) - retry with fresh tip
+              if (response?.status === 409 && !isRetry) {
+                const { data: freshData } = await client.api.GET('/collections/{id}', {
+                  params: { path: { id: parentId } },
+                });
+                if (!freshData) throw new Error('Failed to get fresh collection tip');
+                return attemptPut(freshData.cid, true);
+              }
+              throw new Error(JSON.stringify(error));
+            }
+          } else {
+            const { error, response } = await client.api.PUT('/entities/{id}', {
+              params: { path: { id: parentId }, query: { validate_relationships: 'false' } },
+              body: {
+                expect_tip: tip,
+                relationships_add: relationshipsAdd,
+                note: note ? `${note} (backlink${isRetry ? ' retry' : ''})` : `Upload backlink${isRetry ? ' retry' : ''}`,
+              },
+            });
+
+            if (error) {
+              // Check for CAS conflict (409) - retry with fresh tip via fast /tip endpoint
+              if (response?.status === 409 && !isRetry) {
+                const { data: freshTip, error: tipError } = await client.api.GET('/entities/{id}/tip', {
+                  params: { path: { id: parentId } },
+                });
+                if (tipError || !freshTip) throw new Error(`Failed to get fresh tip: ${JSON.stringify(tipError)}`);
+                return attemptPut(freshTip.cid, true);
+              }
+              throw new Error(JSON.stringify(error));
+            }
+          }
+        };
+
+        await attemptPut(expectTip, false);
 
         completedParents++;
         reportProgress({

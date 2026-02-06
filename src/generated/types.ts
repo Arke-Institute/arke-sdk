@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-02-06T04:48:51.138Z
+ * Generated: 2026-02-06T06:39:23.874Z
  */
 
 export type paths = {
@@ -1011,13 +1011,21 @@ export type paths = {
          * Update collection properties
          * @description Updates collection properties. Requires collection:update permission.
          *
+         *     **Relationship Target Validation:**
+         *     By default, new relationship targets in `relationships_add` are validated to ensure they exist. Use `?validate_relationships=false` to skip this validation.
+         *
+         *     Requests with more than 500 unique relationship targets are rejected when validation is enabled.
+         *
          *     ---
          *     **Permission:** `collection:update`
          *     **Auth:** required
          */
         put: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Validate that relationship targets exist. Defaults to true for single entity operations, false for batch. When true, requests with >500 unique relationship targets are rejected. */
+                    validate_relationships?: "true" | "false";
+                };
                 header?: never;
                 path: {
                     /** @description Entity ID (ULID) */

@@ -9706,7 +9706,7 @@
           "Collections"
         ],
         "summary": "Update collection properties",
-        "description": "Updates collection properties. Requires collection:update permission.\n\n---\n**Permission:** `collection:update`  \n**Auth:** required",
+        "description": "Updates collection properties. Requires collection:update permission.\n\n**Relationship Target Validation:**\nBy default, new relationship targets in `relationships_add` are validated to ensure they exist. Use `?validate_relationships=false` to skip this validation.\n\nRequests with more than 500 unique relationship targets are rejected when validation is enabled.\n\n---\n**Permission:** `collection:update`  \n**Auth:** required",
         "x-arke-action": "collection:update",
         "x-arke-auth": "required",
         "x-arke-tier": "standard",
@@ -9727,6 +9727,20 @@
             "description": "Entity ID (ULID)",
             "name": "id",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "example": "true"
+            },
+            "required": false,
+            "description": "Validate that relationship targets exist. Defaults to true for single entity operations, false for batch. When true, requests with >500 unique relationship targets are rejected.",
+            "name": "validate_relationships",
+            "in": "query"
           }
         ],
         "requestBody": {
