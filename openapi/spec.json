@@ -21,28 +21,28 @@
       "description": "User profile management"
     },
     {
+      "name": "Entities",
+      "description": "Entity CRUD operations for all types (files, folders, etc.)"
+    },
+    {
       "name": "Collections",
       "description": "Collection and permission management"
     },
     {
-      "name": "Entities",
-      "description": "Generic entity CRUD"
-    },
-    {
-      "name": "Relationships",
-      "description": "Entity relationship management"
-    },
-    {
-      "name": "Files",
-      "description": "File storage with versioning"
-    },
-    {
-      "name": "Folders",
-      "description": "Folder hierarchy management"
-    },
-    {
       "name": "Permissions",
       "description": "Permission system metadata and introspection"
+    },
+    {
+      "name": "Search",
+      "description": "Cross-collection semantic search"
+    },
+    {
+      "name": "Query",
+      "description": "Argo DSL query engine combining semantic search and graph traversal"
+    },
+    {
+      "name": "Graph",
+      "description": "Graph traversal and path-finding"
     },
     {
       "name": "Agents",
@@ -57,20 +57,57 @@
       "description": "Entity change event stream"
     },
     {
-      "name": "Graph",
-      "description": "Graph traversal and path-finding"
-    },
-    {
-      "name": "Query",
-      "description": "Argo DSL query engine"
-    },
-    {
-      "name": "Search",
-      "description": "Cross-collection semantic search"
+      "name": "API Keys",
+      "description": "User and agent API key management"
     },
     {
       "name": "Documentation",
       "description": "API documentation and introspection"
+    },
+    {
+      "name": "Alpha",
+      "description": "Alpha invite management (admin only)"
+    }
+  ],
+  "x-tagGroups": [
+    {
+      "name": "Core",
+      "tags": [
+        "Auth",
+        "Users",
+        "Entities",
+        "Collections",
+        "Permissions"
+      ]
+    },
+    {
+      "name": "Discovery",
+      "tags": [
+        "Search",
+        "Query",
+        "Graph"
+      ]
+    },
+    {
+      "name": "Automation",
+      "tags": [
+        "Agents",
+        "Jobs"
+      ]
+    },
+    {
+      "name": "System",
+      "tags": [
+        "Events",
+        "API Keys",
+        "Documentation"
+      ]
+    },
+    {
+      "name": "Admin",
+      "tags": [
+        "Alpha"
+      ]
     }
   ],
   "components": {
@@ -3348,6 +3385,153 @@
           "cid",
           "content",
           "prev_cid"
+        ]
+      },
+      "GetUploadUrlResponse": {
+        "type": "object",
+        "properties": {
+          "upload_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Presigned URL for direct PUT upload to R2",
+            "example": "https://xxx.r2.cloudflarestorage.com/..."
+          },
+          "r2_key": {
+            "type": "string",
+            "description": "R2 storage key (for reference)",
+            "example": "01KABC123.../v1"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the URL expires",
+            "example": "2025-01-15T10:15:00Z"
+          }
+        },
+        "required": [
+          "upload_url",
+          "r2_key",
+          "expires_at"
+        ]
+      },
+      "GetUploadUrlRequest": {
+        "type": "object",
+        "properties": {
+          "content_type": {
+            "type": "string",
+            "minLength": 1,
+            "description": "MIME type of the content to upload",
+            "example": "application/pdf"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 524288000,
+            "description": "Expected file size in bytes (max 500 MB)",
+            "example": 10485760
+          },
+          "filename": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Original filename for Content-Disposition on download",
+            "example": "document.pdf"
+          },
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Version key for this content (e.g., \"v1\", \"original\")",
+            "example": "v1"
+          }
+        },
+        "required": [
+          "content_type",
+          "size",
+          "key"
+        ]
+      },
+      "CompleteUploadResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Entity ID",
+            "example": "01KABC123..."
+          },
+          "cid": {
+            "type": "string",
+            "description": "New entity manifest CID after update",
+            "example": "bafyrei..."
+          },
+          "content": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContentMetadata"
+              },
+              {
+                "description": "Content metadata stored on entity"
+              }
+            ]
+          },
+          "prev_cid": {
+            "type": "string",
+            "description": "Previous entity manifest CID",
+            "example": "bafyrei..."
+          }
+        },
+        "required": [
+          "id",
+          "cid",
+          "content",
+          "prev_cid"
+        ]
+      },
+      "CompleteUploadRequest": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Version key used in upload-url request",
+            "example": "v1"
+          },
+          "cid": {
+            "type": "string",
+            "description": "Content-addressed identifier computed by client",
+            "example": "bafyreih5iy6dqwbcslkqpx6bxwj7qy3z5x..."
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Actual file size in bytes",
+            "example": 10485760
+          },
+          "content_type": {
+            "type": "string",
+            "description": "MIME type of the uploaded content",
+            "example": "application/pdf"
+          },
+          "filename": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Original filename for Content-Disposition",
+            "example": "document.pdf"
+          },
+          "expect_tip": {
+            "type": "string",
+            "description": "Expected current tip CID for CAS protection",
+            "example": "bafyrei..."
+          }
+        },
+        "required": [
+          "key",
+          "cid",
+          "size",
+          "content_type",
+          "expect_tip"
         ]
       },
       "VersionInfo": {
@@ -12197,6 +12381,253 @@
                 },
                 "example": {
                   "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entities/{id}/content/upload-url": {
+      "post": {
+        "tags": [
+          "Entities"
+        ],
+        "summary": "Get presigned URL for direct upload",
+        "description": "Returns a presigned URL for direct upload to R2 storage, bypassing the API worker.\n\n**When to use:**\n- Files larger than 5MB (avoids streaming through API worker)\n- Client has reliable network (single PUT request to R2)\n\n**Flow:**\n1. Call this endpoint to get presigned URL\n2. PUT file directly to the returned URL (include Content-Type header)\n3. Compute CID client-side\n4. Call POST /{id}/content/complete to finalize\n\n**Presigned URL:**\n- Valid for 15 minutes\n- Single use (upload replaces any existing content at key)\n- Must include Content-Type header matching the request\n\n**Security:**\nThe presigned URL is the access control - it's signed and time-limited.\nWithout a valid URL from this endpoint, uploads to R2 will fail.\n\n**Note:** The CID is computed client-side and trusted. For guaranteed integrity,\nuse the direct upload endpoint (POST /{id}/content) which computes CID server-side.\n\n---\n**Permission:** `entity:update`  \n**Auth:** required",
+        "x-arke-action": "entity:update",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetUploadUrlRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Presigned URL generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetUploadUrlResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entities/{id}/content/complete": {
+      "post": {
+        "tags": [
+          "Entities"
+        ],
+        "summary": "Complete presigned URL upload",
+        "description": "Finalizes a presigned URL upload by updating entity metadata.\n\n**Prerequisites:**\n1. Called POST /{id}/content/upload-url to get presigned URL\n2. Uploaded file directly to R2 via presigned URL\n3. Computed CID client-side\n\n**Request:**\n- `key`: Same key used in upload-url request\n- `cid`: Content-addressed identifier computed by client\n- `size`: Actual file size in bytes\n- `content_type`: MIME type of uploaded content\n- `expect_tip`: Current entity tip for CAS protection\n\n**Behavior:**\n- Verifies file exists in R2 at expected location\n- Updates entity with content metadata\n- Creates new entity version\n\n**CID Trust:**\nThe client-provided CID is trusted without server verification.\nFor guaranteed integrity, use direct upload (POST /{id}/content).\n\n---\n**Permission:** `entity:update`  \n**Auth:** required",
+        "x-arke-action": "entity:update",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Upload completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - CAS validation failed (entity was modified)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CASErrorResponse"
+                },
+                "example": {
+                  "error": "Conflict: entity was modified",
+                  "details": {
+                    "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                    "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                  }
                 }
               }
             }

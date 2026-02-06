@@ -24,7 +24,9 @@
  */
 
 import type { ArkeClient } from '../../client/ArkeClient.js';
+import { getAuthorizationHeader } from '../../client/ArkeClient.js';
 import type { components } from '../../generated/types.js';
+import { computeCid } from './cid.js';
 import type {
   UploadTree,
   UploadOptions,
@@ -86,6 +88,9 @@ async function parallelLimit<T, R>(
 
 /** Target bytes in flight (~200MB) */
 const TARGET_BYTES_IN_FLIGHT = 200 * 1024 * 1024;
+
+/** Threshold for using presigned URLs (5MB) - larger files bypass API worker */
+const PRESIGNED_URL_THRESHOLD = 5 * 1024 * 1024;
 
 /**
  * Pool that maintains a target number of bytes in flight.
@@ -524,8 +529,12 @@ export async function uploadTree(
     });
 
     // ─────────────────────────────────────────────────────────────────────────
-    // PHASE 3: Upload file content directly to API
+    // PHASE 3: Upload file content
     // Tree is now browsable! Users can explore while content uploads.
+    //
+    // Two paths based on file size:
+    // - Small files (<5MB): Direct upload through API (simple, CID computed server-side)
+    // - Large files (>=5MB): Presigned URL to R2 (fast, CID computed client-side)
     // ─────────────────────────────────────────────────────────────────────────
     reportProgress({ phase: 'uploading', bytesUploaded: 0 });
 
@@ -550,17 +559,77 @@ export async function uploadTree(
               body = new Blob([fileData], { type: file.mimeType });
             }
 
-            // Upload content directly to API endpoint
-            // The API streams to R2, computes CID, and updates the entity atomically
-            const { error: uploadError } = await client.api.POST('/entities/{id}/content', {
-              params: { path: { id: file.id }, query: { key: 'v1', filename: file.name } },
-              body: body as unknown as Record<string, never>,
-              bodySerializer: (b: unknown) => b as BodyInit,
-              headers: { 'Content-Type': file.mimeType },
-            } as Parameters<typeof client.api.POST>[1]);
+            if (file.size >= PRESIGNED_URL_THRESHOLD) {
+              // ─────────────────────────────────────────────────────────────
+              // LARGE FILE: Presigned URL flow (bypasses API worker)
+              // ─────────────────────────────────────────────────────────────
 
-            if (uploadError) {
-              throw new Error(`Upload failed: ${JSON.stringify(uploadError)}`);
+              // 1. Compute CID client-side
+              const fileCid = await computeCid(fileData);
+
+              // 2. Get presigned URL from API
+              const { data: urlData, error: urlError } = await client.api.POST(
+                '/entities/{id}/content/upload-url',
+                {
+                  params: { path: { id: file.id } },
+                  body: {
+                    content_type: file.mimeType,
+                    size: file.size,
+                    key: 'v1',
+                  },
+                }
+              );
+
+              if (urlError || !urlData) {
+                throw new Error(`Failed to get presigned URL: ${JSON.stringify(urlError)}`);
+              }
+
+              // 3. PUT directly to R2 (fast!)
+              const r2Response = await fetch(urlData.upload_url, {
+                method: 'PUT',
+                headers: { 'Content-Type': file.mimeType },
+                body: body,
+              });
+
+              if (!r2Response.ok) {
+                const errorText = await r2Response.text();
+                throw new Error(`R2 upload failed: ${r2Response.status} ${errorText}`);
+              }
+
+              // 4. Complete upload by updating entity metadata
+              const { error: completeError } = await client.api.POST(
+                '/entities/{id}/content/complete',
+                {
+                  params: { path: { id: file.id } },
+                  body: {
+                    key: 'v1',
+                    cid: fileCid,
+                    size: file.size,
+                    content_type: file.mimeType,
+                    filename: file.name,
+                    expect_tip: file.entityCid,
+                  },
+                }
+              );
+
+              if (completeError) {
+                throw new Error(`Failed to complete upload: ${JSON.stringify(completeError)}`);
+              }
+            } else {
+              // ─────────────────────────────────────────────────────────────
+              // SMALL FILE: Direct upload through API
+              // ─────────────────────────────────────────────────────────────
+
+              const { error: uploadError } = await client.api.POST('/entities/{id}/content', {
+                params: { path: { id: file.id }, query: { key: 'v1', filename: file.name } },
+                body: body as unknown as Record<string, never>,
+                bodySerializer: (b: unknown) => b as BodyInit,
+                headers: { 'Content-Type': file.mimeType },
+              } as Parameters<typeof client.api.POST>[1]);
+
+              if (uploadError) {
+                throw new Error(`Upload failed: ${JSON.stringify(uploadError)}`);
+              }
             }
 
             bytesUploaded += file.size;

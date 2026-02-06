@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-02-06T01:10:39.896Z
+ * Generated: 2026-02-06T04:48:51.138Z
  */
 
 export type paths = {
@@ -3758,6 +3758,301 @@ export type paths = {
                     };
                     content: {
                         "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entities/{id}/content/upload-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get presigned URL for direct upload
+         * @description Returns a presigned URL for direct upload to R2 storage, bypassing the API worker.
+         *
+         *     **When to use:**
+         *     - Files larger than 5MB (avoids streaming through API worker)
+         *     - Client has reliable network (single PUT request to R2)
+         *
+         *     **Flow:**
+         *     1. Call this endpoint to get presigned URL
+         *     2. PUT file directly to the returned URL (include Content-Type header)
+         *     3. Compute CID client-side
+         *     4. Call POST /{id}/content/complete to finalize
+         *
+         *     **Presigned URL:**
+         *     - Valid for 15 minutes
+         *     - Single use (upload replaces any existing content at key)
+         *     - Must include Content-Type header matching the request
+         *
+         *     **Security:**
+         *     The presigned URL is the access control - it's signed and time-limited.
+         *     Without a valid URL from this endpoint, uploads to R2 will fail.
+         *
+         *     **Note:** The CID is computed client-side and trusted. For guaranteed integrity,
+         *     use the direct upload endpoint (POST /{id}/content) which computes CID server-side.
+         *
+         *     ---
+         *     **Permission:** `entity:update`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["GetUploadUrlRequest"];
+                };
+            };
+            responses: {
+                /** @description Presigned URL generated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GetUploadUrlResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entities/{id}/content/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete presigned URL upload
+         * @description Finalizes a presigned URL upload by updating entity metadata.
+         *
+         *     **Prerequisites:**
+         *     1. Called POST /{id}/content/upload-url to get presigned URL
+         *     2. Uploaded file directly to R2 via presigned URL
+         *     3. Computed CID client-side
+         *
+         *     **Request:**
+         *     - `key`: Same key used in upload-url request
+         *     - `cid`: Content-addressed identifier computed by client
+         *     - `size`: Actual file size in bytes
+         *     - `content_type`: MIME type of uploaded content
+         *     - `expect_tip`: Current entity tip for CAS protection
+         *
+         *     **Behavior:**
+         *     - Verifies file exists in R2 at expected location
+         *     - Updates entity with content metadata
+         *     - Creates new entity version
+         *
+         *     **CID Trust:**
+         *     The client-provided CID is trusted without server verification.
+         *     For guaranteed integrity, use direct upload (POST /{id}/content).
+         *
+         *     ---
+         *     **Permission:** `entity:update`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CompleteUploadRequest"];
+                };
+            };
+            responses: {
+                /** @description Upload completed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CompleteUploadResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict - CAS validation failed (entity was modified) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Conflict: entity was modified",
+                         *       "details": {
+                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["CASErrorResponse"];
                     };
                 };
             };
@@ -10135,6 +10430,97 @@ export type components = {
              * @example bafyrei...
              */
             prev_cid: string;
+        };
+        GetUploadUrlResponse: {
+            /**
+             * Format: uri
+             * @description Presigned URL for direct PUT upload to R2
+             * @example https://xxx.r2.cloudflarestorage.com/...
+             */
+            upload_url: string;
+            /**
+             * @description R2 storage key (for reference)
+             * @example 01KABC123.../v1
+             */
+            r2_key: string;
+            /**
+             * Format: date-time
+             * @description ISO 8601 timestamp when the URL expires
+             * @example 2025-01-15T10:15:00Z
+             */
+            expires_at: string;
+        };
+        GetUploadUrlRequest: {
+            /**
+             * @description MIME type of the content to upload
+             * @example application/pdf
+             */
+            content_type: string;
+            /**
+             * @description Expected file size in bytes (max 500 MB)
+             * @example 10485760
+             */
+            size: number;
+            /**
+             * @description Original filename for Content-Disposition on download
+             * @example document.pdf
+             */
+            filename?: string;
+            /**
+             * @description Version key for this content (e.g., "v1", "original")
+             * @example v1
+             */
+            key: string;
+        };
+        CompleteUploadResponse: {
+            /**
+             * @description Entity ID
+             * @example 01KABC123...
+             */
+            id: string;
+            /**
+             * @description New entity manifest CID after update
+             * @example bafyrei...
+             */
+            cid: string;
+            content: components["schemas"]["ContentMetadata"] & unknown;
+            /**
+             * @description Previous entity manifest CID
+             * @example bafyrei...
+             */
+            prev_cid: string;
+        };
+        CompleteUploadRequest: {
+            /**
+             * @description Version key used in upload-url request
+             * @example v1
+             */
+            key: string;
+            /**
+             * @description Content-addressed identifier computed by client
+             * @example bafyreih5iy6dqwbcslkqpx6bxwj7qy3z5x...
+             */
+            cid: string;
+            /**
+             * @description Actual file size in bytes
+             * @example 10485760
+             */
+            size: number;
+            /**
+             * @description MIME type of the uploaded content
+             * @example application/pdf
+             */
+            content_type: string;
+            /**
+             * @description Original filename for Content-Disposition
+             * @example document.pdf
+             */
+            filename?: string;
+            /**
+             * @description Expected current tip CID for CAS protection
+             * @example bafyrei...
+             */
+            expect_tip: string;
         };
         VersionInfo: {
             /**
