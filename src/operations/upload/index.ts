@@ -3,6 +3,27 @@
  *
  * High-level operations for uploading folders and files to Arke.
  *
+ * ## Single File to Existing Entity
+ *
+ * Use `uploadToEntity` for uploading a single file to an existing entity.
+ * Automatically handles direct vs presigned upload based on file size (5MB threshold).
+ *
+ * @example
+ * ```typescript
+ * import { ArkeClient } from '@arke-institute/sdk';
+ * import { uploadToEntity } from '@arke-institute/sdk/operations';
+ *
+ * // Browser: From drag-drop or file input
+ * const file = event.dataTransfer.files[0];
+ * const result = await uploadToEntity(client, entityId, file, {
+ *   onProgress: (uploaded, total) => console.log(`${uploaded}/${total} bytes`),
+ * });
+ * ```
+ *
+ * ## Folder/Multiple File Upload
+ *
+ * Use `uploadTree` for uploading folder structures or multiple files.
+ *
  * @example
  * ```typescript
  * import { ArkeClient } from '@arke-institute/sdk';
@@ -46,6 +67,13 @@ export type {
 
 // Core engine
 export { uploadTree } from './engine.js';
+
+// Single file upload helper
+export {
+  uploadToEntity,
+  type UploadToEntityOptions,
+  type UploadToEntityResult,
+} from './single.js';
 
 // CID utilities
 export { computeCid, verifyCid } from './cid.js';
