@@ -1,6 +1,6 @@
 {
   "name": "@arke-institute/sdk",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "TypeScript SDK for the Arke API - auto-generated from OpenAPI spec",
   "type": "module",
   "main": "dist/index.cjs",

@@ -25,6 +25,7 @@
 
 import type { ArkeClient } from '../../client/ArkeClient.js';
 import { getAuthorizationHeader } from '../../client/ArkeClient.js';
+import { ForbiddenError } from '../../client/errors.js';
 import type { components } from '../../generated/types.js';
 import { computeCid } from './cid.js';
 import type {
@@ -314,6 +315,46 @@ export async function uploadTree(
       }
       rootParentLabel = (parentData.properties?.label as string) ?? target.parentId;
       rootParentType = 'folder';
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PRE-FLIGHT PERMISSION CHECK
+    // Verify we have the required permissions before starting the upload.
+    // This fails fast with a clear error instead of failing mid-upload.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Only check permissions if we didn't just create the collection (we'd have all permissions)
+    if (!collectionCreated) {
+      // Check entity:create permission on the collection
+      const { data: collPerms, error: collPermsError } = await client.api.GET(
+        '/entities/{id}/permissions',
+        { params: { path: { id: collectionId } } }
+      );
+
+      if (collPermsError || !collPerms) {
+        throw new Error(`Failed to check collection permissions: ${JSON.stringify(collPermsError)}`);
+      }
+
+      if (!collPerms.allowed_actions.includes('entity:create')) {
+        throw new ForbiddenError('entity:create', `collection ${collectionId}`);
+      }
+
+      // If a parent folder is specified (not the collection), check entity:update permission
+      // This is required for backlinking (adding 'contains' relationships to the parent)
+      if (target.parentId && target.parentId !== collectionId) {
+        const { data: parentPerms, error: parentPermsError } = await client.api.GET(
+          '/entities/{id}/permissions',
+          { params: { path: { id: target.parentId } } }
+        );
+
+        if (parentPermsError || !parentPerms) {
+          throw new Error(`Failed to check parent folder permissions: ${JSON.stringify(parentPermsError)}`);
+        }
+
+        if (!parentPerms.allowed_actions.includes('entity:update')) {
+          throw new ForbiddenError('entity:update', `parent folder ${target.parentId}`);
+        }
+      }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
