@@ -17,7 +17,7 @@ import { getMimeType } from './scanners.js';
  * A single file to upload to an entity.
  */
 export interface UploadItem {
-  /** Content key. Defaults to filename without extension (e.g., "document.pdf" → "document"), or "v1" if no filename. */
+  /** Content key. Defaults to filename without extension, or "file_{cid_hash}" if no filename. */
   key?: string;
   /** File data */
   data: File | Blob | ArrayBuffer | Uint8Array;
@@ -317,17 +317,20 @@ async function prepareItem(item: UploadItem): Promise<PreparedItem> {
     contentType = getMimeType(filename);
   }
 
-  // Determine key: explicit > filename without extension > "v1"
+  // Compute CID
+  const cid = await computeCid(new Uint8Array(bytes));
+
+  // Determine key: explicit > filename without extension > cid-based
   let key = item.key;
   if (!key && filename) {
     // Strip extension: "document.pdf" -> "document"
     const lastDot = filename.lastIndexOf('.');
     key = lastDot > 0 ? filename.substring(0, lastDot) : filename;
   }
-  key = key || 'v1';
-
-  // Compute CID
-  const cid = await computeCid(new Uint8Array(bytes));
+  if (!key) {
+    // Use last 8 chars of CID for uniqueness
+    key = `file_${cid.slice(-8)}`;
+  }
 
   return { key, bytes, size, contentType, filename, cid };
 }
