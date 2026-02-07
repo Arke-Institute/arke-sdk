@@ -172,6 +172,17 @@ export async function uploadToEntity(
     items.map((item) => prepareItem(item))
   );
 
+  // Check for duplicate keys
+  const keys = prepared.map((p) => p.key);
+  const duplicates = keys.filter((key, i) => keys.indexOf(key) !== i);
+  if (duplicates.length > 0) {
+    const uniqueDupes = [...new Set(duplicates)];
+    throw new Error(
+      `Duplicate content keys detected: ${uniqueDupes.map((k) => `"${k}"`).join(', ')}. ` +
+      `Each file must have a unique key. Provide explicit keys to resolve.`
+    );
+  }
+
   const totalBytes = prepared.reduce((sum, p) => sum + p.size, 0);
   reportProgress({ totalBytes });
 
