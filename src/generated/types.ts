@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-02-06T06:39:23.874Z
+ * Generated: 2026-02-07T17:07:45.355Z
  */
 
 export type paths = {
@@ -3575,6 +3575,7 @@ export type paths = {
             parameters: {
                 query?: {
                     key?: string;
+                    cid?: string;
                 };
                 header?: never;
                 path: {
@@ -3770,10 +3771,274 @@ export type paths = {
                 };
             };
         };
-        delete?: never;
+        /**
+         * Remove content by key or CID
+         * @description Removes content metadata from entity. The actual file in R2 is preserved for version history.
+         *
+         *     **Query Parameters (one required):**
+         *     - `key`: Content key to remove
+         *     - `cid`: Content CID to remove (alternative to key)
+         *     - `expect_tip`: Current entity tip CID for CAS protection (required)
+         *
+         *     **Behavior:**
+         *     - Removes the content entry from the content map
+         *     - R2 file is NOT deleted (preserved for version history)
+         *     - Returns 404 if content not found
+         *     - If CID matches multiple keys, returns error (specify key instead)
+         *
+         *     **Examples:**
+         *     ```
+         *     DELETE /entities/{id}/content?key=thumbnail&expect_tip=bafyrei...
+         *     DELETE /entities/{id}/content?cid=bafyrei...&expect_tip=bafyrei...
+         *     ```
+         *
+         *     ---
+         *     **Permission:** `entity:update`
+         *     **Auth:** required
+         */
+        delete: {
+            parameters: {
+                query: {
+                    key?: string;
+                    cid?: string;
+                    expect_tip: string;
+                };
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Content removed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeleteContentResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict - CAS validation failed (entity was modified) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Conflict: entity was modified",
+                         *       "details": {
+                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["CASErrorResponse"];
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Rename content key
+         * @description Renames a content key without moving the underlying R2 file.
+         *
+         *     Since content is stored by CID, renaming a key is a metadata-only operation.
+         *     The R2 file remains at `{entityId}/{cid}` and is unaffected.
+         *
+         *     **Use Cases:**
+         *     - Renaming `v1` to `original` for semantic clarity
+         *     - Reorganizing content keys without re-uploading
+         *
+         *     **Note:** This does not change the filename property. Use entity update for that.
+         *
+         *     ---
+         *     **Permission:** `entity:update`
+         *     **Auth:** required
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["RenameContentKeyRequest"];
+                };
+            };
+            responses: {
+                /** @description Content key renamed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RenameContentKeyResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict - CAS validation failed (entity was modified) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Conflict: entity was modified",
+                         *       "details": {
+                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["CASErrorResponse"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/entities/{id}/content/upload-url": {
@@ -3792,16 +4057,21 @@ export type paths = {
          *     **When to use:**
          *     - Files larger than 5MB (avoids streaming through API worker)
          *     - Client has reliable network (single PUT request to R2)
+         *     - Parallel uploads (get multiple URLs, upload in parallel, complete sequentially)
          *
          *     **Flow:**
-         *     1. Call this endpoint to get presigned URL
-         *     2. PUT file directly to the returned URL (include Content-Type header)
-         *     3. Compute CID client-side
-         *     4. Call POST /{id}/content/complete to finalize
+         *     1. Compute CID client-side (hash the file content)
+         *     2. Call this endpoint with the CID to get presigned URL
+         *     3. PUT file directly to the returned URL (include Content-Type header)
+         *     4. Call POST /{id}/content/complete to finalize (this is where key/filename are specified)
+         *
+         *     **Parallel uploads:**
+         *     For multiple files, steps 1-3 can be parallelized. Only step 4 (complete) must be
+         *     sequential with CAS retry to update entity metadata atomically.
          *
          *     **Presigned URL:**
          *     - Valid for 15 minutes
-         *     - Single use (upload replaces any existing content at key)
+         *     - R2 path is content-addressed: {entityId}/{cid}
          *     - Must include Content-Type header matching the request
          *
          *     **Security:**
@@ -10460,6 +10730,11 @@ export type components = {
         };
         GetUploadUrlRequest: {
             /**
+             * @description Content-addressed identifier (computed by client before upload)
+             * @example bafyreih5iy6dqwbcslkqpx6bxwj7qy3z5x...
+             */
+            cid: string;
+            /**
              * @description MIME type of the content to upload
              * @example application/pdf
              */
@@ -10469,16 +10744,6 @@ export type components = {
              * @example 10485760
              */
             size: number;
-            /**
-             * @description Original filename for Content-Disposition on download
-             * @example document.pdf
-             */
-            filename?: string;
-            /**
-             * @description Version key for this content (e.g., "v1", "original")
-             * @example v1
-             */
-            key: string;
         };
         CompleteUploadResponse: {
             /**
@@ -10524,6 +10789,77 @@ export type components = {
              * @example document.pdf
              */
             filename?: string;
+            /**
+             * @description Expected current tip CID for CAS protection
+             * @example bafyrei...
+             */
+            expect_tip: string;
+        };
+        DeleteContentResponse: {
+            /**
+             * @description Entity ID
+             * @example 01KABC123...
+             */
+            id: string;
+            /**
+             * @description New entity manifest CID after update
+             * @example bafyrei...
+             */
+            cid: string;
+            /**
+             * @description Content key that was removed
+             * @example thumbnail
+             */
+            removed_key: string;
+            /**
+             * @description Previous entity manifest CID
+             * @example bafyrei...
+             */
+            prev_cid: string;
+        };
+        RenameContentKeyResponse: {
+            /**
+             * @description Entity ID
+             * @example 01KABC123...
+             */
+            id: string;
+            /**
+             * @description New entity manifest CID after update
+             * @example bafyrei...
+             */
+            cid: string;
+            /**
+             * @description Previous key name
+             * @example thumbnail
+             */
+            old_key: string;
+            /**
+             * @description New key name
+             * @example thumbnail_v1
+             */
+            new_key: string;
+            /**
+             * @description CID of the content (unchanged)
+             * @example bafyreih5iy6dqwbcslkqpx6bxwj7qy3z5x...
+             */
+            content_cid: string;
+            /**
+             * @description Previous entity manifest CID
+             * @example bafyrei...
+             */
+            prev_cid: string;
+        };
+        RenameContentKeyRequest: {
+            /**
+             * @description Current content key to rename
+             * @example thumbnail
+             */
+            old_key: string;
+            /**
+             * @description New key name
+             * @example thumbnail_v1
+             */
+            new_key: string;
             /**
              * @description Expected current tip CID for CAS protection
              * @example bafyrei...

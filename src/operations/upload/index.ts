@@ -1,55 +1,47 @@
 /**
  * Upload Module
  *
- * High-level operations for uploading folders and files to Arke.
+ * High-level operations for uploading files to Arke.
  *
- * ## Single File to Existing Entity
+ * ## Upload to Existing Entity
  *
- * Use `uploadToEntity` for uploading a single file to an existing entity.
- * Automatically handles direct vs presigned upload based on file size (5MB threshold).
+ * Use `uploadToEntity` for uploading one or more files to an existing entity.
+ * Files are uploaded in parallel, metadata committed sequentially with CAS.
  *
  * @example
  * ```typescript
  * import { ArkeClient } from '@arke-institute/sdk';
  * import { uploadToEntity } from '@arke-institute/sdk/operations';
  *
- * // Browser: From drag-drop or file input
- * const file = event.dataTransfer.files[0];
- * const result = await uploadToEntity(client, entityId, file, {
- *   onProgress: (uploaded, total) => console.log(`${uploaded}/${total} bytes`),
- * });
+ * // Single file
+ * const result = await uploadToEntity(client, entityId, [
+ *   { key: 'v1', data: file }
+ * ]);
+ *
+ * // Multiple files (e.g., original + thumbnail)
+ * const result = await uploadToEntity(client, entityId, [
+ *   { key: 'original', data: originalFile },
+ *   { key: 'thumbnail', data: thumbnailBlob },
+ * ]);
  * ```
  *
- * ## Folder/Multiple File Upload
+ * ## Folder/Tree Upload
  *
- * Use `uploadTree` for uploading folder structures or multiple files.
+ * Use `uploadTree` for uploading folder structures with multiple entities.
  *
  * @example
  * ```typescript
  * import { ArkeClient } from '@arke-institute/sdk';
  * import { uploadTree, buildUploadTree } from '@arke-institute/sdk/operations';
  *
- * const client = new ArkeClient({ authToken: 'your-token' });
- *
- * // Build upload tree from file data (works in browser and Node.js)
  * const tree = buildUploadTree([
  *   { path: 'docs/readme.md', data: readmeBuffer },
  *   { path: 'images/logo.png', data: logoBlob },
  * ]);
  *
- * // Upload to a new collection
  * const result = await uploadTree(client, tree, {
- *   target: {
- *     createCollection: {
- *       label: 'My Upload',
- *       description: 'Uploaded folder contents',
- *     },
- *   },
- *   onProgress: (p) => console.log(`${p.phase}: ${p.phasePercent}%`),
+ *   target: { createCollection: { label: 'My Upload' } },
  * });
- *
- * console.log('Created collection:', result.collection.id);
- * console.log('Uploaded files:', result.files.length);
  * ```
  */
 
@@ -68,10 +60,13 @@ export type {
 // Core engine
 export { uploadTree } from './engine.js';
 
-// Single file upload helper
+// Upload to existing entity
 export {
   uploadToEntity,
+  type UploadItem,
+  type UploadToEntityProgress,
   type UploadToEntityOptions,
+  type UploadContentResult,
   type UploadToEntityResult,
 } from './single.js';
 

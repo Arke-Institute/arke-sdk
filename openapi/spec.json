@@ -3417,6 +3417,12 @@
       "GetUploadUrlRequest": {
         "type": "object",
         "properties": {
+          "cid": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Content-addressed identifier (computed by client before upload)",
+            "example": "bafyreih5iy6dqwbcslkqpx6bxwj7qy3z5x..."
+          },
           "content_type": {
             "type": "string",
             "minLength": 1,
@@ -3430,25 +3436,12 @@
             "maximum": 524288000,
             "description": "Expected file size in bytes (max 500 MB)",
             "example": 10485760
-          },
-          "filename": {
-            "type": "string",
-            "maxLength": 255,
-            "description": "Original filename for Content-Disposition on download",
-            "example": "document.pdf"
-          },
-          "key": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255,
-            "description": "Version key for this content (e.g., \"v1\", \"original\")",
-            "example": "v1"
           }
         },
         "required": [
+          "cid",
           "content_type",
-          "size",
-          "key"
+          "size"
         ]
       },
       "CompleteUploadResponse": {
@@ -3531,6 +3524,109 @@
           "cid",
           "size",
           "content_type",
+          "expect_tip"
+        ]
+      },
+      "DeleteContentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Entity ID",
+            "example": "01KABC123..."
+          },
+          "cid": {
+            "type": "string",
+            "description": "New entity manifest CID after update",
+            "example": "bafyrei..."
+          },
+          "removed_key": {
+            "type": "string",
+            "description": "Content key that was removed",
+            "example": "thumbnail"
+          },
+          "prev_cid": {
+            "type": "string",
+            "description": "Previous entity manifest CID",
+            "example": "bafyrei..."
+          }
+        },
+        "required": [
+          "id",
+          "cid",
+          "removed_key",
+          "prev_cid"
+        ]
+      },
+      "RenameContentKeyResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Entity ID",
+            "example": "01KABC123..."
+          },
+          "cid": {
+            "type": "string",
+            "description": "New entity manifest CID after update",
+            "example": "bafyrei..."
+          },
+          "old_key": {
+            "type": "string",
+            "description": "Previous key name",
+            "example": "thumbnail"
+          },
+          "new_key": {
+            "type": "string",
+            "description": "New key name",
+            "example": "thumbnail_v1"
+          },
+          "content_cid": {
+            "type": "string",
+            "description": "CID of the content (unchanged)",
+            "example": "bafyreih5iy6dqwbcslkqpx6bxwj7qy3z5x..."
+          },
+          "prev_cid": {
+            "type": "string",
+            "description": "Previous entity manifest CID",
+            "example": "bafyrei..."
+          }
+        },
+        "required": [
+          "id",
+          "cid",
+          "old_key",
+          "new_key",
+          "content_cid",
+          "prev_cid"
+        ]
+      },
+      "RenameContentKeyRequest": {
+        "type": "object",
+        "properties": {
+          "old_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Current content key to rename",
+            "example": "thumbnail"
+          },
+          "new_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "New key name",
+            "example": "thumbnail_v1"
+          },
+          "expect_tip": {
+            "type": "string",
+            "description": "Expected current tip CID for CAS protection",
+            "example": "bafyrei..."
+          }
+        },
+        "required": [
+          "old_key",
+          "new_key",
           "expect_tip"
         ]
       },
@@ -12353,11 +12449,21 @@
           {
             "schema": {
               "type": "string",
-              "description": "Specific version key to download. Default: current content key from entity",
+              "description": "Content key to download (resolved to CID from entity metadata)",
               "example": "v1"
             },
             "required": false,
             "name": "key",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Direct CID to download (alternative to key)",
+              "example": "bafyreih5iy6dqwbcslkqpx6bxwj7qy3z5x..."
+            },
+            "required": false,
+            "name": "cid",
             "in": "query"
           }
         ],
@@ -12400,6 +12506,289 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "Entities"
+        ],
+        "summary": "Remove content by key or CID",
+        "description": "Removes content metadata from entity. The actual file in R2 is preserved for version history.\n\n**Query Parameters (one required):**\n- `key`: Content key to remove\n- `cid`: Content CID to remove (alternative to key)\n- `expect_tip`: Current entity tip CID for CAS protection (required)\n\n**Behavior:**\n- Removes the content entry from the content map\n- R2 file is NOT deleted (preserved for version history)\n- Returns 404 if content not found\n- If CID matches multiple keys, returns error (specify key instead)\n\n**Examples:**\n```\nDELETE /entities/{id}/content?key=thumbnail&expect_tip=bafyrei...\nDELETE /entities/{id}/content?cid=bafyrei...&expect_tip=bafyrei...\n```\n\n---\n**Permission:** `entity:update`  \n**Auth:** required",
+        "x-arke-action": "entity:update",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "description": "Content key to remove",
+              "example": "thumbnail"
+            },
+            "required": false,
+            "name": "key",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Content CID to remove (alternative to key)",
+              "example": "bafyreih5iy6dqwbcslkqpx6bxwj7qy3z5x..."
+            },
+            "required": false,
+            "name": "cid",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Expected current tip CID for CAS protection",
+              "example": "bafyrei..."
+            },
+            "required": true,
+            "name": "expect_tip",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Content removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteContentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - CAS validation failed (entity was modified)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CASErrorResponse"
+                },
+                "example": {
+                  "error": "Conflict: entity was modified",
+                  "details": {
+                    "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                    "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Entities"
+        ],
+        "summary": "Rename content key",
+        "description": "Renames a content key without moving the underlying R2 file.\n\nSince content is stored by CID, renaming a key is a metadata-only operation.\nThe R2 file remains at `{entityId}/{cid}` and is unaffected.\n\n**Use Cases:**\n- Renaming `v1` to `original` for semantic clarity\n- Reorganizing content keys without re-uploading\n\n**Note:** This does not change the filename property. Use entity update for that.\n\n---\n**Permission:** `entity:update`  \n**Auth:** required",
+        "x-arke-action": "entity:update",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameContentKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Content key renamed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenameContentKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - CAS validation failed (entity was modified)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CASErrorResponse"
+                },
+                "example": {
+                  "error": "Conflict: entity was modified",
+                  "details": {
+                    "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                    "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/entities/{id}/content/upload-url": {
@@ -12408,7 +12797,7 @@
           "Entities"
         ],
         "summary": "Get presigned URL for direct upload",
-        "description": "Returns a presigned URL for direct upload to R2 storage, bypassing the API worker.\n\n**When to use:**\n- Files larger than 5MB (avoids streaming through API worker)\n- Client has reliable network (single PUT request to R2)\n\n**Flow:**\n1. Call this endpoint to get presigned URL\n2. PUT file directly to the returned URL (include Content-Type header)\n3. Compute CID client-side\n4. Call POST /{id}/content/complete to finalize\n\n**Presigned URL:**\n- Valid for 15 minutes\n- Single use (upload replaces any existing content at key)\n- Must include Content-Type header matching the request\n\n**Security:**\nThe presigned URL is the access control - it's signed and time-limited.\nWithout a valid URL from this endpoint, uploads to R2 will fail.\n\n**Note:** The CID is computed client-side and trusted. For guaranteed integrity,\nuse the direct upload endpoint (POST /{id}/content) which computes CID server-side.\n\n---\n**Permission:** `entity:update`  \n**Auth:** required",
+        "description": "Returns a presigned URL for direct upload to R2 storage, bypassing the API worker.\n\n**When to use:**\n- Files larger than 5MB (avoids streaming through API worker)\n- Client has reliable network (single PUT request to R2)\n- Parallel uploads (get multiple URLs, upload in parallel, complete sequentially)\n\n**Flow:**\n1. Compute CID client-side (hash the file content)\n2. Call this endpoint with the CID to get presigned URL\n3. PUT file directly to the returned URL (include Content-Type header)\n4. Call POST /{id}/content/complete to finalize (this is where key/filename are specified)\n\n**Parallel uploads:**\nFor multiple files, steps 1-3 can be parallelized. Only step 4 (complete) must be\nsequential with CAS retry to update entity metadata atomically.\n\n**Presigned URL:**\n- Valid for 15 minutes\n- R2 path is content-addressed: {entityId}/{cid}\n- Must include Content-Type header matching the request\n\n**Security:**\nThe presigned URL is the access control - it's signed and time-limited.\nWithout a valid URL from this endpoint, uploads to R2 will fail.\n\n**Note:** The CID is computed client-side and trusted. For guaranteed integrity,\nuse the direct upload endpoint (POST /{id}/content) which computes CID server-side.\n\n---\n**Permission:** `entity:update`  \n**Auth:** required",
         "x-arke-action": "entity:update",
         "x-arke-auth": "required",
         "x-arke-tier": "standard",

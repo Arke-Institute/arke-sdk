@@ -1,68 +1,70 @@
 /**
- * Single File Upload Helper
+ * Upload to Entity Helper
  *
- * Simplified upload for a single file to an existing entity.
- * Automatically handles direct vs presigned upload based on file size.
+ * Upload one or more files to an existing entity.
+ * Handles presigned URL flow with parallel uploads and sequential CAS completion.
  */
 
-import { ArkeClient, getAuthorizationHeader } from '../../client/ArkeClient.js';
+import type { ArkeClient } from '../../client/ArkeClient.js';
 import { computeCid } from './cid.js';
 import { getMimeType } from './scanners.js';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Build auth headers for raw fetch requests.
+ * A single file to upload to an entity.
  */
-function buildAuthHeaders(client: ArkeClient): Record<string, string> {
-  const config = client.getConfig();
-  const headers: Record<string, string> = {};
-
-  if (config.authToken) {
-    headers['Authorization'] = getAuthorizationHeader(config.authToken);
-  }
-
-  if (config.network === 'test') {
-    headers['X-Arke-Network'] = 'test';
-  }
-
-  return headers;
+export interface UploadItem {
+  /** Content version key (e.g., "v1", "original", "thumbnail") */
+  key: string;
+  /** File data */
+  data: File | Blob | ArrayBuffer | Uint8Array;
+  /** MIME type (auto-detected from filename if not provided) */
+  contentType?: string;
+  /** Original filename for Content-Disposition on download */
+  filename?: string;
 }
 
-/** Threshold for using presigned URLs (5MB) */
-const PRESIGNED_THRESHOLD = 5 * 1024 * 1024;
+/**
+ * Progress information during upload to entity.
+ */
+export interface UploadToEntityProgress {
+  /** Current phase */
+  phase: 'preparing' | 'uploading' | 'completing';
+  /** Total bytes across all files */
+  totalBytes: number;
+  /** Bytes uploaded so far */
+  uploadedBytes: number;
+  /** Number of files completed */
+  completedFiles: number;
+  /** Total number of files */
+  totalFiles: number;
+}
 
 /**
  * Options for uploading to an entity.
  */
 export interface UploadToEntityOptions {
-  /**
-   * Version key for the content (default: "v1").
-   * Use different keys for multiple versions: "original", "thumbnail", etc.
-   */
-  key?: string;
+  /** Progress callback */
+  onProgress?: (progress: UploadToEntityProgress) => void;
+}
 
-  /**
-   * MIME type of the content.
-   * Auto-detected from filename if not provided.
-   */
-  contentType?: string;
-
-  /**
-   * Original filename (for Content-Disposition on download).
-   * Uses the file's name if a File object is provided.
-   */
+/**
+ * Result for a single uploaded file.
+ */
+export interface UploadContentResult {
+  /** Content version key */
+  key: string;
+  /** Content CID */
+  cid: string;
+  /** File size in bytes */
+  size: number;
+  /** MIME type */
+  contentType: string;
+  /** Original filename */
   filename?: string;
-
-  /**
-   * Progress callback for large files (presigned uploads only).
-   * Called with bytes uploaded and total bytes.
-   */
-  onProgress?: (uploaded: number, total: number) => void;
-
-  /**
-   * Force presigned upload even for small files.
-   * Useful for testing or when you want client-side CID computation.
-   */
-  forcePresigned?: boolean;
 }
 
 /**
@@ -71,325 +73,308 @@ export interface UploadToEntityOptions {
 export interface UploadToEntityResult {
   /** Entity ID */
   id: string;
-
-  /** New entity CID after upload */
+  /** Final entity CID after all uploads */
   cid: string;
-
-  /** Previous entity CID */
+  /** Entity CID before first upload */
   prevCid: string;
-
-  /** Content metadata */
-  content: {
-    key: string;
-    cid: string;
-    size: number;
-    contentType: string;
-    filename?: string;
-  };
-
-  /** Whether presigned upload was used */
-  usedPresigned: boolean;
+  /** Results for each uploaded file */
+  contents: UploadContentResult[];
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Internal Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface PreparedItem {
+  key: string;
+  bytes: ArrayBuffer;
+  size: number;
+  contentType: string;
+  filename?: string;
+  cid: string;
+}
+
+interface UploadedItem extends PreparedItem {
+  uploadUrl: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MAX_CAS_RETRIES = 3;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Function
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Upload a file to an existing entity.
+ * Upload one or more files to an existing entity.
  *
- * Automatically chooses the optimal upload method:
- * - **Direct upload** (< 5MB): Streams through API, server computes CID
- * - **Presigned upload** (>= 5MB): Direct to R2, client computes CID
+ * Files are uploaded in parallel for speed, then metadata is committed
+ * sequentially with CAS protection to ensure consistency.
  *
  * @example
  * ```typescript
- * // Browser: From drag-drop or file input
- * const file = event.dataTransfer.files[0];
- * const result = await uploadToEntity(client, entityId, file);
+ * // Single file
+ * const result = await uploadToEntity(client, entityId, [
+ *   { key: 'v1', data: file }
+ * ]);
  *
- * // Browser: From Blob
- * const blob = new Blob([data], { type: 'application/json' });
- * const result = await uploadToEntity(client, entityId, blob, {
- *   filename: 'data.json',
- * });
+ * // Multiple files (e.g., original + thumbnail)
+ * const result = await uploadToEntity(client, entityId, [
+ *   { key: 'original', data: originalFile },
+ *   { key: 'thumbnail', data: thumbnailBlob },
+ *   { key: 'preview', data: previewBlob },
+ * ]);
  *
- * // Node.js: From Buffer
- * const buffer = await fs.readFile('document.pdf');
- * const result = await uploadToEntity(client, entityId, buffer, {
- *   filename: 'document.pdf',
- *   contentType: 'application/pdf',
+ * // With progress tracking
+ * const result = await uploadToEntity(client, entityId, items, {
+ *   onProgress: (p) => console.log(`${p.phase}: ${p.uploadedBytes}/${p.totalBytes}`),
  * });
  * ```
  */
 export async function uploadToEntity(
   client: ArkeClient,
   entityId: string,
-  data: File | Blob | ArrayBuffer | Uint8Array,
+  items: UploadItem[],
   options: UploadToEntityOptions = {}
 ): Promise<UploadToEntityResult> {
-  const {
-    key = 'v1',
-    forcePresigned = false,
-    onProgress,
-  } = options;
-
-  // Determine file properties
-  let size: number;
-  let filename: string | undefined = options.filename;
-  let contentType: string | undefined = options.contentType;
-
-  if (data instanceof File) {
-    size = data.size;
-    filename = filename ?? data.name;
-    contentType = contentType ?? (data.type || getMimeType(data.name));
-  } else if (data instanceof Blob) {
-    size = data.size;
-    contentType = contentType ?? (data.type || 'application/octet-stream');
-  } else if (data instanceof ArrayBuffer) {
-    size = data.byteLength;
-    contentType = contentType ?? 'application/octet-stream';
-  } else {
-    // Uint8Array
-    size = data.length;
-    contentType = contentType ?? 'application/octet-stream';
+  if (items.length === 0) {
+    throw new Error('At least one upload item is required');
   }
 
-  // Auto-detect content type from filename if still not set
-  if (contentType === 'application/octet-stream' && filename) {
-    contentType = getMimeType(filename);
+  const { onProgress } = options;
+
+  // Progress state
+  let progressState: UploadToEntityProgress = {
+    phase: 'preparing',
+    totalBytes: 0,
+    uploadedBytes: 0,
+    completedFiles: 0,
+    totalFiles: items.length,
+  };
+
+  const reportProgress = (update: Partial<UploadToEntityProgress>) => {
+    progressState = { ...progressState, ...update };
+    onProgress?.(progressState);
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // PHASE 1: Prepare all files (parallel)
+  // - Convert to ArrayBuffer
+  // - Determine size, contentType, filename
+  // - Compute CID
+  // ─────────────────────────────────────────────────────────────────────────
+  reportProgress({ phase: 'preparing' });
+
+  const prepared: PreparedItem[] = await Promise.all(
+    items.map((item) => prepareItem(item))
+  );
+
+  const totalBytes = prepared.reduce((sum, p) => sum + p.size, 0);
+  reportProgress({ totalBytes });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // PHASE 2: Get presigned URLs (parallel, no tip needed)
+  // ─────────────────────────────────────────────────────────────────────────
+  const uploadInfos: UploadedItem[] = await Promise.all(
+    prepared.map(async (item) => {
+      const { data: presigned, error } = await client.api.POST(
+        '/entities/{id}/content/upload-url',
+        {
+          params: { path: { id: entityId } },
+          body: {
+            cid: item.cid,
+            content_type: item.contentType,
+            size: item.size,
+          },
+        }
+      );
+
+      if (error || !presigned) {
+        throw new Error(
+          `Failed to get upload URL for ${item.key}: ${JSON.stringify(error)}`
+        );
+      }
+
+      return {
+        ...item,
+        uploadUrl: presigned.upload_url,
+      };
+    })
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // PHASE 3: Upload to R2 (parallel - the slow part)
+  // ─────────────────────────────────────────────────────────────────────────
+  reportProgress({ phase: 'uploading', uploadedBytes: 0 });
+
+  let uploadedBytes = 0;
+  await Promise.all(
+    uploadInfos.map(async (item) => {
+      const response = await fetch(item.uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': item.contentType },
+        body: item.bytes,
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Upload to R2 failed for ${item.key}: ${response.statusText}`
+        );
+      }
+
+      uploadedBytes += item.size;
+      reportProgress({ uploadedBytes });
+    })
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // PHASE 4: Get current tip
+  // ─────────────────────────────────────────────────────────────────────────
+  const { data: tipData, error: tipError } = await client.api.GET(
+    '/entities/{id}/tip',
+    { params: { path: { id: entityId } } }
+  );
+
+  if (tipError || !tipData) {
+    throw new Error(`Failed to get entity tip: ${JSON.stringify(tipError)}`);
   }
 
-  // Decide upload method
-  const usePresigned = forcePresigned || size >= PRESIGNED_THRESHOLD;
+  const prevCid = tipData.cid;
+  let currentTip = prevCid;
 
-  if (usePresigned) {
-    return uploadPresigned(client, entityId, data, {
-      key,
-      size,
-      filename,
-      contentType,
-      onProgress,
+  // ─────────────────────────────────────────────────────────────────────────
+  // PHASE 5: Complete uploads (sequential with CAS retry)
+  // ─────────────────────────────────────────────────────────────────────────
+  reportProgress({ phase: 'completing', completedFiles: 0 });
+
+  const contents: UploadContentResult[] = [];
+  let finalCid = currentTip;
+
+  for (let i = 0; i < uploadInfos.length; i++) {
+    const item = uploadInfos[i]!;
+    const result = await completeWithRetry(client, entityId, item, currentTip);
+
+    currentTip = result.cid; // Use new tip for next complete
+    finalCid = result.cid;
+
+    contents.push({
+      key: item.key,
+      cid: result.contentCid,
+      size: item.size,
+      contentType: item.contentType,
+      filename: item.filename,
     });
-  } else {
-    return uploadDirect(client, entityId, data, {
-      key,
-      size,
-      filename,
-      contentType,
-    });
-  }
-}
 
-/**
- * Direct upload - streams through API worker.
- * Best for small files (< 5MB).
- */
-async function uploadDirect(
-  client: ArkeClient,
-  entityId: string,
-  data: File | Blob | ArrayBuffer | Uint8Array,
-  params: {
-    key: string;
-    size: number;
-    filename?: string;
-    contentType: string;
+    reportProgress({ completedFiles: i + 1 });
   }
-): Promise<UploadToEntityResult> {
-  // Convert to Blob for fetch body
-  let body: Blob;
-  if (data instanceof Blob) {
-    body = data;
-  } else if (data instanceof ArrayBuffer) {
-    body = new Blob([data], { type: params.contentType });
-  } else {
-    // Uint8Array - copy to regular ArrayBuffer to handle SharedArrayBuffer
-    const buffer = new ArrayBuffer(data.byteLength);
-    new Uint8Array(buffer).set(data);
-    body = new Blob([buffer], { type: params.contentType });
-  }
-
-  // Use raw fetch for binary upload (openapi-fetch doesn't handle raw binary well)
-  const url = new URL(`/entities/${entityId}/content`, client.baseUrl);
-  url.searchParams.set('key', params.key);
-  if (params.filename) {
-    url.searchParams.set('filename', params.filename);
-  }
-
-  const response = await fetch(url.toString(), {
-    method: 'POST',
-    headers: {
-      'Content-Type': params.contentType,
-      'Content-Length': params.size.toString(),
-      ...buildAuthHeaders(client),
-    },
-    body,
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(`Upload failed: ${error.error || response.statusText}`);
-  }
-
-  const result = await response.json();
 
   return {
-    id: result.id,
-    cid: result.cid,
-    prevCid: result.prev_cid,
-    content: {
-      key: params.key,
-      cid: result.content.cid,
-      size: result.content.size,
-      contentType: result.content.content_type,
-      filename: result.content.filename,
-    },
-    usedPresigned: false,
+    id: entityId,
+    cid: finalCid,
+    prevCid,
+    contents,
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Presigned upload - direct to R2 storage.
- * Best for large files (>= 5MB).
+ * Prepare an upload item: convert to bytes, detect metadata, compute CID.
  */
-async function uploadPresigned(
-  client: ArkeClient,
-  entityId: string,
-  data: File | Blob | ArrayBuffer | Uint8Array,
-  params: {
-    key: string;
-    size: number;
-    filename?: string;
-    contentType: string;
-    onProgress?: (uploaded: number, total: number) => void;
-  }
-): Promise<UploadToEntityResult> {
-  // Step 1: Get current entity tip for CAS
-  const { data: entity, error: getError } = await client.api.GET('/entities/{id}/tip', {
-    params: { path: { id: entityId } },
-  });
+async function prepareItem(item: UploadItem): Promise<PreparedItem> {
+  const { key, data } = item;
 
-  if (getError || !entity) {
-    throw new Error(`Failed to get entity: ${JSON.stringify(getError)}`);
-  }
-
-  const expectTip = entity.cid;
-
-  // Step 2: Get presigned URL
-  const { data: presigned, error: urlError } = await client.api.POST(
-    '/entities/{id}/content/upload-url',
-    {
-      params: { path: { id: entityId } },
-      body: {
-        key: params.key,
-        content_type: params.contentType,
-        size: params.size,
-        filename: params.filename,
-      },
-    }
-  );
-
-  if (urlError || !presigned) {
-    throw new Error(`Failed to get upload URL: ${JSON.stringify(urlError)}`);
-  }
-
-  // Step 3: Compute CID (required for presigned flow)
+  // Convert to ArrayBuffer
   let bytes: ArrayBuffer;
   if (data instanceof Blob) {
     bytes = await data.arrayBuffer();
   } else if (data instanceof ArrayBuffer) {
     bytes = data;
   } else {
-    // Uint8Array - copy to regular ArrayBuffer to handle SharedArrayBuffer
+    // Uint8Array - copy to handle SharedArrayBuffer
     const buffer = new ArrayBuffer(data.byteLength);
     new Uint8Array(buffer).set(data);
     bytes = buffer;
   }
 
-  const contentCid = await computeCid(new Uint8Array(bytes));
+  // Determine properties
+  const size = bytes.byteLength;
+  let filename = item.filename;
+  let contentType = item.contentType;
 
-  // Step 4: Upload to presigned URL
-  if (params.onProgress && typeof XMLHttpRequest !== 'undefined') {
-    // Browser with progress tracking
-    await uploadWithProgress(presigned.upload_url, bytes, params.contentType, params.onProgress);
-  } else {
-    // Simple fetch upload (Node.js or browser without progress)
-    const uploadResponse = await fetch(presigned.upload_url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': params.contentType,
-      },
-      body: bytes,
-    });
-
-    if (!uploadResponse.ok) {
-      throw new Error(`Upload to R2 failed: ${uploadResponse.statusText}`);
-    }
+  if (data instanceof File) {
+    filename = filename ?? data.name;
+    contentType = contentType ?? (data.type || getMimeType(data.name));
   }
 
-  // Step 5: Complete upload
-  const { data: complete, error: completeError } = await client.api.POST(
-    '/entities/{id}/content/complete',
-    {
-      params: { path: { id: entityId } },
-      body: {
-        key: params.key,
-        cid: contentCid,
-        size: params.size,
-        content_type: params.contentType,
-        filename: params.filename,
-        expect_tip: expectTip,
-      },
-    }
-  );
-
-  if (completeError || !complete) {
-    throw new Error(`Failed to complete upload: ${JSON.stringify(completeError)}`);
+  contentType = contentType ?? 'application/octet-stream';
+  if (contentType === 'application/octet-stream' && filename) {
+    contentType = getMimeType(filename);
   }
 
-  return {
-    id: complete.id,
-    cid: complete.cid,
-    prevCid: complete.prev_cid,
-    content: {
-      key: params.key,
-      cid: complete.content.cid,
-      size: complete.content.size,
-      contentType: complete.content.content_type,
-      filename: complete.content.filename,
-    },
-    usedPresigned: true,
-  };
+  // Compute CID
+  const cid = await computeCid(new Uint8Array(bytes));
+
+  return { key, bytes, size, contentType, filename, cid };
 }
 
 /**
- * Upload with progress tracking using XMLHttpRequest.
- * Only available in browser environments.
+ * Complete an upload with CAS retry on conflict.
  */
-function uploadWithProgress(
-  url: string,
-  data: ArrayBuffer,
-  contentType: string,
-  onProgress: (uploaded: number, total: number) => void
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', url, true);
-    xhr.setRequestHeader('Content-Type', contentType);
+async function completeWithRetry(
+  client: ArkeClient,
+  entityId: string,
+  item: UploadedItem,
+  expectTip: string
+): Promise<{ cid: string; contentCid: string }> {
+  let tip = expectTip;
 
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        onProgress(event.loaded, event.total);
+  for (let attempt = 0; attempt < MAX_CAS_RETRIES; attempt++) {
+    const { data, error, response } = await client.api.POST(
+      '/entities/{id}/content/complete',
+      {
+        params: { path: { id: entityId } },
+        body: {
+          key: item.key,
+          cid: item.cid,
+          size: item.size,
+          content_type: item.contentType,
+          filename: item.filename,
+          expect_tip: tip,
+        },
       }
-    };
+    );
 
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
-      } else {
-        reject(new Error(`Upload failed: ${xhr.statusText}`));
+    if (data) {
+      return { cid: data.cid, contentCid: data.content.cid };
+    }
+
+    // Check for CAS conflict (409)
+    if (response?.status === 409) {
+      // Refresh tip and retry
+      const { data: freshTip, error: tipError } = await client.api.GET(
+        '/entities/{id}/tip',
+        { params: { path: { id: entityId } } }
+      );
+
+      if (tipError || !freshTip) {
+        throw new Error(`Failed to refresh tip: ${JSON.stringify(tipError)}`);
       }
-    };
 
-    xhr.onerror = () => reject(new Error('Upload failed: network error'));
-    xhr.onabort = () => reject(new Error('Upload aborted'));
+      tip = freshTip.cid;
+      continue;
+    }
 
-    xhr.send(data);
-  });
+    // Other error - throw immediately
+    throw new Error(
+      `Failed to complete upload for ${item.key}: ${JSON.stringify(error)}`
+    );
+  }
+
+  throw new Error(`Max CAS retries exceeded for ${item.key}`);
 }

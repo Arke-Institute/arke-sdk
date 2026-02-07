@@ -692,9 +692,9 @@ export async function uploadTree(
                 {
                   params: { path: { id: file.id } },
                   body: {
+                    cid: fileCid,
                     content_type: file.mimeType,
                     size: file.size,
-                    key: 'v1',
                   },
                 }
               );
