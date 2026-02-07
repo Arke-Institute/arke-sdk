@@ -17,7 +17,7 @@ import { getMimeType } from './scanners.js';
  * A single file to upload to an entity.
  */
 export interface UploadItem {
-  /** Content version key (default: "v1"). Use different keys for variants: "original", "thumbnail", etc. */
+  /** Content key. Defaults to filename without extension (e.g., "document.pdf" → "document"), or "v1" if no filename. */
   key?: string;
   /** File data */
   data: File | Blob | ArrayBuffer | Uint8Array;
@@ -287,7 +287,7 @@ export async function uploadToEntity(
  * Prepare an upload item: convert to bytes, detect metadata, compute CID.
  */
 async function prepareItem(item: UploadItem): Promise<PreparedItem> {
-  const { key = 'v1', data } = item;
+  const { data } = item;
 
   // Convert to ArrayBuffer
   let bytes: ArrayBuffer;
@@ -316,6 +316,15 @@ async function prepareItem(item: UploadItem): Promise<PreparedItem> {
   if (contentType === 'application/octet-stream' && filename) {
     contentType = getMimeType(filename);
   }
+
+  // Determine key: explicit > filename without extension > "v1"
+  let key = item.key;
+  if (!key && filename) {
+    // Strip extension: "document.pdf" -> "document"
+    const lastDot = filename.lastIndexOf('.');
+    key = lastDot > 0 ? filename.substring(0, lastDot) : filename;
+  }
+  key = key || 'v1';
 
   // Compute CID
   const cid = await computeCid(new Uint8Array(bytes));
