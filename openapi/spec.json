@@ -45,12 +45,12 @@
       "description": "Graph traversal and path-finding"
     },
     {
-      "name": "Agents",
-      "description": "Agent management and invocation"
+      "name": "Kladoi",
+      "description": "Workflow action units - atomic operations with defined inputs/outputs"
     },
     {
-      "name": "Jobs",
-      "description": "Job collection status and monitoring"
+      "name": "Rhizai",
+      "description": "Workflow orchestration - DAGs of kladoi for multi-step pipelines"
     },
     {
       "name": "Events",
@@ -91,8 +91,8 @@
     {
       "name": "Automation",
       "tags": [
-        "Agents",
-        "Jobs"
+        "Kladoi",
+        "Rhizai"
       ]
     },
     {
@@ -116,13 +116,13 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "Supabase JWT token"
+        "description": "Supabase JWT token. Use `Authorization: Bearer <jwt>`. Only for JWT tokens from Supabase auth - do NOT use Bearer with API keys."
       },
       "apiKeyAuth": {
         "type": "apiKey",
         "in": "header",
         "name": "Authorization",
-        "description": "API Key authentication. Format: `ApiKey ak_xxx` (agent) or `ApiKey uk_xxx` (user)"
+        "description": "API Key authentication. **Important:** Use `Authorization: ApiKey <key>` (NOT Bearer). Format: `ApiKey uk_xxx` (user keys) or `ApiKey ak_xxx` (agent keys). Using Bearer with API keys will fail."
       }
     },
     "parameters": {
@@ -225,6 +225,124 @@
         },
         "required": [
           "error"
+        ]
+      },
+      "WhoamiUserResponse": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "user"
+            ],
+            "description": "Identity type"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "User entity ID",
+            "example": "01J1SHMAE10000000000000000"
+          },
+          "auth_method": {
+            "type": "string",
+            "enum": [
+              "jwt",
+              "api_key"
+            ],
+            "description": "How this identity was authenticated",
+            "example": "jwt"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email (JWT auth only)",
+            "example": "ishmael@pequod.ship"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name (JWT auth only)",
+            "example": "Ishmael"
+          },
+          "supabase_user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Supabase Auth user ID (JWT auth only)"
+          },
+          "key_prefix": {
+            "type": "string",
+            "description": "API key prefix (API key auth only)",
+            "example": "uk_abc1"
+          },
+          "key_expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "API key expiration (API key auth only)"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "auth_method"
+        ]
+      },
+      "WhoamiAgentResponse": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "agent"
+            ],
+            "description": "Identity type"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Agent entity ID",
+            "example": "01J1AGENTID000000000000000"
+          },
+          "auth_method": {
+            "type": "string",
+            "enum": [
+              "api_key"
+            ],
+            "description": "How this identity was authenticated",
+            "example": "api_key"
+          },
+          "owner_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID of the agent owner",
+            "example": "01J1OWNERID0000000000000000"
+          },
+          "key_prefix": {
+            "type": "string",
+            "description": "API key prefix",
+            "example": "ak_xyz9"
+          },
+          "key_expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "API key expiration"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "auth_method",
+          "owner_id",
+          "key_prefix",
+          "key_expires_at"
+        ]
+      },
+      "WhoamiResponse": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/WhoamiUserResponse"
+          },
+          {
+            "$ref": "#/components/schemas/WhoamiAgentResponse"
+          }
         ]
       },
       "AlphaInvite": {
@@ -688,7 +806,7 @@
             "description": "Entity label (from properties.label, filename, or name)",
             "example": "Research Paper.pdf"
           },
-          "collection_pi": {
+          "collection_id": {
             "type": "string",
             "description": "Collection ID this entity belongs to",
             "example": "01JCOLLECTION123456789ABCD"
@@ -726,7 +844,7 @@
           "id": "01KDETYWYWM0MJVKM8DK3AEXPY",
           "type": "file",
           "label": "Research Paper.pdf",
-          "collection_pi": "01JCOLLECTION123456789AB",
+          "collection_id": "01JCOLLECTION123456789AB",
           "description_preview": "A comprehensive study on distributed systems architecture...",
           "created_at": "2026-01-12T00:00:00.000Z",
           "updated_at": "2026-01-12T10:30:00.000Z"
@@ -735,10 +853,10 @@
       "SearchResultItem": {
         "type": "object",
         "properties": {
-          "pi": {
+          "id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Entity persistent identifier",
+            "description": "Entity ID",
             "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
           },
           "type": {
@@ -751,7 +869,7 @@
             "description": "Entity label/name",
             "example": "Research Paper.pdf"
           },
-          "collection_pi": {
+          "collection_id": {
             "type": "string",
             "nullable": true,
             "description": "Collection this entity belongs to (null for public-domain)",
@@ -787,10 +905,10 @@
           }
         },
         "required": [
-          "pi",
+          "id",
           "type",
           "label",
-          "collection_pi",
+          "collection_id",
           "score"
         ]
       },
@@ -1002,6 +1120,12 @@
             "format": "uri",
             "description": "URL for collection display image"
           },
+          "use_roles_default": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether to merge with default roles (true) or use only provided roles (false). Public role with *:view is always ensured.",
+            "example": true
+          },
           "roles": {
             "type": "object",
             "additionalProperties": {
@@ -1010,26 +1134,11 @@
                 "type": "string"
               }
             },
-            "description": "Custom role definitions (defaults to owner/editor/viewer/public)",
+            "description": "Role definitions. When use_roles_default is true (default), these merge with defaults. When false, these replace defaults entirely.",
             "example": {
-              "captain": [
-                "*:view",
-                "*:update",
-                "*:create",
-                "collection:manage"
-              ],
-              "harpooner": [
-                "*:view",
-                "*:update",
-                "*:create"
-              ],
-              "crew": [
-                "*:view",
-                "entity:create"
-              ],
               "public": [
-                "entity:view",
-                "collection:view"
+                "*:view",
+                "*:invoke"
               ]
             }
           },
@@ -1718,10 +1827,10 @@
       "CollectionEntitySummary": {
         "type": "object",
         "properties": {
-          "pi": {
+          "id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Entity persistent identifier"
+            "description": "Entity ID"
           },
           "type": {
             "type": "string",
@@ -1765,7 +1874,7 @@
           }
         },
         "required": [
-          "pi",
+          "id",
           "type",
           "label",
           "created_at",
@@ -1820,6 +1929,101 @@
           "collection_id",
           "entities",
           "pagination"
+        ]
+      },
+      "EntityIndexEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity persistent identifier"
+          },
+          "type": {
+            "type": "string",
+            "description": "Entity type",
+            "example": "person"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "description": "Entity display label",
+            "example": "Captain Ahab"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the entity was created"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the entity was last updated"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "label",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "CollectionEntityLookupResponse": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Collection ID"
+          },
+          "entities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntityIndexEntry"
+            },
+            "description": "Matching entities"
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of entities returned"
+          }
+        },
+        "required": [
+          "collection_id",
+          "entities",
+          "count"
+        ]
+      },
+      "CollectionEntitySearchResponse": {
+        "type": "object",
+        "properties": {
+          "collection_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Collection ID"
+          },
+          "query": {
+            "type": "string",
+            "description": "Original search query"
+          },
+          "entities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntityIndexEntry"
+            },
+            "description": "Matching entities"
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of entities returned"
+          }
+        },
+        "required": [
+          "collection_id",
+          "query",
+          "entities",
+          "count"
         ]
       },
       "EntityCreatedResponse": {
@@ -2045,6 +2249,11 @@
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
             "description": "Parent collection ID (creates collection relationship)",
             "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "sync_index": {
+            "type": "boolean",
+            "default": false,
+            "description": "Wait for collection index update before returning. Use when checking for duplicates immediately after creation. Adds ~1-5ms latency per collection."
           }
         },
         "required": [
@@ -2486,6 +2695,11 @@
               "description": "Relationship to remove"
             },
             "description": "Relationships to remove"
+          },
+          "sync_index": {
+            "type": "boolean",
+            "default": false,
+            "description": "Wait for collection index update before returning. Use when checking index immediately after update."
           }
         },
         "required": [
@@ -2553,6 +2767,11 @@
             "maxLength": 500,
             "description": "Reason for deleting the entity",
             "example": "Duplicate entry"
+          },
+          "sync_index": {
+            "type": "boolean",
+            "default": false,
+            "description": "Wait for collection index removal before returning. Use when checking index immediately after deletion."
           }
         },
         "required": [
@@ -2825,7 +3044,7 @@
       "TreeNode": {
         "type": "object",
         "properties": {
-          "pi": {
+          "id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
             "description": "Entity ID (ULID format)",
@@ -2852,7 +3071,7 @@
           }
         },
         "required": [
-          "pi",
+          "id",
           "label",
           "type",
           "depth",
@@ -3630,6 +3849,220 @@
           "expect_tip"
         ]
       },
+      "QueuedUpdateInfo": {
+        "type": "object",
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "queue_id": {
+            "type": "integer",
+            "description": "Queue ID for tracking (unique within entity)",
+            "example": 1
+          }
+        },
+        "required": [
+          "entity_id",
+          "queue_id"
+        ]
+      },
+      "FailedUpdateInfo": {
+        "type": "object",
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID (ULID format)",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message explaining why queueing failed",
+            "example": "Entity not found"
+          }
+        },
+        "required": [
+          "entity_id",
+          "error"
+        ]
+      },
+      "BatchSummary": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "Total updates submitted",
+            "example": 10
+          },
+          "queued": {
+            "type": "integer",
+            "description": "Updates successfully queued",
+            "example": 9
+          },
+          "failed": {
+            "type": "integer",
+            "description": "Updates that failed to queue",
+            "example": 1
+          }
+        },
+        "required": [
+          "total",
+          "queued",
+          "failed"
+        ]
+      },
+      "AdditiveUpdatesResponse": {
+        "type": "object",
+        "properties": {
+          "queued": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueuedUpdateInfo"
+            },
+            "description": "Successfully queued updates"
+          },
+          "failed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FailedUpdateInfo"
+            },
+            "description": "Updates that failed to queue (e.g., infrastructure errors)"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/BatchSummary"
+          }
+        },
+        "required": [
+          "queued",
+          "failed",
+          "summary"
+        ]
+      },
+      "AdditiveUpdateItem": {
+        "type": "object",
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity ID to update",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Properties to merge (deep merge semantics). Later values overwrite earlier for same keys.",
+            "example": {
+              "extracted": {
+                "keywords": [
+                  "whaling",
+                  "voyage"
+                ]
+              }
+            }
+          },
+          "relationships_add": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "predicate": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Relationship predicate (e.g., \"admin\", \"contains\", \"collection\")",
+                  "example": "admin"
+                },
+                "peer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Target entity ID",
+                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+                },
+                "peer_type": {
+                  "type": "string",
+                  "description": "Target entity type hint",
+                  "example": "user"
+                },
+                "peer_label": {
+                  "type": "string",
+                  "description": "Target entity label hint",
+                  "example": "Captain Ahab"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "nullable": true
+                  },
+                  "description": "Properties to add/update on this relationship (deep merged if relationship exists)",
+                  "example": {
+                    "expires_at": "2025-12-31T00:00:00Z"
+                  }
+                },
+                "properties_remove": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "nullable": true
+                      }
+                    }
+                  ],
+                  "description": "Properties to remove from this relationship (string array or nested object)"
+                }
+              },
+              "required": [
+                "predicate",
+                "peer"
+              ],
+              "description": "Relationship to add or update (upsert semantics)"
+            },
+            "description": "Relationships to add (upsert by predicate+peer). Properties are merged if relationship exists.",
+            "example": [
+              {
+                "predicate": "mentions",
+                "peer": "01KDETYWYWM0MJVKM8DK3AEXPY",
+                "peer_type": "person"
+              }
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Optional note for this update (preserved in version history)",
+            "example": "Extracted by document indexer"
+          }
+        },
+        "required": [
+          "entity_id"
+        ]
+      },
+      "AdditiveUpdatesRequest": {
+        "type": "object",
+        "properties": {
+          "updates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdditiveUpdateItem"
+            },
+            "minItems": 1,
+            "maxItems": 1000,
+            "description": "Updates to queue (1-1000 items). Updates to the same entity from the same actor are merged."
+          }
+        },
+        "required": [
+          "updates"
+        ]
+      },
       "VersionInfo": {
         "type": "object",
         "properties": {
@@ -4132,1040 +4565,6 @@
           "wildcards",
           "restrictions",
           "default_roles"
-        ]
-      },
-      "AgentResponse": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/EntityResponse"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "agent"
-                ]
-              },
-              "warnings": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "sub_agent_id": {
-                      "type": "string",
-                      "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-                      "description": "The sub-agent ID that has an issue"
-                    },
-                    "reason": {
-                      "type": "string",
-                      "enum": [
-                        "not_found",
-                        "not_an_agent",
-                        "disabled"
-                      ],
-                      "description": "Why this is a warning: not_found (entity does not exist), not_an_agent (entity exists but is not an agent), or disabled (agent is disabled)"
-                    },
-                    "message": {
-                      "type": "string",
-                      "description": "Human-readable explanation"
-                    }
-                  },
-                  "required": [
-                    "sub_agent_id",
-                    "reason",
-                    "message"
-                  ],
-                  "description": "Warning about a sub-agent reference that could not be validated. The agent is still created/updated, but this sub-agent may cause issues at invocation time.",
-                  "title": "AgentSubAgentWarning"
-                },
-                "description": "Warnings about sub-agent references that could not be validated. Present only when uses_agents contains references to non-existent, non-agent, or disabled entities."
-              }
-            }
-          }
-        ]
-      },
-      "CreateAgentRequest": {
-        "type": "object",
-        "properties": {
-          "note": {
-            "type": "string",
-            "description": "Optional note describing this change",
-            "example": "Added Chapter 42: The Whiteness of the Whale"
-          },
-          "id": {
-            "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Custom entity ID (generated if not provided)"
-          },
-          "label": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200,
-            "description": "Agent display name",
-            "example": "OCR Processor"
-          },
-          "endpoint": {
-            "type": "string",
-            "format": "uri",
-            "description": "Agent service base URL",
-            "example": "https://ocr.example.com/v1"
-          },
-          "actions_required": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "pattern": "^[a-z_]+:[a-z_]+$"
-            },
-            "minItems": 1,
-            "description": "Actions this agent requires on target collections",
-            "example": [
-              "entity:view",
-              "entity:update",
-              "entity:create"
-            ]
-          },
-          "collection": {
-            "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Collection to place agent in"
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 2000,
-            "description": "Agent description",
-            "example": "Extracts text from scanned documents using OCR"
-          },
-          "uses_agents": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "pi": {
-                  "type": "string",
-                  "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-                  "description": "Sub-agent entity ID. The sub-agent's actions_required will be fetched dynamically at invocation time."
-                },
-                "label": {
-                  "type": "string",
-                  "maxLength": 200,
-                  "description": "Optional display label override (defaults to sub-agent's own label)"
-                },
-                "description": {
-                  "type": "string",
-                  "maxLength": 2000,
-                  "description": "Optional description of the sub-agent's role in this orchestrator's workflow"
-                }
-              },
-              "required": [
-                "pi"
-              ],
-              "description": "Reference to a sub-agent. Permissions are NOT declared here - they are fetched dynamically from the sub-agent's own manifest at invocation time. This means sub-agent permission changes propagate automatically without updating the orchestrator.",
-              "title": "SubAgentRef"
-            },
-            "description": "Sub-agents this orchestrator delegates work to. Only provide the sub-agent ID (pi) - their permissions are fetched dynamically at invocation time. Warnings are returned if any referenced sub-agents do not exist or are disabled."
-          },
-          "input_schema": {
-            "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
-            "description": "JSON Schema for input validation"
-          },
-          "output_schema": {
-            "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
-            "description": "JSON Schema for output description"
-          },
-          "properties": {
-            "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
-            "description": "Additional properties to store"
-          },
-          "relationships": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "predicate": {
-                  "type": "string",
-                  "minLength": 1
-                },
-                "peer": {
-                  "type": "string",
-                  "minLength": 1
-                },
-                "peer_type": {
-                  "type": "string"
-                },
-                "peer_label": {
-                  "type": "string"
-                },
-                "properties": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "nullable": true
-                  }
-                }
-              },
-              "required": [
-                "predicate",
-                "peer"
-              ],
-              "description": "Entity relationship",
-              "example": {
-                "predicate": "crew",
-                "peer": "01KDETYWYWM0MJVKM8DK3AEXPY",
-                "peer_type": "collection"
-              }
-            },
-            "description": "Relationships to create"
-          }
-        },
-        "required": [
-          "label",
-          "endpoint",
-          "actions_required",
-          "collection"
-        ]
-      },
-      "AgentUpdateResponse": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/AgentResponse"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "prev_cid": {
-                "type": "string",
-                "minLength": 1,
-                "description": "Previous version CID",
-                "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
-              }
-            },
-            "required": [
-              "prev_cid"
-            ]
-          }
-        ]
-      },
-      "UpdateAgentRequest": {
-        "type": "object",
-        "properties": {
-          "expect_tip": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Current tip CID for CAS validation. Request fails with 409 if this does not match.",
-            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
-          },
-          "note": {
-            "type": "string",
-            "description": "Optional note describing this change",
-            "example": "Added Chapter 42: The Whiteness of the Whale"
-          },
-          "properties": {
-            "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
-            "description": "Properties to add or update (deep merged)"
-          },
-          "properties_remove": {
-            "anyOf": [
-              {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "Top-level property keys to remove",
-                "example": [
-                  "deprecated_field",
-                  "old_field"
-                ]
-              },
-              {
-                "type": "object",
-                "additionalProperties": {
-                  "nullable": true
-                },
-                "description": "Nested removal structure. Each key navigates into a nested object; leaf arrays specify keys to delete at that level.",
-                "example": {
-                  "settings": {
-                    "notifications": [
-                      "email",
-                      "slack"
-                    ]
-                  }
-                }
-              }
-            ],
-            "description": "Properties to remove. Use string[] for top-level keys (e.g., [\"old_field\"]), or nested objects for deep removal (e.g., { config: { options: [\"debug\"] } }). Dot notation like \"config.options.debug\" is NOT supported."
-          },
-          "relationships_add": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "predicate": {
-                  "type": "string",
-                  "minLength": 1,
-                  "description": "Relationship predicate (e.g., \"admin\", \"contains\", \"collection\")",
-                  "example": "admin"
-                },
-                "peer": {
-                  "type": "string",
-                  "minLength": 1,
-                  "description": "Target entity ID",
-                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
-                },
-                "peer_type": {
-                  "type": "string",
-                  "description": "Target entity type hint",
-                  "example": "user"
-                },
-                "peer_label": {
-                  "type": "string",
-                  "description": "Target entity label hint",
-                  "example": "Captain Ahab"
-                },
-                "properties": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "nullable": true
-                  },
-                  "description": "Properties to add/update on this relationship (deep merged if relationship exists)",
-                  "example": {
-                    "expires_at": "2025-12-31T00:00:00Z"
-                  }
-                },
-                "properties_remove": {
-                  "anyOf": [
-                    {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
-                    {
-                      "type": "object",
-                      "additionalProperties": {
-                        "nullable": true
-                      }
-                    }
-                  ],
-                  "description": "Properties to remove from this relationship (string array or nested object)"
-                }
-              },
-              "required": [
-                "predicate",
-                "peer"
-              ],
-              "description": "Relationship to add or update (upsert semantics)"
-            },
-            "description": "Relationships to add or update (upsert semantics)"
-          },
-          "relationships_remove": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "predicate": {
-                  "type": "string",
-                  "minLength": 1,
-                  "description": "Relationship predicate",
-                  "example": "viewer"
-                },
-                "peer": {
-                  "type": "string",
-                  "description": "Target entity ID. If omitted, removes ALL relationships with this predicate.",
-                  "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
-                }
-              },
-              "required": [
-                "predicate"
-              ],
-              "description": "Relationship to remove"
-            },
-            "description": "Relationships to remove"
-          },
-          "label": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200,
-            "description": "Updated agent display name"
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 2000,
-            "description": "Updated agent description"
-          },
-          "endpoint": {
-            "type": "string",
-            "format": "uri",
-            "description": "Updated agent service URL"
-          },
-          "actions_required": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "pattern": "^[a-z_]+:[a-z_]+$"
-            },
-            "minItems": 1,
-            "description": "Actions this agent requires on target collections",
-            "example": [
-              "entity:view",
-              "entity:update",
-              "entity:create"
-            ]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "development",
-              "active",
-              "disabled"
-            ],
-            "description": "Agent status",
-            "example": "development"
-          },
-          "uses_agents": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "pi": {
-                  "type": "string",
-                  "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-                  "description": "Sub-agent entity ID. The sub-agent's actions_required will be fetched dynamically at invocation time."
-                },
-                "label": {
-                  "type": "string",
-                  "maxLength": 200,
-                  "description": "Optional display label override (defaults to sub-agent's own label)"
-                },
-                "description": {
-                  "type": "string",
-                  "maxLength": 2000,
-                  "description": "Optional description of the sub-agent's role in this orchestrator's workflow"
-                }
-              },
-              "required": [
-                "pi"
-              ],
-              "description": "Reference to a sub-agent. Permissions are NOT declared here - they are fetched dynamically from the sub-agent's own manifest at invocation time. This means sub-agent permission changes propagate automatically without updating the orchestrator.",
-              "title": "SubAgentRef"
-            },
-            "description": "Updated sub-agent references. Only provide sub-agent IDs (pi) - their permissions are fetched dynamically at invocation time."
-          },
-          "input_schema": {
-            "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
-            "description": "Updated input schema"
-          },
-          "output_schema": {
-            "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
-            "description": "Updated output schema"
-          }
-        },
-        "required": [
-          "expect_tip"
-        ]
-      },
-      "InvokeGrant": {
-        "type": "object",
-        "properties": {
-          "agent": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
-              },
-              "label": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "id",
-              "label"
-            ]
-          },
-          "actions": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "role": {
-            "type": "string"
-          },
-          "already_granted": {
-            "type": "boolean"
-          },
-          "expired": {
-            "type": "boolean"
-          },
-          "missing_actions": {
-            "type": "boolean"
-          },
-          "current_expires_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "agent",
-          "actions",
-          "role",
-          "already_granted"
-        ]
-      },
-      "InvokePreviewResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending_confirmation"
-            ]
-          },
-          "message": {
-            "type": "string"
-          },
-          "grants": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/InvokeGrant"
-            }
-          },
-          "target": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
-              },
-              "label": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "id",
-              "label"
-            ]
-          },
-          "expires_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "can_proceed": {
-            "type": "boolean",
-            "description": "True if all grants exist or user can create them"
-          },
-          "grants_needed": {
-            "type": "boolean",
-            "description": "True if some agents need permission grants"
-          },
-          "warnings": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "sub_agent_id": {
-                  "type": "string",
-                  "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-                  "description": "The sub-agent ID that could not be resolved"
-                },
-                "parent_agent_id": {
-                  "type": "string",
-                  "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-                  "description": "The orchestrator or parent agent that declared this sub-agent reference"
-                },
-                "reason": {
-                  "type": "string",
-                  "enum": [
-                    "not_found",
-                    "disabled"
-                  ],
-                  "description": "Why the sub-agent was skipped: not_found (entity does not exist) or disabled (agent status is disabled)"
-                },
-                "message": {
-                  "type": "string",
-                  "description": "Human-readable explanation of the warning"
-                }
-              },
-              "required": [
-                "sub_agent_id",
-                "parent_agent_id",
-                "reason",
-                "message"
-              ],
-              "description": "Warning generated when a sub-agent reference cannot be resolved during dynamic permission lookup. The agent creation/invocation proceeds, but the sub-agent is skipped.",
-              "title": "SubAgentWarning"
-            },
-            "description": "Warnings about sub-agents that were skipped"
-          }
-        },
-        "required": [
-          "status",
-          "message",
-          "grants",
-          "target",
-          "expires_at",
-          "can_proceed",
-          "grants_needed"
-        ]
-      },
-      "InvokeGrantResult": {
-        "type": "object",
-        "properties": {
-          "agent_id": {
-            "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
-          },
-          "role": {
-            "type": "string"
-          },
-          "expires_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "was_update": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "agent_id",
-          "role",
-          "expires_at",
-          "was_update"
-        ]
-      },
-      "InvokeStartedResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "started"
-            ]
-          },
-          "job_id": {
-            "type": "string",
-            "description": "Unique job identifier",
-            "example": "job_01JEXAMPLEID12345678901"
-          },
-          "job_collection": {
-            "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "The job collection where agent writes logs"
-          },
-          "grants": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/InvokeGrantResult"
-            }
-          },
-          "target_cid": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Content Identifier (CID) - content-addressed hash",
-            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
-          },
-          "expires_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "status",
-          "job_id",
-          "job_collection",
-          "grants",
-          "target_cid",
-          "expires_at"
-        ]
-      },
-      "InvokeRejectedResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "rejected"
-            ]
-          },
-          "error": {
-            "type": "string",
-            "description": "Error message explaining why the agent rejected the job"
-          },
-          "retry_after": {
-            "type": "integer",
-            "description": "Suggested seconds to wait before retrying"
-          },
-          "grants": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/InvokeGrantResult"
-            }
-          },
-          "target_cid": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Content Identifier (CID) - content-addressed hash",
-            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
-          },
-          "expires_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "status",
-          "error",
-          "grants",
-          "target_cid",
-          "expires_at"
-        ]
-      },
-      "InvokeConfirmedResponse": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/InvokeStartedResponse"
-          },
-          {
-            "$ref": "#/components/schemas/InvokeRejectedResponse"
-          }
-        ]
-      },
-      "InvokeAgentRequest": {
-        "type": "object",
-        "properties": {
-          "target": {
-            "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Collection ID to grant the agent access to. All agent permissions are collection-scoped."
-          },
-          "job_collection": {
-            "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Job collection where agent should write logs. If not provided, creates new root collection."
-          },
-          "input": {
-            "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
-            "description": "Input data for the agent (validated against agent input_schema)"
-          },
-          "expires_in": {
-            "type": "integer",
-            "minimum": 60,
-            "maximum": 86400,
-            "default": 3600,
-            "description": "Permission duration in seconds (60-86400, default: 3600)",
-            "example": 3600
-          },
-          "confirm": {
-            "type": "boolean",
-            "default": false,
-            "description": "false = preview grants, true = execute agent",
-            "example": false
-          }
-        },
-        "required": [
-          "target"
-        ]
-      },
-      "CreateAgentApiKeyResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "key": {
-            "type": "string",
-            "description": "Full API key - store securely, shown only once",
-            "example": "ak_abc123..."
-          },
-          "prefix": {
-            "type": "string",
-            "description": "Key prefix for identification",
-            "example": "ak_abc1"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "expires_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "label": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "key",
-          "prefix",
-          "created_at",
-          "expires_at",
-          "label"
-        ]
-      },
-      "CreateAgentApiKeyRequest": {
-        "type": "object",
-        "properties": {
-          "label": {
-            "type": "string",
-            "maxLength": 100,
-            "description": "Human-readable label for the key",
-            "example": "Production key"
-          },
-          "expires_in_days": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 365,
-            "default": 365,
-            "description": "Key expiration in days (1-365, default: 365)",
-            "example": 90
-          }
-        }
-      },
-      "AgentApiKeyInfo": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "prefix": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "expires_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "last_used_at": {
-            "type": "string",
-            "nullable": true,
-            "format": "date-time"
-          },
-          "label": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "prefix",
-          "created_at",
-          "expires_at",
-          "last_used_at",
-          "label"
-        ]
-      },
-      "ListAgentApiKeysResponse": {
-        "type": "object",
-        "properties": {
-          "keys": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AgentApiKeyInfo"
-            }
-          }
-        },
-        "required": [
-          "keys"
-        ]
-      },
-      "VerifyAgentTokenResponse": {
-        "type": "object",
-        "properties": {
-          "verification_token": {
-            "type": "string",
-            "description": "Token to deploy at your endpoint",
-            "example": "vt_abc123def456..."
-          },
-          "agent_id": {
-            "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Agent ID to include in verification response"
-          },
-          "endpoint": {
-            "type": "string",
-            "format": "uri",
-            "description": "Your agent endpoint URL"
-          },
-          "instructions": {
-            "type": "string",
-            "description": "How to complete verification"
-          },
-          "expires_at": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Token expiration time"
-          }
-        },
-        "required": [
-          "verification_token",
-          "agent_id",
-          "endpoint",
-          "instructions",
-          "expires_at"
-        ]
-      },
-      "VerifyAgentSuccessResponse": {
-        "type": "object",
-        "properties": {
-          "verified": {
-            "type": "boolean",
-            "enum": [
-              true
-            ]
-          },
-          "verified_at": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When the endpoint was verified"
-          }
-        },
-        "required": [
-          "verified",
-          "verified_at"
-        ]
-      },
-      "VerifyAgentFailureResponse": {
-        "type": "object",
-        "properties": {
-          "verified": {
-            "type": "boolean",
-            "enum": [
-              false
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "no_token",
-              "token_expired",
-              "fetch_failed",
-              "invalid_response",
-              "token_mismatch",
-              "agent_id_mismatch"
-            ],
-            "description": "Verification error code"
-          },
-          "message": {
-            "type": "string",
-            "description": "Human-readable error description"
-          }
-        },
-        "required": [
-          "verified",
-          "error",
-          "message"
-        ]
-      },
-      "VerifyAgentRequest": {
-        "type": "object",
-        "properties": {
-          "confirm": {
-            "type": "boolean",
-            "description": "Set to true to perform verification. Omit or false to generate/get verification token.",
-            "example": true
-          }
-        }
-      },
-      "JobProgress": {
-        "type": "object",
-        "properties": {
-          "total": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Total items to process",
-            "example": 10
-          },
-          "pending": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Items not yet started",
-            "example": 3
-          },
-          "dispatched": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Items dispatched but not complete",
-            "example": 2
-          },
-          "done": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Successfully completed items",
-            "example": 4
-          },
-          "error": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Failed items",
-            "example": 1
-          }
-        },
-        "required": [
-          "total",
-          "pending",
-          "done",
-          "error"
-        ]
-      },
-      "JobError": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string",
-            "description": "Error code",
-            "example": "TIMEOUT"
-          },
-          "message": {
-            "type": "string",
-            "description": "Human-readable error message",
-            "example": "Request timed out after 30 seconds"
-          }
-        },
-        "required": [
-          "code",
-          "message"
-        ]
-      },
-      "AgentUnreachableError": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "description": "Error message",
-            "example": "Failed to reach agent: Connection refused"
-          }
-        },
-        "required": [
-          "error"
         ]
       },
       "KladosResponse": {
@@ -7459,7 +6858,7 @@
             "description": "Auto-increment event ID (use as cursor)",
             "example": 12346
           },
-          "pi": {
+          "entity_id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
             "description": "Entity ID that changed",
@@ -7479,7 +6878,7 @@
         },
         "required": [
           "id",
-          "pi",
+          "entity_id",
           "cid",
           "ts"
         ]
@@ -7514,7 +6913,7 @@
       "PathEdge": {
         "type": "object",
         "properties": {
-          "subject_pi": {
+          "subject_id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
             "description": "Source entity PI",
@@ -7552,7 +6951,7 @@
             "type": "string",
             "description": "Relationship predicate"
           },
-          "object_pi": {
+          "object_id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
             "description": "Target entity PI",
@@ -7588,36 +6987,36 @@
           }
         },
         "required": [
-          "subject_pi",
+          "subject_id",
           "subject_label",
           "subject_type",
           "predicate",
-          "object_pi",
+          "object_id",
           "object_label",
           "object_type"
         ],
         "example": {
-          "subject_pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+          "subject_id": "01KE4ZY69F9R40E88PK9S0TQRQ",
           "subject_label": "Project Folder",
           "subject_type": "folder",
           "subject_preview": {
             "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
             "type": "folder",
             "label": "Project Folder",
-            "collection_pi": "01JCOLLECTION123456789ABCD",
+            "collection_id": "01JCOLLECTION123456789ABCD",
             "description_preview": "Main project folder containing research documents...",
             "created_at": "2025-01-10T08:00:00.000Z",
             "updated_at": "2025-01-18T16:45:00.000Z"
           },
           "predicate": "contains",
-          "object_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+          "object_id": "01KE506KZGD8M2P1XK3VNQT4YR",
           "object_label": "Research Paper.pdf",
           "object_type": "file",
           "object_preview": {
             "id": "01KE506KZGD8M2P1XK3VNQT4YR",
             "type": "file",
             "label": "Research Paper.pdf",
-            "collection_pi": "01JCOLLECTION123456789ABCD",
+            "collection_id": "01JCOLLECTION123456789ABCD",
             "description_preview": "Analysis of entity management patterns and best practices...",
             "created_at": "2025-01-15T10:00:00.000Z",
             "updated_at": "2025-01-20T14:30:00.000Z"
@@ -7627,13 +7026,13 @@
       "PathResult": {
         "type": "object",
         "properties": {
-          "source_pi": {
+          "source_id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
             "description": "Entity ID (ULID format)",
             "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
           },
-          "target_pi": {
+          "target_id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
             "description": "Entity ID (ULID format)",
@@ -7651,8 +7050,8 @@
           }
         },
         "required": [
-          "source_pi",
-          "target_pi",
+          "source_id",
+          "target_id",
           "length",
           "edges"
         ]
@@ -7679,7 +7078,7 @@
       "PathsBetweenRequest": {
         "type": "object",
         "properties": {
-          "source_pis": {
+          "source_ids": {
             "type": "array",
             "items": {
               "type": "string",
@@ -7693,7 +7092,7 @@
               "01KE4ZY69F9R40E88PK9S0TQRQ"
             ]
           },
-          "target_pis": {
+          "target_ids": {
             "type": "array",
             "items": {
               "type": "string",
@@ -7736,20 +7135,20 @@
           }
         },
         "required": [
-          "source_pis",
-          "target_pis"
+          "source_ids",
+          "target_ids"
         ]
       },
       "ReachableResult": {
         "type": "object",
         "properties": {
-          "source_pi": {
+          "source_id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
             "description": "Entity ID (ULID format)",
             "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
           },
-          "target_pi": {
+          "target_id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
             "description": "Entity ID (ULID format)",
@@ -7793,16 +7192,16 @@
           }
         },
         "required": [
-          "source_pi",
-          "target_pi",
+          "source_id",
+          "target_id",
           "target_label",
           "target_type",
           "length",
           "edges"
         ],
         "example": {
-          "source_pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
-          "target_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+          "source_id": "01KE4ZY69F9R40E88PK9S0TQRQ",
+          "target_id": "01KE506KZGD8M2P1XK3VNQT4YR",
           "target_label": "Research Paper.pdf",
           "target_type": "file",
           "length": 1,
@@ -7811,7 +7210,7 @@
             "id": "01KE506KZGD8M2P1XK3VNQT4YR",
             "type": "file",
             "label": "Research Paper.pdf",
-            "collection_pi": "01JCOLLECTION123456789ABCD",
+            "collection_id": "01JCOLLECTION123456789ABCD",
             "description_preview": "Analysis of entity management patterns and best practices...",
             "created_at": "2025-01-15T10:00:00.000Z",
             "updated_at": "2025-01-20T14:30:00.000Z"
@@ -7840,7 +7239,7 @@
       "PathsReachableRequest": {
         "type": "object",
         "properties": {
-          "source_pis": {
+          "source_ids": {
             "type": "array",
             "items": {
               "type": "string",
@@ -7889,7 +7288,7 @@
           }
         },
         "required": [
-          "source_pis",
+          "source_ids",
           "target_type"
         ]
       },
@@ -7906,7 +7305,7 @@
           "predicate": {
             "type": "string"
           },
-          "peer_pi": {
+          "peer_id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
             "description": "Entity ID (ULID format)",
@@ -7948,7 +7347,7 @@
         "required": [
           "direction",
           "predicate",
-          "peer_pi",
+          "peer_id",
           "peer_type",
           "peer_label",
           "properties"
@@ -7956,7 +7355,7 @@
         "example": {
           "direction": "outgoing",
           "predicate": "contains",
-          "peer_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+          "peer_id": "01KE506KZGD8M2P1XK3VNQT4YR",
           "peer_type": "file",
           "peer_label": "Research Paper.pdf",
           "properties": {},
@@ -7964,7 +7363,7 @@
             "id": "01KE506KZGD8M2P1XK3VNQT4YR",
             "type": "file",
             "label": "Research Paper.pdf",
-            "collection_pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+            "collection_id": "01KE4ZY69F9R40E88PK9S0TQRQ",
             "description_preview": "Analysis of entity management patterns and best practices...",
             "created_at": "2025-01-15T10:00:00.000Z",
             "updated_at": "2025-01-20T14:30:00.000Z"
@@ -7974,7 +7373,7 @@
       "GraphEntityResponse": {
         "type": "object",
         "properties": {
-          "pi": {
+          "id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
             "description": "Entity ID (ULID format)",
@@ -7986,7 +7385,7 @@
           "label": {
             "type": "string"
           },
-          "collection_pi": {
+          "collection_id": {
             "type": "string",
             "nullable": true
           },
@@ -8006,26 +7405,26 @@
           }
         },
         "required": [
-          "pi",
+          "id",
           "type",
           "label",
-          "collection_pi",
+          "collection_id",
           "created_at",
           "updated_at",
           "relationships"
         ],
         "example": {
-          "pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+          "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
           "type": "folder",
           "label": "Project Folder",
-          "collection_pi": "01JCOLLECTION123456789ABCD",
+          "collection_id": "01JCOLLECTION123456789ABCD",
           "created_at": "2025-01-10T08:00:00.000Z",
           "updated_at": "2025-01-18T16:45:00.000Z",
           "relationships": [
             {
               "direction": "outgoing",
               "predicate": "contains",
-              "peer_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+              "peer_id": "01KE506KZGD8M2P1XK3VNQT4YR",
               "peer_type": "file",
               "peer_label": "Research Paper.pdf",
               "properties": {},
@@ -8033,7 +7432,7 @@
                 "id": "01KE506KZGD8M2P1XK3VNQT4YR",
                 "type": "file",
                 "label": "Research Paper.pdf",
-                "collection_pi": "01JCOLLECTION123456789ABCD",
+                "collection_id": "01JCOLLECTION123456789ABCD",
                 "description_preview": "Analysis of entity management patterns and best practices...",
                 "created_at": "2025-01-15T10:00:00.000Z",
                 "updated_at": "2025-01-20T14:30:00.000Z"
@@ -8192,7 +7591,7 @@
                 "entity": {
                   "type": "object",
                   "properties": {
-                    "pi": {
+                    "id": {
                       "type": "string",
                       "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
                       "description": "Entity ID (ULID format)",
@@ -8206,7 +7605,7 @@
                       "type": "string",
                       "example": "Albert Einstein"
                     },
-                    "collection_pi": {
+                    "collection_id": {
                       "type": "string",
                       "nullable": true,
                       "example": "01JCOLL_RESEARCH"
@@ -8233,22 +7632,22 @@
                     }
                   },
                   "required": [
-                    "pi",
+                    "id",
                     "type",
                     "label",
-                    "collection_pi"
+                    "collection_id"
                   ],
                   "description": "Query result entity with optional expansion data",
                   "example": {
-                    "pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+                    "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
                     "type": "person",
                     "label": "Albert Einstein",
-                    "collection_pi": "01JCOLL_RESEARCH",
+                    "collection_id": "01JCOLL_RESEARCH",
                     "preview_data": {
                       "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
                       "type": "person",
                       "label": "Albert Einstein",
-                      "collection_pi": "01JCOLL_RESEARCH",
+                      "collection_id": "01JCOLL_RESEARCH",
                       "description_preview": "German-born theoretical physicist who developed the theory of relativity...",
                       "created_at": "2025-01-15T10:00:00.000Z",
                       "updated_at": "2025-01-20T14:30:00.000Z"
@@ -8276,15 +7675,15 @@
               "description": "A single query result with entity, path, and score",
               "example": {
                 "entity": {
-                  "pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+                  "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
                   "type": "file",
                   "label": "Theory of Relativity.pdf",
-                  "collection_pi": "01JCOLL_RESEARCH",
+                  "collection_id": "01JCOLL_RESEARCH",
                   "preview_data": {
                     "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
                     "type": "file",
                     "label": "Theory of Relativity.pdf",
-                    "collection_pi": "01JCOLL_RESEARCH",
+                    "collection_id": "01JCOLL_RESEARCH",
                     "description_preview": "Seminal paper on special and general relativity...",
                     "created_at": "2025-01-10T08:00:00.000Z",
                     "updated_at": "2025-01-10T08:00:00.000Z"
@@ -8359,6 +7758,18 @@
             ],
             "description": "Control entity expansion in results and path steps.\n- **omitted/preview** (default): Attach lightweight preview data (label, timestamps, truncated description/text)\n- **full**: Attach complete entity manifest (all properties, relationships, version info)\n- **none**: No expansion - return only Pinecone metadata (fastest, smallest payload)",
             "example": "preview"
+          },
+          "filter": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Filter by indexed metadata properties during semantic search.\n\nOnly underscore-prefixed properties (`_year`, `_class`, etc.) are indexed as filterable metadata.\n\n**Operators:** `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$exists`, `$and`, `$or`\n\n**Example - Find letters from the 1800s:**\n```json\n{ \"_year\": { \"$gte\": 1800, \"$lte\": 1899 } }\n```",
+            "example": {
+              "_year": {
+                "$gt": 1800
+              }
+            }
           }
         },
         "required": [
@@ -8763,7 +8174,7 @@
       "AttestationResponse": {
         "type": "object",
         "properties": {
-          "pi": {
+          "id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
             "description": "Entity ID (ULID format)",
@@ -8800,7 +8211,7 @@
           }
         },
         "required": [
-          "pi",
+          "id",
           "ver",
           "cid",
           "arweave_tx",
@@ -8811,7 +8222,7 @@
       "AttestationPendingResponse": {
         "type": "object",
         "properties": {
-          "pi": {
+          "id": {
             "type": "string",
             "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
             "description": "Entity ID (ULID format)",
@@ -8844,7 +8255,7 @@
           }
         },
         "required": [
-          "pi",
+          "id",
           "ver",
           "cid",
           "attestation_status",
@@ -8886,7 +8297,7 @@
           "attestation": {
             "type": "object",
             "properties": {
-              "pi": {
+              "id": {
                 "type": "string",
                 "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
                 "description": "Entity ID (ULID format)",
@@ -8934,7 +8345,7 @@
               }
             },
             "required": [
-              "pi",
+              "id",
               "ver",
               "cid",
               "op",
@@ -9008,6 +8419,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "responses": {
@@ -9053,6 +8467,64 @@
                 },
                 "example": {
                   "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Internal server error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/whoami": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Get current identity",
+        "description": "Returns identity information for the authenticated caller.\n\nAccepts any valid credential type:\n- **JWT**: Returns user PI, email, name, and Supabase user ID\n- **User API Key (uk_)**: Returns user PI and key metadata\n- **Agent API Key (ak_)**: Returns agent PI, owner PI, and key metadata\n\nUse this endpoint to verify credentials are working or to retrieve the caller's entity PI.\n\n---\n**Permission:** `auth:whoami`  \n**Auth:** required",
+        "x-arke-action": "auth:whoami",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Identity information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhoamiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
                 }
               }
             }
@@ -9269,6 +8741,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "responses": {
@@ -9315,6 +8790,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "requestBody": {
@@ -9365,6 +8843,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "responses": {
@@ -9408,6 +8889,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -9581,6 +9065,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "requestBody": {
@@ -9652,13 +9139,16 @@
           "Collections"
         ],
         "summary": "Create a new collection",
-        "description": "Creates a collection with the authenticated user as owner.\n\n---\n**Permission:** `collection:create`  \n**Auth:** required",
+        "description": "Creates a collection with the authenticated user as owner.\n\n**Default Roles:**\n\nBy default (`use_roles_default: true`), collections include these standard roles:\n- `owner`: Full control including collection management\n- `editor`: Can modify entities but not collection settings\n- `viewer`: Read-only access\n- `public`: Public read access (`*:view`)\n\n**Customizing Roles:**\n\nPass custom `roles` to override specific defaults while keeping others. For example, to make entities publicly invokable (for agents):\n```json\n{ \"roles\": { \"public\": [\"*:view\", \"*:invoke\"] } }\n```\n\nSet `use_roles_default: false` to define all roles from scratch.\n\n**Platform Requirement:** The `public` role with `*:view` is always automatically ensured, guaranteeing all collections are publicly readable.\n\n---\n**Permission:** `collection:create`  \n**Auth:** required",
         "x-arke-action": "collection:create",
         "x-arke-auth": "required",
         "x-arke-tier": "standard",
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "requestBody": {
@@ -9809,6 +9299,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -9955,6 +9448,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -10070,6 +9566,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -10195,6 +9694,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -10365,6 +9867,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -10480,6 +9985,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -10609,6 +10117,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -10734,7 +10245,7 @@
           "Collections"
         ],
         "summary": "List entities in a collection",
-        "description": "Returns entities belonging to this collection from the graph database.\n\nSupports pagination and optional type filtering. Results are ordered by creation date (newest first).\n\n**Expansion Modes:**\n\nBy default, returns lightweight summaries from GraphDB (pi, type, label, timestamps).\n\nUse the `expand` parameter to hydrate entity data from storage:\n\n- **`?expand=preview`**: Adds `preview` field with fresh lightweight data (label, truncated description/text, timestamps). ~5-10KB per entity.\n\n- **`?expand=full`**: Adds `entity` field with complete manifest (all properties, relationships, version history). ~20-50KB per entity.\n\n**Performance Note:** Expansion requires fetching each entity from storage. Limited to 100 entities per request. Use smaller `limit` values when expanding.\n\n---\n**Permission:** `collection:view`  \n**Auth:** optional",
+        "description": "Returns entities belonging to this collection.\n\nSupports pagination and optional type filtering. Results are ordered by creation date (newest first).\n\n**Expansion Modes:**\n\nBy default, returns lightweight summaries (pi, type, label, timestamps).\n\nUse the `expand` parameter to hydrate entity data from storage:\n\n- **`?expand=preview`**: Adds `preview` field with fresh lightweight data (label, truncated description/text, timestamps). ~5-10KB per entity.\n\n- **`?expand=full`**: Adds `entity` field with complete manifest (all properties, relationships, version history). ~20-50KB per entity.\n\n**Performance Note:** Expansion requires fetching each entity from storage. Limited to 100 entities per request. Use smaller `limit` values when expanding.\n\n---\n**Permission:** `collection:view`  \n**Auth:** optional",
         "x-arke-action": "collection:view",
         "x-arke-auth": "optional",
         "x-arke-tier": "external",
@@ -10840,7 +10351,208 @@
             }
           },
           "503": {
-            "description": "GraphDB service unavailable"
+            "description": "Collection index service unavailable"
+          }
+        }
+      }
+    },
+    "/collections/{id}/entities/lookup": {
+      "get": {
+        "tags": [
+          "Collections"
+        ],
+        "summary": "Lookup entities by label",
+        "description": "Fast (~5ms) lookup of entities by exact label and/or type within this collection.\n\nUses a per-collection SQLite index for instant keyword queries. Complements semantic search for when you know the exact label.\n\n**Query Parameters:**\n- `label`: Exact label match (case-insensitive)\n- `type`: Filter by entity type\n- `limit`: Maximum results (default: 100, max: 1000)\n\nAt least one of `label` or `type` should be provided for meaningful results.\n\n---\n**Permission:** `collection:view`  \n**Auth:** optional",
+        "x-arke-action": "collection:view",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Exact label to match (case-insensitive)",
+              "example": "Captain Ahab"
+            },
+            "required": false,
+            "name": "label",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Filter by entity type",
+              "example": "person"
+            },
+            "required": false,
+            "name": "type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 100,
+              "description": "Maximum number of entities to return",
+              "example": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching entities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionEntityLookupResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Collection index service unavailable"
+          }
+        }
+      }
+    },
+    "/collections/{id}/entities/search": {
+      "get": {
+        "tags": [
+          "Collections"
+        ],
+        "summary": "Search entities by keyword",
+        "description": "Fast (~5ms) keyword search within entity labels in this collection.\n\nUses a per-collection SQLite index for instant substring matching. Complements semantic search for quick keyword lookups.\n\n**Query Parameters:**\n- `q`: Search query (required, case-insensitive substring match)\n- `type`: Filter by entity type\n- `limit`: Maximum results (default: 100, max: 1000)\n\n**Note:** This is a simple substring match, not semantic search. Use /query for AI-powered semantic search.\n\n---\n**Permission:** `collection:view`  \n**Auth:** optional",
+        "x-arke-action": "collection:view",
+        "x-arke-auth": "optional",
+        "x-arke-tier": "standard",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Search query (case-insensitive substring match on label)",
+              "example": "ahab"
+            },
+            "required": true,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Filter by entity type",
+              "example": "person"
+            },
+            "required": false,
+            "name": "type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 100,
+              "description": "Maximum number of entities to return",
+              "example": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching entities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionEntitySearchResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Collection index service unavailable"
           }
         }
       }
@@ -10858,6 +10570,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -10980,6 +10695,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -11236,6 +10954,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -11380,6 +11101,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -11630,6 +11354,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -11763,6 +11490,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -12200,6 +11930,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -12282,6 +12015,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -12519,6 +12255,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -12672,6 +12411,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -12804,6 +12546,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -12919,6 +12664,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -13031,6 +12779,85 @@
                     "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
                     "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/updates/additive": {
+      "post": {
+        "tags": [
+          "Entities",
+          "Batch"
+        ],
+        "summary": "Queue additive updates (fire-and-forget)",
+        "description": "Queues additive updates for multiple entities. Returns 202 Accepted immediately.\n\n**Fire-and-Forget Semantics:**\n- Updates are queued and processed asynchronously\n- CAS conflicts are handled internally with exponential backoff retry\n- Client does not need to retry on conflicts\n\n**Additive-Only Operations:**\n- `properties`: Deep merged with existing properties\n- `relationships_add`: Upsert semantics (add new or merge properties)\n- `properties_remove` and `relationships_remove` are **NOT supported** - use `PUT /entities/:id` for removals\n\n**Per-Actor Versioning:**\n- Multiple updates from the same actor are merged before applying (one version)\n- Updates from different actors create separate versions (preserves audit trail)\n\n**Use Cases:**\n- Many workers adding relationships to a shared parent entity\n- High-volume indexing where multiple sources enrich the same entity\n- Any scenario where ordering doesn't matter and CAS conflicts are expected\n\n**Max batch size:** 100 updates per request.\n\n---\n**Permission:** `entity:update`  \n**Auth:** required",
+        "x-arke-action": "entity:update",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdditiveUpdatesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Updates accepted for processing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdditiveUpdatesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
                 }
               }
             }
@@ -13239,981 +13066,6 @@
         }
       }
     },
-    "/agents": {
-      "post": {
-        "tags": [
-          "Agents"
-        ],
-        "summary": "Create an agent",
-        "description": "Creates a new agent entity. Requires agent:create permission in the target collection.\n\n---\n**Permission:** `agent:create`  \n**Auth:** required",
-        "x-arke-action": "agent:create",
-        "x-arke-auth": "required",
-        "x-arke-tier": "standard",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateAgentRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Agent created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AgentResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request - Invalid input",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorResponse"
-                },
-                "example": {
-                  "error": "Validation failed",
-                  "details": {
-                    "issues": [
-                      {
-                        "path": [
-                          "properties",
-                          "label"
-                        ],
-                        "message": "Required"
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized - Missing or invalid authentication",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Unauthorized: Missing or invalid authentication token"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - Insufficient permissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Forbidden: You do not have permission to perform this action"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Entity not found"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/agents/{id}": {
-      "get": {
-        "tags": [
-          "Agents"
-        ],
-        "summary": "Get agent by ID",
-        "description": "Returns an agent entity by ID.\n\n---\n**Permission:** `agent:view`  \n**Auth:** optional",
-        "x-arke-action": "agent:view",
-        "x-arke-auth": "optional",
-        "x-arke-tier": "standard",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-              "description": "Entity ID (ULID format)",
-              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
-            },
-            "required": true,
-            "description": "Entity ID (ULID)",
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Agent found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AgentResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - Insufficient permissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Forbidden: You do not have permission to perform this action"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Entity not found"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Agents"
-        ],
-        "summary": "Update agent",
-        "description": "Updates an agent. Requires agent:update permission.\n\n**Field placement:** Agent-specific fields (`label`, `endpoint`, `actions_required`, `input_schema`, etc.) must be at the root level, NOT inside `properties`. The `properties` bag is for additional custom data only.\n\n**properties_remove syntax:** Use nested objects, not dot notation.\n- Correct: `{ \"input_schema\": { \"properties\": [\"field_to_remove\"] } }`\n- Wrong: `[\"input_schema.properties.field_to_remove\"]`\n\n---\n**Permission:** `agent:update`  \n**Auth:** required",
-        "x-arke-action": "agent:update",
-        "x-arke-auth": "required",
-        "x-arke-tier": "standard",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-              "description": "Entity ID (ULID format)",
-              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
-            },
-            "required": true,
-            "description": "Entity ID (ULID)",
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAgentRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Agent updated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AgentUpdateResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request - Invalid input",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorResponse"
-                },
-                "example": {
-                  "error": "Validation failed",
-                  "details": {
-                    "issues": [
-                      {
-                        "path": [
-                          "properties",
-                          "label"
-                        ],
-                        "message": "Required"
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized - Missing or invalid authentication",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Unauthorized: Missing or invalid authentication token"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - Insufficient permissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Forbidden: You do not have permission to perform this action"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Entity not found"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict - CAS validation failed (entity was modified)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CASErrorResponse"
-                },
-                "example": {
-                  "error": "Conflict: entity was modified",
-                  "details": {
-                    "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                    "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/agents/{id}/invoke": {
-      "post": {
-        "tags": [
-          "Agents"
-        ],
-        "summary": "Invoke an agent",
-        "description": "Invoke an agent to perform work on a target collection.\n\n**Note:** The `target` parameter must be a collection ID. Agents receive permissions scoped to collections, not individual entities. To process a specific entity, pass the collection it belongs to.\n\n**Two-phase interaction:**\n1. `confirm: false` (default) - preview permissions that will be granted\n2. `confirm: true` - execute the agent\n\nThe agent receives temporal (time-limited) permissions on the target collection.\n\n---\n**Permission:** `agent:invoke`  \n**Auth:** required",
-        "x-arke-action": "agent:invoke",
-        "x-arke-auth": "required",
-        "x-arke-tier": "standard",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-              "description": "Entity ID (ULID format)",
-              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
-            },
-            "required": true,
-            "description": "Entity ID (ULID)",
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/InvokeAgentRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Invoke preview (confirm: false) or execution started (confirm: true)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InvokePreviewResponse"
-                }
-              }
-            }
-          },
-          "202": {
-            "description": "Agent execution started",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InvokeConfirmedResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request - Invalid input",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorResponse"
-                },
-                "example": {
-                  "error": "Validation failed",
-                  "details": {
-                    "issues": [
-                      {
-                        "path": [
-                          "properties",
-                          "label"
-                        ],
-                        "message": "Required"
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized - Missing or invalid authentication",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Unauthorized: Missing or invalid authentication token"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - Insufficient permissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Forbidden: You do not have permission to perform this action"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Entity not found"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/agents/{id}/keys": {
-      "post": {
-        "tags": [
-          "Agents"
-        ],
-        "summary": "Create API key for agent",
-        "description": "Creates an API key for the agent. The full key is only returned once.\n\n---\n**Permission:** `agent:manage`  \n**Auth:** required",
-        "x-arke-action": "agent:manage",
-        "x-arke-auth": "required",
-        "x-arke-tier": "standard",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-              "description": "Entity ID (ULID format)",
-              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
-            },
-            "required": true,
-            "description": "Entity ID (ULID)",
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateAgentApiKeyRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "API key created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateAgentApiKeyResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request - Invalid input",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorResponse"
-                },
-                "example": {
-                  "error": "Validation failed",
-                  "details": {
-                    "issues": [
-                      {
-                        "path": [
-                          "properties",
-                          "label"
-                        ],
-                        "message": "Required"
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized - Missing or invalid authentication",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Unauthorized: Missing or invalid authentication token"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - Insufficient permissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Forbidden: You do not have permission to perform this action"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Entity not found"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "Agents"
-        ],
-        "summary": "List API keys for agent",
-        "description": "Lists all active API keys for the agent (without the actual key values).\n\n---\n**Permission:** `agent:manage`  \n**Auth:** required",
-        "x-arke-action": "agent:manage",
-        "x-arke-auth": "required",
-        "x-arke-tier": "standard",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-              "description": "Entity ID (ULID format)",
-              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
-            },
-            "required": true,
-            "description": "Entity ID (ULID)",
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "API keys listed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListAgentApiKeysResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized - Missing or invalid authentication",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Unauthorized: Missing or invalid authentication token"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - Insufficient permissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Forbidden: You do not have permission to perform this action"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Entity not found"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/agents/{id}/keys/{prefix}": {
-      "delete": {
-        "tags": [
-          "Agents"
-        ],
-        "summary": "Revoke API key",
-        "description": "Revokes an API key for the agent.\n\n---\n**Permission:** `agent:manage`  \n**Auth:** required",
-        "x-arke-action": "agent:manage",
-        "x-arke-auth": "required",
-        "x-arke-tier": "standard",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-              "description": "Entity ID (ULID format)",
-              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
-            },
-            "required": true,
-            "description": "Entity ID (ULID)",
-            "name": "id",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "minLength": 4,
-              "maxLength": 12,
-              "description": "API key prefix (e.g., ak_xKj9)",
-              "example": "ak_xKj9"
-            },
-            "required": true,
-            "name": "prefix",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "API key revoked"
-          },
-          "401": {
-            "description": "Unauthorized - Missing or invalid authentication",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Unauthorized: Missing or invalid authentication token"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - Insufficient permissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Forbidden: You do not have permission to perform this action"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Entity not found"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/agents/{id}/verify": {
-      "post": {
-        "tags": [
-          "Agents"
-        ],
-        "summary": "Verify agent endpoint ownership",
-        "description": "Verify that you control the agent's endpoint URL. This is required before activating an agent.\n\n**Two-phase flow:**\n1. Call without `confirm` to get a verification token\n2. Deploy `/.well-known/arke-verification` endpoint returning the token\n3. Call with `confirm: true` to complete verification\n\n**Verification endpoint format:**\nYour endpoint must return JSON:\n```json\n{\n  \"verification_token\": \"vt_xxx...\",\n  \"agent_id\": \"IIxxx...\"\n}\n```\n\n---\n**Permission:** `agent:manage`  \n**Auth:** required",
-        "x-arke-action": "agent:manage",
-        "x-arke-auth": "required",
-        "x-arke-tier": "standard",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-              "description": "Entity ID (ULID format)",
-              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
-            },
-            "required": true,
-            "description": "Entity ID (ULID)",
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VerifyAgentRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Verification token (when confirm is false) or verification result (when confirm is true)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/VerifyAgentTokenResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/VerifyAgentSuccessResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/VerifyAgentFailureResponse"
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request - Invalid input",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorResponse"
-                },
-                "example": {
-                  "error": "Validation failed",
-                  "details": {
-                    "issues": [
-                      {
-                        "path": [
-                          "properties",
-                          "label"
-                        ],
-                        "message": "Required"
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized - Missing or invalid authentication",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Unauthorized: Missing or invalid authentication token"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - Insufficient permissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Forbidden: You do not have permission to perform this action"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Entity not found"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/agents/{id}/jobs/{job_id}/status": {
-      "get": {
-        "tags": [
-          "Agents"
-        ],
-        "summary": "Get job status from agent",
-        "description": "Proxies to the agent's `/status/:job_id` endpoint and returns the response.\n\nUse this endpoint to poll job status after invoking an agent. The `agent_id` and `job_id`\nare both returned in the invoke response.\n\n**Query Parameters (passed through to agent):**\n- `detail=full` - Include detailed sub-job/dispatch information (orchestrators/workflows)\n- `errors=N` - Include last N errors (orchestrators only)\n\n**Response:** Returns the agent's status response directly. Schema varies by agent type\n(service, workflow, orchestrator) but always includes:\n- `job_id` - Job identifier\n- `status` - Current status (pending/running/done/error)\n- `progress` - Progress counters (total/pending/done/error)\n- `started_at` - When the job started\n- `completed_at` - When the job completed (if done/error)\n- `updated_at` - Last state modification\n\nAgent-specific fields (phase, stages, sub_jobs, folders, dispatches) are also included\nwhen applicable.\n\n---\n**Permission:** `agent:view`  \n**Auth:** optional",
-        "x-arke-action": "agent:view",
-        "x-arke-auth": "optional",
-        "x-arke-tier": "standard",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-              "description": "Agent entity ID"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Job ID returned from agent invocation (e.g., job_01KFX...)",
-              "example": "job_01KFXPQ3ABCDEFGHIJKLMN"
-            },
-            "required": true,
-            "name": "job_id",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "full"
-              ],
-              "description": "Include detailed sub-job information (orchestrators/workflows only)"
-            },
-            "required": false,
-            "name": "detail",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "nullable": true,
-              "minimum": 0,
-              "maximum": 100,
-              "description": "Include last N errors in response (orchestrators only)"
-            },
-            "required": false,
-            "name": "errors",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Job status from agent",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "job_id": {
-                      "type": "string",
-                      "description": "Unique job identifier",
-                      "example": "job_01KFXPQ3ABCDEFGHIJKLMN"
-                    },
-                    "status": {
-                      "type": "string",
-                      "enum": [
-                        "pending",
-                        "running",
-                        "done",
-                        "error"
-                      ],
-                      "description": "Current job status",
-                      "example": "running"
-                    },
-                    "progress": {
-                      "$ref": "#/components/schemas/JobProgress"
-                    },
-                    "started_at": {
-                      "type": "string",
-                      "description": "When this job started (ISO timestamp)",
-                      "example": "2026-01-26T17:48:15.000Z"
-                    },
-                    "completed_at": {
-                      "type": "string",
-                      "description": "When this job completed (ISO timestamp)",
-                      "example": "2026-01-26T17:49:30.000Z"
-                    },
-                    "updated_at": {
-                      "type": "string",
-                      "description": "Last state modification (ISO timestamp)",
-                      "example": "2026-01-26T17:49:27.000Z"
-                    },
-                    "result": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "nullable": true
-                      },
-                      "description": "Final result data (only when status is done)"
-                    },
-                    "error": {
-                      "$ref": "#/components/schemas/JobError"
-                    }
-                  },
-                  "required": [
-                    "job_id",
-                    "status",
-                    "progress",
-                    "started_at"
-                  ],
-                  "description": "Job status response from an agent's /status/:job_id endpoint.\n\nThis schema defines the base fields that all agents return. Agent-specific fields\n(phase, stages, sub_jobs, folders, dispatches, nested_progress, etc.) are also\nallowed and passed through.\n\n**Query parameters (passed through to agent):**\n- `?detail=full` - Include detailed sub-job/dispatch information (orchestrators/workflows)\n- `?errors=N` - Include last N errors (orchestrators only)\n\n**Agent types return different additional fields:**\n- **Services**: May include `nested_progress` for Lambda-backed services\n- **Workflows**: May include `phase`, `stages`, `sub_jobs`\n- **Orchestrators**: May include `phase`, `discovery`, `grouping`, `dispatch`, `folders`, `dispatches`, `recent_errors`",
-                  "title": "AgentJobStatusResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Entity not found"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Agent unreachable or returned an error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AgentUnreachableError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/kladoi": {
       "post": {
         "tags": [
@@ -14227,6 +13079,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "requestBody": {
@@ -14390,6 +13245,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -14522,6 +13380,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -14647,6 +13508,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -14772,6 +13636,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -14897,6 +13764,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -15010,6 +13880,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -15092,6 +13965,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -15179,6 +14055,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "requestBody": {
@@ -15342,6 +14221,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -15474,6 +14356,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -15659,6 +14544,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -15846,6 +14734,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -15925,6 +14816,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -16004,6 +14898,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "parameters": [
@@ -16075,6 +14972,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "requestBody": {
@@ -16137,6 +15037,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "requestBody": {
@@ -16145,9 +15048,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "pi": {
+                  "id": {
                     "type": "string",
-                    "description": "Collection PI to find similar collections for"
+                    "description": "Collection ID to find similar collections for"
                   },
                   "limit": {
                     "type": "number",
@@ -16173,7 +15076,7 @@
                   }
                 },
                 "required": [
-                  "pi"
+                  "id"
                 ]
               }
             }
@@ -16192,7 +15095,7 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "pi": {
+                          "id": {
                             "type": "string"
                           },
                           "label": {
@@ -16237,7 +15140,7 @@
                           }
                         },
                         "required": [
-                          "pi",
+                          "id",
                           "label",
                           "score"
                         ]
@@ -16246,7 +15149,7 @@
                     "metadata": {
                       "type": "object",
                       "properties": {
-                        "source_pi": {
+                        "source_id": {
                           "type": "string"
                         },
                         "result_count": {
@@ -16260,7 +15163,7 @@
                         }
                       },
                       "required": [
-                        "source_pi",
+                        "source_id",
                         "result_count"
                       ]
                     }
@@ -16342,6 +15245,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "requestBody": {
@@ -16350,13 +15256,13 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "pi": {
+                  "id": {
                     "type": "string",
-                    "description": "Entity PI to find similar items for"
+                    "description": "Entity ID to find similar items for"
                   },
-                  "collection_pi": {
+                  "collection_id": {
                     "type": "string",
-                    "description": "Entity's collection PI"
+                    "description": "Entity's collection ID"
                   },
                   "limit": {
                     "type": "number",
@@ -16401,8 +15307,8 @@
                   }
                 },
                 "required": [
-                  "pi",
-                  "collection_pi"
+                  "id",
+                  "collection_id"
                 ]
               }
             }
@@ -16421,7 +15327,7 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "pi": {
+                          "id": {
                             "type": "string"
                           },
                           "type": {
@@ -16430,7 +15336,7 @@
                           "label": {
                             "type": "string"
                           },
-                          "collection_pi": {
+                          "collection_id": {
                             "type": "string",
                             "nullable": true
                           },
@@ -16454,7 +15360,7 @@
                                   "id": "01KENTITY123456789ABCDEFGH",
                                   "type": "document",
                                   "label": "Similar Research Paper",
-                                  "collection_pi": "01JCOLLECTION123456789AB",
+                                  "collection_id": "01JCOLLECTION123456789AB",
                                   "description_preview": "Related findings on distributed systems...",
                                   "created_at": "2026-01-08T00:00:00.000Z",
                                   "updated_at": "2026-01-12T10:00:00.000Z"
@@ -16474,10 +15380,10 @@
                           }
                         },
                         "required": [
-                          "pi",
+                          "id",
                           "type",
                           "label",
-                          "collection_pi",
+                          "collection_id",
                           "score"
                         ]
                       }
@@ -16485,7 +15391,7 @@
                     "metadata": {
                       "type": "object",
                       "properties": {
-                        "source_pi": {
+                        "source_id": {
                           "type": "string"
                         },
                         "collections_searched": {
@@ -16502,7 +15408,7 @@
                         }
                       },
                       "required": [
-                        "source_pi",
+                        "source_id",
                         "collections_searched",
                         "result_count"
                       ]
@@ -16585,6 +15491,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "requestBody": {
@@ -16612,6 +15521,19 @@
                       "type": "string"
                     },
                     "description": "Filter by collection types"
+                  },
+                  "filter": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "nullable": true
+                    },
+                    "description": "Filter by indexed metadata properties.\n\n**Filterable Properties:**\nOnly underscore-prefixed properties (`_year`, `_class`, etc.) are indexed as filterable metadata.\n\n**Operators:**\n| Operator | Description | Example |\n|----------|-------------|---------|\n| `$eq` | Equals | `{ \"_year\": { \"$eq\": 1905 } }` |\n| `$ne` | Not equals | `{ \"_class\": { \"$ne\": \"draft\" } }` |\n| `$gt` | Greater than | `{ \"_year\": { \"$gt\": 1900 } }` |\n| `$gte` | Greater than or equal | `{ \"_year\": { \"$gte\": 1900 } }` |\n| `$lt` | Less than | `{ \"_year\": { \"$lt\": 2000 } }` |\n| `$lte` | Less than or equal | `{ \"_year\": { \"$lte\": 2000 } }` |\n| `$in` | In array | `{ \"_class\": { \"$in\": [\"letter\", \"memo\"] } }` |\n| `$nin` | Not in array | `{ \"_class\": { \"$nin\": [\"draft\"] } }` |\n| `$exists` | Property exists | `{ \"_ocr_text\": { \"$exists\": true } }` |\n\n**Logical Operators:**\n| Operator | Description | Example |\n|----------|-------------|---------|\n| `$and` | All conditions must match | `{ \"$and\": [{ \"_year\": { \"$gt\": 1900 } }, { \"_year\": { \"$lt\": 2000 } }] }` |\n| `$or` | Any condition must match | `{ \"$or\": [{ \"_class\": \"letter\" }, { \"_class\": \"memo\" }] }` |\n\n**Built-in Fields (always available):**\n- `type` - Entity type\n- `created_at` - ISO timestamp string\n- `updated_at` - ISO timestamp string\n\n**Example - Find letters from 1800-1900:**\n```json\n{\n  \"$and\": [\n    { \"type\": { \"$eq\": \"letter\" } },\n    { \"_year\": { \"$gte\": 1800 } },\n    { \"_year\": { \"$lte\": 1900 } }\n  ]\n}\n```",
+                    "example": {
+                      "_year": {
+                        "$gt": 1800
+                      },
+                      "type": "letter"
+                    }
                   },
                   "expand": {
                     "type": "string",
@@ -16644,7 +15566,7 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "pi": {
+                          "id": {
                             "type": "string"
                           },
                           "label": {
@@ -16692,7 +15614,7 @@
                           }
                         },
                         "required": [
-                          "pi",
+                          "id",
                           "label",
                           "type",
                           "score"
@@ -16779,6 +15701,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "requestBody": {
@@ -16799,6 +15724,19 @@
                     "maximum": 100,
                     "default": 10,
                     "description": "Maximum results to return"
+                  },
+                  "filter": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "nullable": true
+                    },
+                    "description": "Filter by indexed metadata properties.\n\n**Filterable Properties:**\nOnly underscore-prefixed properties (`_year`, `_class`, etc.) are indexed as filterable metadata.\n\n**Operators:**\n| Operator | Description | Example |\n|----------|-------------|---------|\n| `$eq` | Equals | `{ \"_year\": { \"$eq\": 1905 } }` |\n| `$ne` | Not equals | `{ \"_class\": { \"$ne\": \"draft\" } }` |\n| `$gt` | Greater than | `{ \"_year\": { \"$gt\": 1900 } }` |\n| `$gte` | Greater than or equal | `{ \"_year\": { \"$gte\": 1900 } }` |\n| `$lt` | Less than | `{ \"_year\": { \"$lt\": 2000 } }` |\n| `$lte` | Less than or equal | `{ \"_year\": { \"$lte\": 2000 } }` |\n| `$in` | In array | `{ \"_class\": { \"$in\": [\"letter\", \"memo\"] } }` |\n| `$nin` | Not in array | `{ \"_class\": { \"$nin\": [\"draft\"] } }` |\n| `$exists` | Property exists | `{ \"_ocr_text\": { \"$exists\": true } }` |\n\n**Logical Operators:**\n| Operator | Description | Example |\n|----------|-------------|---------|\n| `$and` | All conditions must match | `{ \"$and\": [{ \"_year\": { \"$gt\": 1900 } }, { \"_year\": { \"$lt\": 2000 } }] }` |\n| `$or` | Any condition must match | `{ \"$or\": [{ \"_class\": \"letter\" }, { \"_class\": \"memo\" }] }` |\n\n**Built-in Fields (always available):**\n- `type` - Entity type\n- `created_at` - ISO timestamp string\n- `updated_at` - ISO timestamp string\n\n**Example - Find letters from 1800-1900:**\n```json\n{\n  \"$and\": [\n    { \"type\": { \"$eq\": \"letter\" } },\n    { \"_year\": { \"$gte\": 1800 } },\n    { \"_year\": { \"$lte\": 1900 } }\n  ]\n}\n```",
+                    "example": {
+                      "_year": {
+                        "$gt": 1800
+                      },
+                      "type": "letter"
+                    }
                   },
                   "expand": {
                     "type": "string",
@@ -16840,7 +15778,7 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "pi": {
+                          "id": {
                             "type": "string"
                           },
                           "label": {
@@ -16849,7 +15787,7 @@
                           "score": {
                             "type": "number"
                           },
-                          "collection_pi": {
+                          "collection_id": {
                             "type": "string",
                             "nullable": true
                           },
@@ -16873,7 +15811,7 @@
                                   "id": "01KAGENT123456789ABCDEFGHI",
                                   "type": "agent",
                                   "label": "Document Analyzer Agent",
-                                  "collection_pi": "01JCOLLECTION123456789AB",
+                                  "collection_id": "01JCOLLECTION123456789AB",
                                   "description_preview": "An AI agent that analyzes documents and extracts key insights...",
                                   "created_at": "2026-01-01T00:00:00.000Z",
                                   "updated_at": "2026-01-15T16:00:00.000Z"
@@ -16893,10 +15831,10 @@
                           }
                         },
                         "required": [
-                          "pi",
+                          "id",
                           "label",
                           "score",
-                          "collection_pi"
+                          "collection_id"
                         ]
                       }
                     },
@@ -16973,13 +15911,16 @@
           "Search"
         ],
         "summary": "Search entities within collection(s)",
-        "description": "Search for entities within one or more collections using semantic text search.\n\nProvide either `collection_pi` for a single collection or `collection_pis` for multiple collections (searched in parallel).\n\nUse `per_collection_limit` to ensure result diversity when searching multiple collections.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
+        "description": "Search for entities within one or more collections using semantic text search.\n\nProvide either `collection_pi` for a single collection or `collection_ids` for multiple collections (searched in parallel).\n\nUse `per_collection_limit` to ensure result diversity when searching multiple collections.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
         "x-arke-action": "search:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "requestBody": {
@@ -16988,17 +15929,17 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "collection_pi": {
+                  "collection_id": {
                     "type": "string",
-                    "description": "Single collection PI to search within"
+                    "description": "Single collection ID to search within"
                   },
-                  "collection_pis": {
+                  "collection_ids": {
                     "type": "array",
                     "items": {
                       "type": "string"
                     },
                     "maxItems": 20,
-                    "description": "Multiple collection PIs to search (max 20)"
+                    "description": "Multiple collection IDs to search (max 20)"
                   },
                   "query": {
                     "type": "string",
@@ -17019,6 +15960,19 @@
                       "type": "string"
                     },
                     "description": "Filter by entity types"
+                  },
+                  "filter": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "nullable": true
+                    },
+                    "description": "Filter by indexed metadata properties.\n\n**Filterable Properties:**\nOnly underscore-prefixed properties (`_year`, `_class`, etc.) are indexed as filterable metadata.\n\n**Operators:**\n| Operator | Description | Example |\n|----------|-------------|---------|\n| `$eq` | Equals | `{ \"_year\": { \"$eq\": 1905 } }` |\n| `$ne` | Not equals | `{ \"_class\": { \"$ne\": \"draft\" } }` |\n| `$gt` | Greater than | `{ \"_year\": { \"$gt\": 1900 } }` |\n| `$gte` | Greater than or equal | `{ \"_year\": { \"$gte\": 1900 } }` |\n| `$lt` | Less than | `{ \"_year\": { \"$lt\": 2000 } }` |\n| `$lte` | Less than or equal | `{ \"_year\": { \"$lte\": 2000 } }` |\n| `$in` | In array | `{ \"_class\": { \"$in\": [\"letter\", \"memo\"] } }` |\n| `$nin` | Not in array | `{ \"_class\": { \"$nin\": [\"draft\"] } }` |\n| `$exists` | Property exists | `{ \"_ocr_text\": { \"$exists\": true } }` |\n\n**Logical Operators:**\n| Operator | Description | Example |\n|----------|-------------|---------|\n| `$and` | All conditions must match | `{ \"$and\": [{ \"_year\": { \"$gt\": 1900 } }, { \"_year\": { \"$lt\": 2000 } }] }` |\n| `$or` | Any condition must match | `{ \"$or\": [{ \"_class\": \"letter\" }, { \"_class\": \"memo\" }] }` |\n\n**Built-in Fields (always available):**\n- `type` - Entity type\n- `created_at` - ISO timestamp string\n- `updated_at` - ISO timestamp string\n\n**Example - Find letters from 1800-1900:**\n```json\n{\n  \"$and\": [\n    { \"type\": { \"$eq\": \"letter\" } },\n    { \"_year\": { \"$gte\": 1800 } },\n    { \"_year\": { \"$lte\": 1900 } }\n  ]\n}\n```",
+                    "example": {
+                      "_year": {
+                        "$gt": 1800
+                      },
+                      "type": "letter"
+                    }
                   },
                   "per_collection_limit": {
                     "type": "number",
@@ -17057,7 +16011,7 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "pi": {
+                          "id": {
                             "type": "string"
                           },
                           "label": {
@@ -17069,7 +16023,7 @@
                           "score": {
                             "type": "number"
                           },
-                          "collection_pi": {
+                          "collection_id": {
                             "type": "string"
                           },
                           "created_at": {
@@ -17089,7 +16043,7 @@
                                   "id": "01KENTITY123456789ABCDEFGH",
                                   "type": "document",
                                   "label": "Research Findings Report",
-                                  "collection_pi": "01JCOLLECTION123456789AB",
+                                  "collection_id": "01JCOLLECTION123456789AB",
                                   "description_preview": "Detailed analysis of experimental results...",
                                   "created_at": "2026-01-10T00:00:00.000Z",
                                   "updated_at": "2026-01-14T09:00:00.000Z"
@@ -17109,18 +16063,18 @@
                           }
                         },
                         "required": [
-                          "pi",
+                          "id",
                           "label",
                           "type",
                           "score",
-                          "collection_pi"
+                          "collection_id"
                         ]
                       }
                     },
                     "metadata": {
                       "type": "object",
                       "properties": {
-                        "collection_pis": {
+                        "collection_ids": {
                           "type": "array",
                           "items": {
                             "type": "string"
@@ -17137,7 +16091,7 @@
                         }
                       },
                       "required": [
-                        "collection_pis",
+                        "collection_ids",
                         "query",
                         "collections_searched",
                         "result_count"
@@ -17208,6 +16162,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "requestBody": {
@@ -17235,6 +16192,19 @@
                       "type": "string"
                     },
                     "description": "Filter by entity types"
+                  },
+                  "filter": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "nullable": true
+                    },
+                    "description": "Filter by indexed metadata properties.\n\n**Filterable Properties:**\nOnly underscore-prefixed properties (`_year`, `_class`, etc.) are indexed as filterable metadata.\n\n**Operators:**\n| Operator | Description | Example |\n|----------|-------------|---------|\n| `$eq` | Equals | `{ \"_year\": { \"$eq\": 1905 } }` |\n| `$ne` | Not equals | `{ \"_class\": { \"$ne\": \"draft\" } }` |\n| `$gt` | Greater than | `{ \"_year\": { \"$gt\": 1900 } }` |\n| `$gte` | Greater than or equal | `{ \"_year\": { \"$gte\": 1900 } }` |\n| `$lt` | Less than | `{ \"_year\": { \"$lt\": 2000 } }` |\n| `$lte` | Less than or equal | `{ \"_year\": { \"$lte\": 2000 } }` |\n| `$in` | In array | `{ \"_class\": { \"$in\": [\"letter\", \"memo\"] } }` |\n| `$nin` | Not in array | `{ \"_class\": { \"$nin\": [\"draft\"] } }` |\n| `$exists` | Property exists | `{ \"_ocr_text\": { \"$exists\": true } }` |\n\n**Logical Operators:**\n| Operator | Description | Example |\n|----------|-------------|---------|\n| `$and` | All conditions must match | `{ \"$and\": [{ \"_year\": { \"$gt\": 1900 } }, { \"_year\": { \"$lt\": 2000 } }] }` |\n| `$or` | Any condition must match | `{ \"$or\": [{ \"_class\": \"letter\" }, { \"_class\": \"memo\" }] }` |\n\n**Built-in Fields (always available):**\n- `type` - Entity type\n- `created_at` - ISO timestamp string\n- `updated_at` - ISO timestamp string\n\n**Example - Find letters from 1800-1900:**\n```json\n{\n  \"$and\": [\n    { \"type\": { \"$eq\": \"letter\" } },\n    { \"_year\": { \"$gte\": 1800 } },\n    { \"_year\": { \"$lte\": 1900 } }\n  ]\n}\n```",
+                    "example": {
+                      "_year": {
+                        "$gt": 1800
+                      },
+                      "type": "letter"
+                    }
                   },
                   "collection_limit": {
                     "type": "number",
@@ -17281,7 +16251,7 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "pi": {
+                          "id": {
                             "type": "string"
                           },
                           "label": {
@@ -17293,7 +16263,7 @@
                           "score": {
                             "type": "number"
                           },
-                          "collection_pi": {
+                          "collection_id": {
                             "type": "string"
                           },
                           "created_at": {
@@ -17313,7 +16283,7 @@
                                   "id": "01KENTITY123456789ABCDEFGH",
                                   "type": "file",
                                   "label": "Discovered Document.pdf",
-                                  "collection_pi": "01JCOLLECTION123456789AB",
+                                  "collection_id": "01JCOLLECTION123456789AB",
                                   "description_preview": "A document discovered through semantic search...",
                                   "created_at": "2026-01-08T00:00:00.000Z",
                                   "updated_at": "2026-01-12T14:00:00.000Z"
@@ -17333,11 +16303,11 @@
                           }
                         },
                         "required": [
-                          "pi",
+                          "id",
                           "label",
                           "type",
                           "score",
-                          "collection_pi"
+                          "collection_id"
                         ]
                       }
                     },
@@ -17425,6 +16395,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "requestBody": {
@@ -17510,6 +16483,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "responses": {
@@ -17552,6 +16528,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "responses": {
@@ -17618,6 +16597,9 @@
         "security": [
           {
             "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
           }
         ],
         "responses": {

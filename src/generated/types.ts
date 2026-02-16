@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-02-07T17:07:45.355Z
+ * Generated: 2026-02-16T14:30:05.179Z
  */
 
 export type paths = {
@@ -155,6 +155,84 @@ export type paths = {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/whoami": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get current identity
+         * @description Returns identity information for the authenticated caller.
+         *
+         *     Accepts any valid credential type:
+         *     - **JWT**: Returns user PI, email, name, and Supabase user ID
+         *     - **User API Key (uk_)**: Returns user PI and key metadata
+         *     - **Agent API Key (ak_)**: Returns agent PI, owner PI, and key metadata
+         *
+         *     Use this endpoint to verify credentials are working or to retrieve the caller's entity PI.
+         *
+         *     ---
+         *     **Permission:** `auth:whoami`
+         *     **Auth:** required
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Identity information */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WhoamiResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Internal server error"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -853,6 +931,25 @@ export type paths = {
         /**
          * Create a new collection
          * @description Creates a collection with the authenticated user as owner.
+         *
+         *     **Default Roles:**
+         *
+         *     By default (`use_roles_default: true`), collections include these standard roles:
+         *     - `owner`: Full control including collection management
+         *     - `editor`: Can modify entities but not collection settings
+         *     - `viewer`: Read-only access
+         *     - `public`: Public read access (`*:view`)
+         *
+         *     **Customizing Roles:**
+         *
+         *     Pass custom `roles` to override specific defaults while keeping others. For example, to make entities publicly invokable (for agents):
+         *     ```json
+         *     { "roles": { "public": ["*:view", "*:invoke"] } }
+         *     ```
+         *
+         *     Set `use_roles_default: false` to define all roles from scratch.
+         *
+         *     **Platform Requirement:** The `public` role with `*:view` is always automatically ensured, guaranteeing all collections are publicly readable.
          *
          *     ---
          *     **Permission:** `collection:create`
@@ -1904,13 +2001,13 @@ export type paths = {
         };
         /**
          * List entities in a collection
-         * @description Returns entities belonging to this collection from the graph database.
+         * @description Returns entities belonging to this collection.
          *
          *     Supports pagination and optional type filtering. Results are ordered by creation date (newest first).
          *
          *     **Expansion Modes:**
          *
-         *     By default, returns lightweight summaries from GraphDB (pi, type, label, timestamps).
+         *     By default, returns lightweight summaries (pi, type, label, timestamps).
          *
          *     Use the `expand` parameter to hydrate entity data from storage:
          *
@@ -1978,7 +2075,195 @@ export type paths = {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description GraphDB service unavailable */
+                /** @description Collection index service unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collections/{id}/entities/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lookup entities by label
+         * @description Fast (~5ms) lookup of entities by exact label and/or type within this collection.
+         *
+         *     Uses a per-collection SQLite index for instant keyword queries. Complements semantic search for when you know the exact label.
+         *
+         *     **Query Parameters:**
+         *     - `label`: Exact label match (case-insensitive)
+         *     - `type`: Filter by entity type
+         *     - `limit`: Maximum results (default: 100, max: 1000)
+         *
+         *     At least one of `label` or `type` should be provided for meaningful results.
+         *
+         *     ---
+         *     **Permission:** `collection:view`
+         *     **Auth:** optional
+         */
+        get: {
+            parameters: {
+                query?: {
+                    label?: string;
+                    type?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Matching entities */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CollectionEntityLookupResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Collection index service unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collections/{id}/entities/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search entities by keyword
+         * @description Fast (~5ms) keyword search within entity labels in this collection.
+         *
+         *     Uses a per-collection SQLite index for instant substring matching. Complements semantic search for quick keyword lookups.
+         *
+         *     **Query Parameters:**
+         *     - `q`: Search query (required, case-insensitive substring match)
+         *     - `type`: Filter by entity type
+         *     - `limit`: Maximum results (default: 100, max: 1000)
+         *
+         *     **Note:** This is a simple substring match, not semantic search. Use /query for AI-powered semantic search.
+         *
+         *     ---
+         *     **Permission:** `collection:view`
+         *     **Auth:** optional
+         */
+        get: {
+            parameters: {
+                query: {
+                    q: string;
+                    type?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Matching entities */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CollectionEntitySearchResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Collection index service unavailable */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -4341,6 +4626,113 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/updates/additive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Queue additive updates (fire-and-forget)
+         * @description Queues additive updates for multiple entities. Returns 202 Accepted immediately.
+         *
+         *     **Fire-and-Forget Semantics:**
+         *     - Updates are queued and processed asynchronously
+         *     - CAS conflicts are handled internally with exponential backoff retry
+         *     - Client does not need to retry on conflicts
+         *
+         *     **Additive-Only Operations:**
+         *     - `properties`: Deep merged with existing properties
+         *     - `relationships_add`: Upsert semantics (add new or merge properties)
+         *     - `properties_remove` and `relationships_remove` are **NOT supported** - use `PUT /entities/:id` for removals
+         *
+         *     **Per-Actor Versioning:**
+         *     - Multiple updates from the same actor are merged before applying (one version)
+         *     - Updates from different actors create separate versions (preserves audit trail)
+         *
+         *     **Use Cases:**
+         *     - Many workers adding relationships to a shared parent entity
+         *     - High-volume indexing where multiple sources enrich the same entity
+         *     - Any scenario where ordering doesn't matter and CAS conflicts are expected
+         *
+         *     **Max batch size:** 100 updates per request.
+         *
+         *     ---
+         *     **Permission:** `entity:update`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["AdditiveUpdatesRequest"];
+                };
+            };
+            responses: {
+                /** @description Updates accepted for processing */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdditiveUpdatesResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/versions/{id}": {
         parameters: {
             query?: never;
@@ -4557,984 +4949,6 @@ export type paths = {
                     };
                     content: {
                         "application/json": components["schemas"]["PermissionsResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/agents": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create an agent
-         * @description Creates a new agent entity. Requires agent:create permission in the target collection.
-         *
-         *     ---
-         *     **Permission:** `agent:create`
-         *     **Auth:** required
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["CreateAgentRequest"];
-                };
-            };
-            responses: {
-                /** @description Agent created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AgentResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/agents/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get agent by ID
-         * @description Returns an agent entity by ID.
-         *
-         *     ---
-         *     **Permission:** `agent:view`
-         *     **Auth:** optional
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Agent found */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AgentResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        /**
-         * Update agent
-         * @description Updates an agent. Requires agent:update permission.
-         *
-         *     **Field placement:** Agent-specific fields (`label`, `endpoint`, `actions_required`, `input_schema`, etc.) must be at the root level, NOT inside `properties`. The `properties` bag is for additional custom data only.
-         *
-         *     **properties_remove syntax:** Use nested objects, not dot notation.
-         *     - Correct: `{ "input_schema": { "properties": ["field_to_remove"] } }`
-         *     - Wrong: `["input_schema.properties.field_to_remove"]`
-         *
-         *     ---
-         *     **Permission:** `agent:update`
-         *     **Auth:** required
-         */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["UpdateAgentRequest"];
-                };
-            };
-            responses: {
-                /** @description Agent updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AgentUpdateResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Conflict - CAS validation failed (entity was modified) */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Conflict: entity was modified",
-                         *       "details": {
-                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
-                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["CASErrorResponse"];
-                    };
-                };
-            };
-        };
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/agents/{id}/invoke": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Invoke an agent
-         * @description Invoke an agent to perform work on a target collection.
-         *
-         *     **Note:** The `target` parameter must be a collection ID. Agents receive permissions scoped to collections, not individual entities. To process a specific entity, pass the collection it belongs to.
-         *
-         *     **Two-phase interaction:**
-         *     1. `confirm: false` (default) - preview permissions that will be granted
-         *     2. `confirm: true` - execute the agent
-         *
-         *     The agent receives temporal (time-limited) permissions on the target collection.
-         *
-         *     ---
-         *     **Permission:** `agent:invoke`
-         *     **Auth:** required
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["InvokeAgentRequest"];
-                };
-            };
-            responses: {
-                /** @description Invoke preview (confirm: false) or execution started (confirm: true) */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["InvokePreviewResponse"];
-                    };
-                };
-                /** @description Agent execution started */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["InvokeConfirmedResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/agents/{id}/keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List API keys for agent
-         * @description Lists all active API keys for the agent (without the actual key values).
-         *
-         *     ---
-         *     **Permission:** `agent:manage`
-         *     **Auth:** required
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description API keys listed */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ListAgentApiKeysResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        /**
-         * Create API key for agent
-         * @description Creates an API key for the agent. The full key is only returned once.
-         *
-         *     ---
-         *     **Permission:** `agent:manage`
-         *     **Auth:** required
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["CreateAgentApiKeyRequest"];
-                };
-            };
-            responses: {
-                /** @description API key created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CreateAgentApiKeyResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/agents/{id}/keys/{prefix}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Revoke API key
-         * @description Revokes an API key for the agent.
-         *
-         *     ---
-         *     **Permission:** `agent:manage`
-         *     **Auth:** required
-         */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                    prefix: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description API key revoked */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/agents/{id}/verify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Verify agent endpoint ownership
-         * @description Verify that you control the agent's endpoint URL. This is required before activating an agent.
-         *
-         *     **Two-phase flow:**
-         *     1. Call without `confirm` to get a verification token
-         *     2. Deploy `/.well-known/arke-verification` endpoint returning the token
-         *     3. Call with `confirm: true` to complete verification
-         *
-         *     **Verification endpoint format:**
-         *     Your endpoint must return JSON:
-         *     ```json
-         *     {
-         *       "verification_token": "vt_xxx...",
-         *       "agent_id": "IIxxx..."
-         *     }
-         *     ```
-         *
-         *     ---
-         *     **Permission:** `agent:manage`
-         *     **Auth:** required
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["VerifyAgentRequest"];
-                };
-            };
-            responses: {
-                /** @description Verification token (when confirm is false) or verification result (when confirm is true) */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["VerifyAgentTokenResponse"] | components["schemas"]["VerifyAgentSuccessResponse"] | components["schemas"]["VerifyAgentFailureResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/agents/{id}/jobs/{job_id}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get job status from agent
-         * @description Proxies to the agent's `/status/:job_id` endpoint and returns the response.
-         *
-         *     Use this endpoint to poll job status after invoking an agent. The `agent_id` and `job_id`
-         *     are both returned in the invoke response.
-         *
-         *     **Query Parameters (passed through to agent):**
-         *     - `detail=full` - Include detailed sub-job/dispatch information (orchestrators/workflows)
-         *     - `errors=N` - Include last N errors (orchestrators only)
-         *
-         *     **Response:** Returns the agent's status response directly. Schema varies by agent type
-         *     (service, workflow, orchestrator) but always includes:
-         *     - `job_id` - Job identifier
-         *     - `status` - Current status (pending/running/done/error)
-         *     - `progress` - Progress counters (total/pending/done/error)
-         *     - `started_at` - When the job started
-         *     - `completed_at` - When the job completed (if done/error)
-         *     - `updated_at` - Last state modification
-         *
-         *     Agent-specific fields (phase, stages, sub_jobs, folders, dispatches) are also included
-         *     when applicable.
-         *
-         *     ---
-         *     **Permission:** `agent:view`
-         *     **Auth:** optional
-         */
-        get: {
-            parameters: {
-                query?: {
-                    detail?: "full";
-                    errors?: number | null;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                    job_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Job status from agent */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /**
-                             * @description Unique job identifier
-                             * @example job_01KFXPQ3ABCDEFGHIJKLMN
-                             */
-                            job_id: string;
-                            /**
-                             * @description Current job status
-                             * @example running
-                             * @enum {string}
-                             */
-                            status: "pending" | "running" | "done" | "error";
-                            progress: components["schemas"]["JobProgress"];
-                            /**
-                             * @description When this job started (ISO timestamp)
-                             * @example 2026-01-26T17:48:15.000Z
-                             */
-                            started_at: string;
-                            /**
-                             * @description When this job completed (ISO timestamp)
-                             * @example 2026-01-26T17:49:30.000Z
-                             */
-                            completed_at?: string;
-                            /**
-                             * @description Last state modification (ISO timestamp)
-                             * @example 2026-01-26T17:49:27.000Z
-                             */
-                            updated_at?: string;
-                            /** @description Final result data (only when status is done) */
-                            result?: {
-                                [key: string]: unknown;
-                            };
-                            error?: components["schemas"]["JobError"];
-                        };
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Agent unreachable or returned an error */
-                502: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AgentUnreachableError"];
                     };
                 };
             };
@@ -7665,8 +7079,8 @@ export type paths = {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Collection PI to find similar collections for */
-                        pi: string;
+                        /** @description Collection ID to find similar collections for */
+                        id: string;
                         /**
                          * @description Maximum results to return
                          * @default 10
@@ -7695,7 +7109,7 @@ export type paths = {
                     content: {
                         "application/json": {
                             results: {
-                                pi: string;
+                                id: string;
                                 label: string;
                                 score: number;
                                 created_at?: string;
@@ -7704,7 +7118,7 @@ export type paths = {
                                 entity?: components["schemas"]["EntityResponse"] & unknown;
                             }[];
                             metadata: {
-                                source_pi: string;
+                                source_id: string;
                                 result_count: number;
                                 cached?: boolean;
                                 cached_at?: string;
@@ -7819,10 +7233,10 @@ export type paths = {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Entity PI to find similar items for */
-                        pi: string;
-                        /** @description Entity's collection PI */
-                        collection_pi: string;
+                        /** @description Entity ID to find similar items for */
+                        id: string;
+                        /** @description Entity's collection ID */
+                        collection_id: string;
                         /**
                          * @description Maximum results to return
                          * @default 20
@@ -7866,10 +7280,10 @@ export type paths = {
                     content: {
                         "application/json": {
                             results: {
-                                pi: string;
+                                id: string;
                                 type: string;
                                 label: string;
-                                collection_pi: string | null;
+                                collection_id: string | null;
                                 score: number;
                                 created_at?: string;
                                 updated_at?: string;
@@ -7877,7 +7291,7 @@ export type paths = {
                                 entity?: components["schemas"]["EntityResponse"] & unknown;
                             }[];
                             metadata: {
-                                source_pi: string;
+                                source_id: string;
                                 collections_searched: number;
                                 result_count: number;
                                 cached?: boolean;
@@ -8000,6 +7414,56 @@ export type paths = {
                         /** @description Filter by collection types */
                         types?: string[];
                         /**
+                         * @description Filter by indexed metadata properties.
+                         *
+                         *     **Filterable Properties:**
+                         *     Only underscore-prefixed properties (`_year`, `_class`, etc.) are indexed as filterable metadata.
+                         *
+                         *     **Operators:**
+                         *     | Operator | Description | Example |
+                         *     |----------|-------------|---------|
+                         *     | `$eq` | Equals | `{ "_year": { "$eq": 1905 } }` |
+                         *     | `$ne` | Not equals | `{ "_class": { "$ne": "draft" } }` |
+                         *     | `$gt` | Greater than | `{ "_year": { "$gt": 1900 } }` |
+                         *     | `$gte` | Greater than or equal | `{ "_year": { "$gte": 1900 } }` |
+                         *     | `$lt` | Less than | `{ "_year": { "$lt": 2000 } }` |
+                         *     | `$lte` | Less than or equal | `{ "_year": { "$lte": 2000 } }` |
+                         *     | `$in` | In array | `{ "_class": { "$in": ["letter", "memo"] } }` |
+                         *     | `$nin` | Not in array | `{ "_class": { "$nin": ["draft"] } }` |
+                         *     | `$exists` | Property exists | `{ "_ocr_text": { "$exists": true } }` |
+                         *
+                         *     **Logical Operators:**
+                         *     | Operator | Description | Example |
+                         *     |----------|-------------|---------|
+                         *     | `$and` | All conditions must match | `{ "$and": [{ "_year": { "$gt": 1900 } }, { "_year": { "$lt": 2000 } }] }` |
+                         *     | `$or` | Any condition must match | `{ "$or": [{ "_class": "letter" }, { "_class": "memo" }] }` |
+                         *
+                         *     **Built-in Fields (always available):**
+                         *     - `type` - Entity type
+                         *     - `created_at` - ISO timestamp string
+                         *     - `updated_at` - ISO timestamp string
+                         *
+                         *     **Example - Find letters from 1800-1900:**
+                         *     ```json
+                         *     {
+                         *       "$and": [
+                         *         { "type": { "$eq": "letter" } },
+                         *         { "_year": { "$gte": 1800 } },
+                         *         { "_year": { "$lte": 1900 } }
+                         *       ]
+                         *     }
+                         *     ```
+                         * @example {
+                         *       "_year": {
+                         *         "$gt": 1800
+                         *       },
+                         *       "type": "letter"
+                         *     }
+                         */
+                        filter?: {
+                            [key: string]: unknown;
+                        };
+                        /**
                          * @description Entity expansion mode. Default: "preview" for lightweight previews, "full" for complete manifests, "none" for no expansion.
                          * @example preview
                          * @enum {string}
@@ -8017,7 +7481,7 @@ export type paths = {
                     content: {
                         "application/json": {
                             results: {
-                                pi: string;
+                                id: string;
                                 label: string;
                                 type: string;
                                 score: number;
@@ -8132,6 +7596,56 @@ export type paths = {
                          */
                         limit?: number;
                         /**
+                         * @description Filter by indexed metadata properties.
+                         *
+                         *     **Filterable Properties:**
+                         *     Only underscore-prefixed properties (`_year`, `_class`, etc.) are indexed as filterable metadata.
+                         *
+                         *     **Operators:**
+                         *     | Operator | Description | Example |
+                         *     |----------|-------------|---------|
+                         *     | `$eq` | Equals | `{ "_year": { "$eq": 1905 } }` |
+                         *     | `$ne` | Not equals | `{ "_class": { "$ne": "draft" } }` |
+                         *     | `$gt` | Greater than | `{ "_year": { "$gt": 1900 } }` |
+                         *     | `$gte` | Greater than or equal | `{ "_year": { "$gte": 1900 } }` |
+                         *     | `$lt` | Less than | `{ "_year": { "$lt": 2000 } }` |
+                         *     | `$lte` | Less than or equal | `{ "_year": { "$lte": 2000 } }` |
+                         *     | `$in` | In array | `{ "_class": { "$in": ["letter", "memo"] } }` |
+                         *     | `$nin` | Not in array | `{ "_class": { "$nin": ["draft"] } }` |
+                         *     | `$exists` | Property exists | `{ "_ocr_text": { "$exists": true } }` |
+                         *
+                         *     **Logical Operators:**
+                         *     | Operator | Description | Example |
+                         *     |----------|-------------|---------|
+                         *     | `$and` | All conditions must match | `{ "$and": [{ "_year": { "$gt": 1900 } }, { "_year": { "$lt": 2000 } }] }` |
+                         *     | `$or` | Any condition must match | `{ "$or": [{ "_class": "letter" }, { "_class": "memo" }] }` |
+                         *
+                         *     **Built-in Fields (always available):**
+                         *     - `type` - Entity type
+                         *     - `created_at` - ISO timestamp string
+                         *     - `updated_at` - ISO timestamp string
+                         *
+                         *     **Example - Find letters from 1800-1900:**
+                         *     ```json
+                         *     {
+                         *       "$and": [
+                         *         { "type": { "$eq": "letter" } },
+                         *         { "_year": { "$gte": 1800 } },
+                         *         { "_year": { "$lte": 1900 } }
+                         *       ]
+                         *     }
+                         *     ```
+                         * @example {
+                         *       "_year": {
+                         *         "$gt": 1800
+                         *       },
+                         *       "type": "letter"
+                         *     }
+                         */
+                        filter?: {
+                            [key: string]: unknown;
+                        };
+                        /**
                          * @description Entity expansion mode. Default: "preview" for lightweight previews, "full" for complete manifests, "none" for no expansion.
                          * @example preview
                          * @enum {string}
@@ -8155,10 +7669,10 @@ export type paths = {
                     content: {
                         "application/json": {
                             results: {
-                                pi: string;
+                                id: string;
                                 label: string;
                                 score: number;
-                                collection_pi: string | null;
+                                collection_id: string | null;
                                 status?: string;
                                 created_at?: string;
                                 updated_at?: string;
@@ -8235,7 +7749,7 @@ export type paths = {
          * Search entities within collection(s)
          * @description Search for entities within one or more collections using semantic text search.
          *
-         *     Provide either `collection_pi` for a single collection or `collection_pis` for multiple collections (searched in parallel).
+         *     Provide either `collection_pi` for a single collection or `collection_ids` for multiple collections (searched in parallel).
          *
          *     Use `per_collection_limit` to ensure result diversity when searching multiple collections.
          *
@@ -8264,10 +7778,10 @@ export type paths = {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @description Single collection PI to search within */
-                        collection_pi?: string;
-                        /** @description Multiple collection PIs to search (max 20) */
-                        collection_pis?: string[];
+                        /** @description Single collection ID to search within */
+                        collection_id?: string;
+                        /** @description Multiple collection IDs to search (max 20) */
+                        collection_ids?: string[];
                         /** @description Search query text */
                         query: string;
                         /**
@@ -8277,6 +7791,56 @@ export type paths = {
                         limit?: number;
                         /** @description Filter by entity types */
                         types?: string[];
+                        /**
+                         * @description Filter by indexed metadata properties.
+                         *
+                         *     **Filterable Properties:**
+                         *     Only underscore-prefixed properties (`_year`, `_class`, etc.) are indexed as filterable metadata.
+                         *
+                         *     **Operators:**
+                         *     | Operator | Description | Example |
+                         *     |----------|-------------|---------|
+                         *     | `$eq` | Equals | `{ "_year": { "$eq": 1905 } }` |
+                         *     | `$ne` | Not equals | `{ "_class": { "$ne": "draft" } }` |
+                         *     | `$gt` | Greater than | `{ "_year": { "$gt": 1900 } }` |
+                         *     | `$gte` | Greater than or equal | `{ "_year": { "$gte": 1900 } }` |
+                         *     | `$lt` | Less than | `{ "_year": { "$lt": 2000 } }` |
+                         *     | `$lte` | Less than or equal | `{ "_year": { "$lte": 2000 } }` |
+                         *     | `$in` | In array | `{ "_class": { "$in": ["letter", "memo"] } }` |
+                         *     | `$nin` | Not in array | `{ "_class": { "$nin": ["draft"] } }` |
+                         *     | `$exists` | Property exists | `{ "_ocr_text": { "$exists": true } }` |
+                         *
+                         *     **Logical Operators:**
+                         *     | Operator | Description | Example |
+                         *     |----------|-------------|---------|
+                         *     | `$and` | All conditions must match | `{ "$and": [{ "_year": { "$gt": 1900 } }, { "_year": { "$lt": 2000 } }] }` |
+                         *     | `$or` | Any condition must match | `{ "$or": [{ "_class": "letter" }, { "_class": "memo" }] }` |
+                         *
+                         *     **Built-in Fields (always available):**
+                         *     - `type` - Entity type
+                         *     - `created_at` - ISO timestamp string
+                         *     - `updated_at` - ISO timestamp string
+                         *
+                         *     **Example - Find letters from 1800-1900:**
+                         *     ```json
+                         *     {
+                         *       "$and": [
+                         *         { "type": { "$eq": "letter" } },
+                         *         { "_year": { "$gte": 1800 } },
+                         *         { "_year": { "$lte": 1900 } }
+                         *       ]
+                         *     }
+                         *     ```
+                         * @example {
+                         *       "_year": {
+                         *         "$gt": 1800
+                         *       },
+                         *       "type": "letter"
+                         *     }
+                         */
+                        filter?: {
+                            [key: string]: unknown;
+                        };
                         /** @description Max results per collection for diversity */
                         per_collection_limit?: number;
                         /**
@@ -8297,18 +7861,18 @@ export type paths = {
                     content: {
                         "application/json": {
                             results: {
-                                pi: string;
+                                id: string;
                                 label: string;
                                 type: string;
                                 score: number;
-                                collection_pi: string;
+                                collection_id: string;
                                 created_at?: string;
                                 updated_at?: string;
                                 entity_preview?: components["schemas"]["EntityPreview"] & unknown;
                                 entity?: components["schemas"]["EntityResponse"] & unknown;
                             }[];
                             metadata: {
-                                collection_pis: string[];
+                                collection_ids: string[];
                                 query: string;
                                 collections_searched: number;
                                 result_count: number;
@@ -8421,6 +7985,56 @@ export type paths = {
                         /** @description Filter by entity types */
                         types?: string[];
                         /**
+                         * @description Filter by indexed metadata properties.
+                         *
+                         *     **Filterable Properties:**
+                         *     Only underscore-prefixed properties (`_year`, `_class`, etc.) are indexed as filterable metadata.
+                         *
+                         *     **Operators:**
+                         *     | Operator | Description | Example |
+                         *     |----------|-------------|---------|
+                         *     | `$eq` | Equals | `{ "_year": { "$eq": 1905 } }` |
+                         *     | `$ne` | Not equals | `{ "_class": { "$ne": "draft" } }` |
+                         *     | `$gt` | Greater than | `{ "_year": { "$gt": 1900 } }` |
+                         *     | `$gte` | Greater than or equal | `{ "_year": { "$gte": 1900 } }` |
+                         *     | `$lt` | Less than | `{ "_year": { "$lt": 2000 } }` |
+                         *     | `$lte` | Less than or equal | `{ "_year": { "$lte": 2000 } }` |
+                         *     | `$in` | In array | `{ "_class": { "$in": ["letter", "memo"] } }` |
+                         *     | `$nin` | Not in array | `{ "_class": { "$nin": ["draft"] } }` |
+                         *     | `$exists` | Property exists | `{ "_ocr_text": { "$exists": true } }` |
+                         *
+                         *     **Logical Operators:**
+                         *     | Operator | Description | Example |
+                         *     |----------|-------------|---------|
+                         *     | `$and` | All conditions must match | `{ "$and": [{ "_year": { "$gt": 1900 } }, { "_year": { "$lt": 2000 } }] }` |
+                         *     | `$or` | Any condition must match | `{ "$or": [{ "_class": "letter" }, { "_class": "memo" }] }` |
+                         *
+                         *     **Built-in Fields (always available):**
+                         *     - `type` - Entity type
+                         *     - `created_at` - ISO timestamp string
+                         *     - `updated_at` - ISO timestamp string
+                         *
+                         *     **Example - Find letters from 1800-1900:**
+                         *     ```json
+                         *     {
+                         *       "$and": [
+                         *         { "type": { "$eq": "letter" } },
+                         *         { "_year": { "$gte": 1800 } },
+                         *         { "_year": { "$lte": 1900 } }
+                         *       ]
+                         *     }
+                         *     ```
+                         * @example {
+                         *       "_year": {
+                         *         "$gt": 1800
+                         *       },
+                         *       "type": "letter"
+                         *     }
+                         */
+                        filter?: {
+                            [key: string]: unknown;
+                        };
+                        /**
                          * @description Number of collections to search
                          * @default 10
                          */
@@ -8448,11 +8062,11 @@ export type paths = {
                     content: {
                         "application/json": {
                             results: {
-                                pi: string;
+                                id: string;
                                 label: string;
                                 type: string;
                                 score: number;
-                                collection_pi: string;
+                                collection_id: string;
                                 created_at?: string;
                                 updated_at?: string;
                                 entity_preview?: components["schemas"]["EntityPreview"] & unknown;
@@ -9179,6 +8793,84 @@ export type components = {
                 [key: string]: unknown;
             };
         };
+        WhoamiUserResponse: {
+            /**
+             * @description Identity type
+             * @enum {string}
+             */
+            type: "user";
+            /**
+             * @description User entity ID
+             * @example 01J1SHMAE10000000000000000
+             */
+            id: string;
+            /**
+             * @description How this identity was authenticated
+             * @example jwt
+             * @enum {string}
+             */
+            auth_method: "jwt" | "api_key";
+            /**
+             * Format: email
+             * @description User email (JWT auth only)
+             * @example ishmael@pequod.ship
+             */
+            email?: string;
+            /**
+             * @description Display name (JWT auth only)
+             * @example Ishmael
+             */
+            name?: string;
+            /**
+             * Format: uuid
+             * @description Supabase Auth user ID (JWT auth only)
+             */
+            supabase_user_id?: string;
+            /**
+             * @description API key prefix (API key auth only)
+             * @example uk_abc1
+             */
+            key_prefix?: string;
+            /**
+             * Format: date-time
+             * @description API key expiration (API key auth only)
+             */
+            key_expires_at?: string;
+        };
+        WhoamiAgentResponse: {
+            /**
+             * @description Identity type
+             * @enum {string}
+             */
+            type: "agent";
+            /**
+             * @description Agent entity ID
+             * @example 01J1AGENTID000000000000000
+             */
+            id: string;
+            /**
+             * @description How this identity was authenticated
+             * @example api_key
+             * @enum {string}
+             */
+            auth_method: "api_key";
+            /**
+             * @description Entity ID of the agent owner
+             * @example 01J1OWNERID0000000000000000
+             */
+            owner_id: string;
+            /**
+             * @description API key prefix
+             * @example ak_xyz9
+             */
+            key_prefix: string;
+            /**
+             * Format: date-time
+             * @description API key expiration
+             */
+            key_expires_at: string;
+        };
+        WhoamiResponse: components["schemas"]["WhoamiUserResponse"] | components["schemas"]["WhoamiAgentResponse"];
         AlphaInvite: {
             /**
              * Format: uuid
@@ -9416,7 +9108,7 @@ export type components = {
          *       "id": "01KDETYWYWM0MJVKM8DK3AEXPY",
          *       "type": "file",
          *       "label": "Research Paper.pdf",
-         *       "collection_pi": "01JCOLLECTION123456789AB",
+         *       "collection_id": "01JCOLLECTION123456789AB",
          *       "description_preview": "A comprehensive study on distributed systems architecture...",
          *       "created_at": "2026-01-12T00:00:00.000Z",
          *       "updated_at": "2026-01-12T10:30:00.000Z"
@@ -9442,7 +9134,7 @@ export type components = {
              * @description Collection ID this entity belongs to
              * @example 01JCOLLECTION123456789ABCD
              */
-            collection_pi?: string;
+            collection_id?: string;
             /**
              * @description Truncated description (max 200 chars + "...")
              * @example This document contains research findings from the 2025 study on entity management systems. It covers key architectural decisions and performance benchmarks...
@@ -9466,10 +9158,10 @@ export type components = {
         };
         SearchResultItem: {
             /**
-             * @description Entity persistent identifier
+             * @description Entity ID
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
-            pi: string;
+            id: string;
             /**
              * @description Entity type
              * @example file
@@ -9484,7 +9176,7 @@ export type components = {
              * @description Collection this entity belongs to (null for public-domain)
              * @example 01JCOLLECTION123456789AB
              */
-            collection_pi: string | null;
+            collection_id: string | null;
             /**
              * @description Relevance score (0-1, higher is better)
              * @example 0.87
@@ -9597,26 +9289,17 @@ export type components = {
              */
             display_image_url?: string;
             /**
-             * @description Custom role definitions (defaults to owner/editor/viewer/public)
+             * @description Whether to merge with default roles (true) or use only provided roles (false). Public role with *:view is always ensured.
+             * @default true
+             * @example true
+             */
+            use_roles_default: boolean;
+            /**
+             * @description Role definitions. When use_roles_default is true (default), these merge with defaults. When false, these replace defaults entirely.
              * @example {
-             *       "captain": [
-             *         "*:view",
-             *         "*:update",
-             *         "*:create",
-             *         "collection:manage"
-             *       ],
-             *       "harpooner": [
-             *         "*:view",
-             *         "*:update",
-             *         "*:create"
-             *       ],
-             *       "crew": [
-             *         "*:view",
-             *         "entity:create"
-             *       ],
              *       "public": [
-             *         "entity:view",
-             *         "collection:view"
+             *         "*:view",
+             *         "*:invoke"
              *       ]
              *     }
              */
@@ -9943,8 +9626,8 @@ export type components = {
             entity_id: string;
         };
         CollectionEntitySummary: {
-            /** @description Entity persistent identifier */
-            pi: string;
+            /** @description Entity ID */
+            id: string;
             /**
              * @description Entity type
              * @example document
@@ -9984,6 +9667,48 @@ export type components = {
                 /** @description Whether more entities exist beyond this page */
                 has_more: boolean;
             };
+        };
+        EntityIndexEntry: {
+            /** @description Entity persistent identifier */
+            id: string;
+            /**
+             * @description Entity type
+             * @example person
+             */
+            type: string;
+            /**
+             * @description Entity display label
+             * @example Captain Ahab
+             */
+            label: string | null;
+            /**
+             * Format: date-time
+             * @description When the entity was created
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the entity was last updated
+             */
+            updated_at: string;
+        };
+        CollectionEntityLookupResponse: {
+            /** @description Collection ID */
+            collection_id: string;
+            /** @description Matching entities */
+            entities: components["schemas"]["EntityIndexEntry"][];
+            /** @description Number of entities returned */
+            count: number;
+        };
+        CollectionEntitySearchResponse: {
+            /** @description Collection ID */
+            collection_id: string;
+            /** @description Original search query */
+            query: string;
+            /** @description Matching entities */
+            entities: components["schemas"]["EntityIndexEntry"][];
+            /** @description Number of entities returned */
+            count: number;
         };
         EntityCreatedResponse: {
             /**
@@ -10103,6 +9828,11 @@ export type components = {
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
             collection?: string;
+            /**
+             * @description Wait for collection index update before returning. Use when checking for duplicates immediately after creation. Adds ~1-5ms latency per collection.
+             * @default false
+             */
+            sync_index: boolean;
         };
         BatchCreateSuccess: {
             /** @enum {boolean} */
@@ -10280,6 +10010,11 @@ export type components = {
                  */
                 peer?: string;
             }[];
+            /**
+             * @description Wait for collection index update before returning. Use when checking index immediately after update.
+             * @default false
+             */
+            sync_index: boolean;
         };
         EntityDeletedResponse: {
             /**
@@ -10324,6 +10059,11 @@ export type components = {
              * @example Duplicate entry
              */
             reason?: string;
+            /**
+             * @description Wait for collection index removal before returning. Use when checking index immediately after deletion.
+             * @default false
+             */
+            sync_index: boolean;
         };
         CascadeDeletedEntity: {
             /**
@@ -10468,7 +10208,7 @@ export type components = {
              * @description Entity ID (ULID format)
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
-            pi: string;
+            id: string;
             /** @description Entity label */
             label: string;
             /** @description Entity type */
@@ -10866,6 +10606,129 @@ export type components = {
              */
             expect_tip: string;
         };
+        QueuedUpdateInfo: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            entity_id: string;
+            /**
+             * @description Queue ID for tracking (unique within entity)
+             * @example 1
+             */
+            queue_id: number;
+        };
+        FailedUpdateInfo: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            entity_id: string;
+            /**
+             * @description Error message explaining why queueing failed
+             * @example Entity not found
+             */
+            error: string;
+        };
+        BatchSummary: {
+            /**
+             * @description Total updates submitted
+             * @example 10
+             */
+            total: number;
+            /**
+             * @description Updates successfully queued
+             * @example 9
+             */
+            queued: number;
+            /**
+             * @description Updates that failed to queue
+             * @example 1
+             */
+            failed: number;
+        };
+        AdditiveUpdatesResponse: {
+            /** @description Successfully queued updates */
+            queued: components["schemas"]["QueuedUpdateInfo"][];
+            /** @description Updates that failed to queue (e.g., infrastructure errors) */
+            failed: components["schemas"]["FailedUpdateInfo"][];
+            summary: components["schemas"]["BatchSummary"];
+        };
+        AdditiveUpdateItem: {
+            /**
+             * @description Entity ID to update
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            entity_id: string;
+            /**
+             * @description Properties to merge (deep merge semantics). Later values overwrite earlier for same keys.
+             * @example {
+             *       "extracted": {
+             *         "keywords": [
+             *           "whaling",
+             *           "voyage"
+             *         ]
+             *       }
+             *     }
+             */
+            properties?: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description Relationships to add (upsert by predicate+peer). Properties are merged if relationship exists.
+             * @example [
+             *       {
+             *         "predicate": "mentions",
+             *         "peer": "01KDETYWYWM0MJVKM8DK3AEXPY",
+             *         "peer_type": "person"
+             *       }
+             *     ]
+             */
+            relationships_add?: {
+                /**
+                 * @description Relationship predicate (e.g., "admin", "contains", "collection")
+                 * @example admin
+                 */
+                predicate: string;
+                /**
+                 * @description Target entity ID
+                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+                 */
+                peer: string;
+                /**
+                 * @description Target entity type hint
+                 * @example user
+                 */
+                peer_type?: string;
+                /**
+                 * @description Target entity label hint
+                 * @example Captain Ahab
+                 */
+                peer_label?: string;
+                /**
+                 * @description Properties to add/update on this relationship (deep merged if relationship exists)
+                 * @example {
+                 *       "expires_at": "2025-12-31T00:00:00Z"
+                 *     }
+                 */
+                properties?: {
+                    [key: string]: unknown;
+                };
+                /** @description Properties to remove from this relationship (string array or nested object) */
+                properties_remove?: string[] | {
+                    [key: string]: unknown;
+                };
+            }[];
+            /**
+             * @description Optional note for this update (preserved in version history)
+             * @example Extracted by document indexer
+             */
+            note?: string;
+        };
+        AdditiveUpdatesRequest: {
+            /** @description Updates to queue (1-1000 items). Updates to the same entity from the same actor are merged. */
+            updates: components["schemas"]["AdditiveUpdateItem"][];
+        };
         VersionInfo: {
             /**
              * @description Entity version number
@@ -11139,455 +11002,6 @@ export type components = {
             default_roles: {
                 [key: string]: string[];
             };
-        };
-        AgentResponse: components["schemas"]["EntityResponse"] & {
-            /** @enum {string} */
-            type?: "agent";
-            /** @description Warnings about sub-agent references that could not be validated. Present only when uses_agents contains references to non-existent, non-agent, or disabled entities. */
-            warnings?: {
-                /** @description The sub-agent ID that has an issue */
-                sub_agent_id: string;
-                /**
-                 * @description Why this is a warning: not_found (entity does not exist), not_an_agent (entity exists but is not an agent), or disabled (agent is disabled)
-                 * @enum {string}
-                 */
-                reason: "not_found" | "not_an_agent" | "disabled";
-                /** @description Human-readable explanation */
-                message: string;
-            }[];
-        };
-        CreateAgentRequest: {
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /** @description Custom entity ID (generated if not provided) */
-            id?: string;
-            /**
-             * @description Agent display name
-             * @example OCR Processor
-             */
-            label: string;
-            /**
-             * Format: uri
-             * @description Agent service base URL
-             * @example https://ocr.example.com/v1
-             */
-            endpoint: string;
-            /**
-             * @description Actions this agent requires on target collections
-             * @example [
-             *       "entity:view",
-             *       "entity:update",
-             *       "entity:create"
-             *     ]
-             */
-            actions_required: string[];
-            /** @description Collection to place agent in */
-            collection: string;
-            /**
-             * @description Agent description
-             * @example Extracts text from scanned documents using OCR
-             */
-            description?: string;
-            /** @description Sub-agents this orchestrator delegates work to. Only provide the sub-agent ID (pi) - their permissions are fetched dynamically at invocation time. Warnings are returned if any referenced sub-agents do not exist or are disabled. */
-            uses_agents?: {
-                /** @description Sub-agent entity ID. The sub-agent's actions_required will be fetched dynamically at invocation time. */
-                pi: string;
-                /** @description Optional display label override (defaults to sub-agent's own label) */
-                label?: string;
-                /** @description Optional description of the sub-agent's role in this orchestrator's workflow */
-                description?: string;
-            }[];
-            /** @description JSON Schema for input validation */
-            input_schema?: {
-                [key: string]: unknown;
-            };
-            /** @description JSON Schema for output description */
-            output_schema?: {
-                [key: string]: unknown;
-            };
-            /** @description Additional properties to store */
-            properties?: {
-                [key: string]: unknown;
-            };
-            /** @description Relationships to create */
-            relationships?: {
-                predicate: string;
-                peer: string;
-                peer_type?: string;
-                peer_label?: string;
-                properties?: {
-                    [key: string]: unknown;
-                };
-            }[];
-        };
-        AgentUpdateResponse: components["schemas"]["AgentResponse"] & {
-            /**
-             * @description Previous version CID
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            prev_cid: string;
-        };
-        UpdateAgentRequest: {
-            /**
-             * @description Current tip CID for CAS validation. Request fails with 409 if this does not match.
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            expect_tip: string;
-            /**
-             * @description Optional note describing this change
-             * @example Added Chapter 42: The Whiteness of the Whale
-             */
-            note?: string;
-            /** @description Properties to add or update (deep merged) */
-            properties?: {
-                [key: string]: unknown;
-            };
-            /** @description Properties to remove. Use string[] for top-level keys (e.g., ["old_field"]), or nested objects for deep removal (e.g., { config: { options: ["debug"] } }). Dot notation like "config.options.debug" is NOT supported. */
-            properties_remove?: string[] | {
-                [key: string]: unknown;
-            };
-            /** @description Relationships to add or update (upsert semantics) */
-            relationships_add?: {
-                /**
-                 * @description Relationship predicate (e.g., "admin", "contains", "collection")
-                 * @example admin
-                 */
-                predicate: string;
-                /**
-                 * @description Target entity ID
-                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-                 */
-                peer: string;
-                /**
-                 * @description Target entity type hint
-                 * @example user
-                 */
-                peer_type?: string;
-                /**
-                 * @description Target entity label hint
-                 * @example Captain Ahab
-                 */
-                peer_label?: string;
-                /**
-                 * @description Properties to add/update on this relationship (deep merged if relationship exists)
-                 * @example {
-                 *       "expires_at": "2025-12-31T00:00:00Z"
-                 *     }
-                 */
-                properties?: {
-                    [key: string]: unknown;
-                };
-                /** @description Properties to remove from this relationship (string array or nested object) */
-                properties_remove?: string[] | {
-                    [key: string]: unknown;
-                };
-            }[];
-            /** @description Relationships to remove */
-            relationships_remove?: {
-                /**
-                 * @description Relationship predicate
-                 * @example viewer
-                 */
-                predicate: string;
-                /**
-                 * @description Target entity ID. If omitted, removes ALL relationships with this predicate.
-                 * @example 01KDETYWYWM0MJVKM8DK3AEXPY
-                 */
-                peer?: string;
-            }[];
-            /** @description Updated agent display name */
-            label?: string;
-            /** @description Updated agent description */
-            description?: string;
-            /**
-             * Format: uri
-             * @description Updated agent service URL
-             */
-            endpoint?: string;
-            /**
-             * @description Actions this agent requires on target collections
-             * @example [
-             *       "entity:view",
-             *       "entity:update",
-             *       "entity:create"
-             *     ]
-             */
-            actions_required?: string[];
-            /**
-             * @description Agent status
-             * @example development
-             * @enum {string}
-             */
-            status?: "development" | "active" | "disabled";
-            /** @description Updated sub-agent references. Only provide sub-agent IDs (pi) - their permissions are fetched dynamically at invocation time. */
-            uses_agents?: {
-                /** @description Sub-agent entity ID. The sub-agent's actions_required will be fetched dynamically at invocation time. */
-                pi: string;
-                /** @description Optional display label override (defaults to sub-agent's own label) */
-                label?: string;
-                /** @description Optional description of the sub-agent's role in this orchestrator's workflow */
-                description?: string;
-            }[];
-            /** @description Updated input schema */
-            input_schema?: {
-                [key: string]: unknown;
-            };
-            /** @description Updated output schema */
-            output_schema?: {
-                [key: string]: unknown;
-            };
-        };
-        InvokeGrant: {
-            agent: {
-                id: string;
-                label: string;
-            };
-            actions: string[];
-            role: string;
-            already_granted: boolean;
-            expired?: boolean;
-            missing_actions?: boolean;
-            /** Format: date-time */
-            current_expires_at?: string;
-        };
-        InvokePreviewResponse: {
-            /** @enum {string} */
-            status: "pending_confirmation";
-            message: string;
-            grants: components["schemas"]["InvokeGrant"][];
-            target: {
-                id: string;
-                label: string;
-            };
-            /** Format: date-time */
-            expires_at: string;
-            /** @description True if all grants exist or user can create them */
-            can_proceed: boolean;
-            /** @description True if some agents need permission grants */
-            grants_needed: boolean;
-            /** @description Warnings about sub-agents that were skipped */
-            warnings?: {
-                /** @description The sub-agent ID that could not be resolved */
-                sub_agent_id: string;
-                /** @description The orchestrator or parent agent that declared this sub-agent reference */
-                parent_agent_id: string;
-                /**
-                 * @description Why the sub-agent was skipped: not_found (entity does not exist) or disabled (agent status is disabled)
-                 * @enum {string}
-                 */
-                reason: "not_found" | "disabled";
-                /** @description Human-readable explanation of the warning */
-                message: string;
-            }[];
-        };
-        InvokeGrantResult: {
-            agent_id: string;
-            role: string;
-            /** Format: date-time */
-            expires_at: string;
-            was_update: boolean;
-        };
-        InvokeStartedResponse: {
-            /** @enum {string} */
-            status: "started";
-            /**
-             * @description Unique job identifier
-             * @example job_01JEXAMPLEID12345678901
-             */
-            job_id: string;
-            /** @description The job collection where agent writes logs */
-            job_collection: string;
-            grants: components["schemas"]["InvokeGrantResult"][];
-            /**
-             * @description Content Identifier (CID) - content-addressed hash
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            target_cid: string;
-            /** Format: date-time */
-            expires_at: string;
-        };
-        InvokeRejectedResponse: {
-            /** @enum {string} */
-            status: "rejected";
-            /** @description Error message explaining why the agent rejected the job */
-            error: string;
-            /** @description Suggested seconds to wait before retrying */
-            retry_after?: number;
-            grants: components["schemas"]["InvokeGrantResult"][];
-            /**
-             * @description Content Identifier (CID) - content-addressed hash
-             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
-             */
-            target_cid: string;
-            /** Format: date-time */
-            expires_at: string;
-        };
-        InvokeConfirmedResponse: components["schemas"]["InvokeStartedResponse"] | components["schemas"]["InvokeRejectedResponse"];
-        InvokeAgentRequest: {
-            /** @description Collection ID to grant the agent access to. All agent permissions are collection-scoped. */
-            target: string;
-            /** @description Job collection where agent should write logs. If not provided, creates new root collection. */
-            job_collection?: string;
-            /** @description Input data for the agent (validated against agent input_schema) */
-            input?: {
-                [key: string]: unknown;
-            };
-            /**
-             * @description Permission duration in seconds (60-86400, default: 3600)
-             * @default 3600
-             * @example 3600
-             */
-            expires_in: number;
-            /**
-             * @description false = preview grants, true = execute agent
-             * @default false
-             * @example false
-             */
-            confirm: boolean;
-        };
-        CreateAgentApiKeyResponse: {
-            /** Format: uuid */
-            id: string;
-            /**
-             * @description Full API key - store securely, shown only once
-             * @example ak_abc123...
-             */
-            key: string;
-            /**
-             * @description Key prefix for identification
-             * @example ak_abc1
-             */
-            prefix: string;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            expires_at: string;
-            label: string | null;
-        };
-        CreateAgentApiKeyRequest: {
-            /**
-             * @description Human-readable label for the key
-             * @example Production key
-             */
-            label?: string;
-            /**
-             * @description Key expiration in days (1-365, default: 365)
-             * @default 365
-             * @example 90
-             */
-            expires_in_days: number;
-        };
-        AgentApiKeyInfo: {
-            /** Format: uuid */
-            id: string;
-            prefix: string;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            expires_at: string;
-            /** Format: date-time */
-            last_used_at: string | null;
-            label: string | null;
-        };
-        ListAgentApiKeysResponse: {
-            keys: components["schemas"]["AgentApiKeyInfo"][];
-        };
-        VerifyAgentTokenResponse: {
-            /**
-             * @description Token to deploy at your endpoint
-             * @example vt_abc123def456...
-             */
-            verification_token: string;
-            /** @description Agent ID to include in verification response */
-            agent_id: string;
-            /**
-             * Format: uri
-             * @description Your agent endpoint URL
-             */
-            endpoint: string;
-            /** @description How to complete verification */
-            instructions: string;
-            /**
-             * Format: date-time
-             * @description Token expiration time
-             */
-            expires_at: string;
-        };
-        VerifyAgentSuccessResponse: {
-            /** @enum {boolean} */
-            verified: true;
-            /**
-             * Format: date-time
-             * @description When the endpoint was verified
-             */
-            verified_at: string;
-        };
-        VerifyAgentFailureResponse: {
-            /** @enum {boolean} */
-            verified: false;
-            /**
-             * @description Verification error code
-             * @enum {string}
-             */
-            error: "no_token" | "token_expired" | "fetch_failed" | "invalid_response" | "token_mismatch" | "agent_id_mismatch";
-            /** @description Human-readable error description */
-            message: string;
-        };
-        VerifyAgentRequest: {
-            /**
-             * @description Set to true to perform verification. Omit or false to generate/get verification token.
-             * @example true
-             */
-            confirm?: boolean;
-        };
-        JobProgress: {
-            /**
-             * @description Total items to process
-             * @example 10
-             */
-            total: number;
-            /**
-             * @description Items not yet started
-             * @example 3
-             */
-            pending: number;
-            /**
-             * @description Items dispatched but not complete
-             * @example 2
-             */
-            dispatched?: number;
-            /**
-             * @description Successfully completed items
-             * @example 4
-             */
-            done: number;
-            /**
-             * @description Failed items
-             * @example 1
-             */
-            error: number;
-        };
-        JobError: {
-            /**
-             * @description Error code
-             * @example TIMEOUT
-             */
-            code: string;
-            /**
-             * @description Human-readable error message
-             * @example Request timed out after 30 seconds
-             */
-            message: string;
-        };
-        AgentUnreachableError: {
-            /**
-             * @description Error message
-             * @example Failed to reach agent: Connection refused
-             */
-            error: string;
         };
         KladosResponse: components["schemas"]["EntityResponse"] & {
             /** @enum {string} */
@@ -12553,7 +11967,7 @@ export type components = {
              * @description Entity ID that changed
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
-            pi: string;
+            entity_id: string;
             /**
              * @description New manifest CID
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
@@ -12581,27 +11995,27 @@ export type components = {
         };
         /**
          * @example {
-         *       "subject_pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+         *       "subject_id": "01KE4ZY69F9R40E88PK9S0TQRQ",
          *       "subject_label": "Project Folder",
          *       "subject_type": "folder",
          *       "subject_preview": {
          *         "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
          *         "type": "folder",
          *         "label": "Project Folder",
-         *         "collection_pi": "01JCOLLECTION123456789ABCD",
+         *         "collection_id": "01JCOLLECTION123456789ABCD",
          *         "description_preview": "Main project folder containing research documents...",
          *         "created_at": "2025-01-10T08:00:00.000Z",
          *         "updated_at": "2025-01-18T16:45:00.000Z"
          *       },
          *       "predicate": "contains",
-         *       "object_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+         *       "object_id": "01KE506KZGD8M2P1XK3VNQT4YR",
          *       "object_label": "Research Paper.pdf",
          *       "object_type": "file",
          *       "object_preview": {
          *         "id": "01KE506KZGD8M2P1XK3VNQT4YR",
          *         "type": "file",
          *         "label": "Research Paper.pdf",
-         *         "collection_pi": "01JCOLLECTION123456789ABCD",
+         *         "collection_id": "01JCOLLECTION123456789ABCD",
          *         "description_preview": "Analysis of entity management patterns and best practices...",
          *         "created_at": "2025-01-15T10:00:00.000Z",
          *         "updated_at": "2025-01-20T14:30:00.000Z"
@@ -12613,7 +12027,7 @@ export type components = {
              * @description Source entity PI
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
-            subject_pi: string;
+            subject_id: string;
             /** @description Source entity label */
             subject_label: string;
             /** @description Source entity type */
@@ -12626,7 +12040,7 @@ export type components = {
              * @description Target entity PI
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
-            object_pi: string;
+            object_id: string;
             /** @description Target entity label */
             object_label: string;
             /** @description Target entity type */
@@ -12639,12 +12053,12 @@ export type components = {
              * @description Entity ID (ULID format)
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
-            source_pi: string;
+            source_id: string;
             /**
              * @description Entity ID (ULID format)
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
-            target_pi: string;
+            target_id: string;
             /** @description Path length (number of hops) */
             length: number;
             edges: components["schemas"]["PathEdge"][];
@@ -12661,14 +12075,14 @@ export type components = {
              *       "01KE4ZY69F9R40E88PK9S0TQRQ"
              *     ]
              */
-            source_pis: string[];
+            source_ids: string[];
             /**
              * @description Target entity PIs
              * @example [
              *       "01KE506KZGD8M2P1XK3VNQT4YR"
              *     ]
              */
-            target_pis: string[];
+            target_ids: string[];
             /**
              * @description Maximum path depth (1-4)
              * @default 4
@@ -12691,8 +12105,8 @@ export type components = {
         };
         /**
          * @example {
-         *       "source_pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
-         *       "target_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+         *       "source_id": "01KE4ZY69F9R40E88PK9S0TQRQ",
+         *       "target_id": "01KE506KZGD8M2P1XK3VNQT4YR",
          *       "target_label": "Research Paper.pdf",
          *       "target_type": "file",
          *       "length": 1,
@@ -12701,7 +12115,7 @@ export type components = {
          *         "id": "01KE506KZGD8M2P1XK3VNQT4YR",
          *         "type": "file",
          *         "label": "Research Paper.pdf",
-         *         "collection_pi": "01JCOLLECTION123456789ABCD",
+         *         "collection_id": "01JCOLLECTION123456789ABCD",
          *         "description_preview": "Analysis of entity management patterns and best practices...",
          *         "created_at": "2025-01-15T10:00:00.000Z",
          *         "updated_at": "2025-01-20T14:30:00.000Z"
@@ -12713,12 +12127,12 @@ export type components = {
              * @description Entity ID (ULID format)
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
-            source_pi: string;
+            source_id: string;
             /**
              * @description Entity ID (ULID format)
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
-            target_pi: string;
+            target_id: string;
             target_label: string;
             target_type: string;
             /** @description Path length (number of hops) */
@@ -12739,7 +12153,7 @@ export type components = {
              *       "01KE4ZY69F9R40E88PK9S0TQRQ"
              *     ]
              */
-            source_pis: string[];
+            source_ids: string[];
             /**
              * @description Target entity type to find
              * @example file
@@ -12769,7 +12183,7 @@ export type components = {
          * @example {
          *       "direction": "outgoing",
          *       "predicate": "contains",
-         *       "peer_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+         *       "peer_id": "01KE506KZGD8M2P1XK3VNQT4YR",
          *       "peer_type": "file",
          *       "peer_label": "Research Paper.pdf",
          *       "properties": {},
@@ -12777,7 +12191,7 @@ export type components = {
          *         "id": "01KE506KZGD8M2P1XK3VNQT4YR",
          *         "type": "file",
          *         "label": "Research Paper.pdf",
-         *         "collection_pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+         *         "collection_id": "01KE4ZY69F9R40E88PK9S0TQRQ",
          *         "description_preview": "Analysis of entity management patterns and best practices...",
          *         "created_at": "2025-01-15T10:00:00.000Z",
          *         "updated_at": "2025-01-20T14:30:00.000Z"
@@ -12792,7 +12206,7 @@ export type components = {
              * @description Entity ID (ULID format)
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
-            peer_pi: string;
+            peer_id: string;
             peer_type: string;
             peer_label: string;
             properties: {
@@ -12803,17 +12217,17 @@ export type components = {
         };
         /**
          * @example {
-         *       "pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+         *       "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
          *       "type": "folder",
          *       "label": "Project Folder",
-         *       "collection_pi": "01JCOLLECTION123456789ABCD",
+         *       "collection_id": "01JCOLLECTION123456789ABCD",
          *       "created_at": "2025-01-10T08:00:00.000Z",
          *       "updated_at": "2025-01-18T16:45:00.000Z",
          *       "relationships": [
          *         {
          *           "direction": "outgoing",
          *           "predicate": "contains",
-         *           "peer_pi": "01KE506KZGD8M2P1XK3VNQT4YR",
+         *           "peer_id": "01KE506KZGD8M2P1XK3VNQT4YR",
          *           "peer_type": "file",
          *           "peer_label": "Research Paper.pdf",
          *           "properties": {},
@@ -12821,7 +12235,7 @@ export type components = {
          *             "id": "01KE506KZGD8M2P1XK3VNQT4YR",
          *             "type": "file",
          *             "label": "Research Paper.pdf",
-         *             "collection_pi": "01JCOLLECTION123456789ABCD",
+         *             "collection_id": "01JCOLLECTION123456789ABCD",
          *             "description_preview": "Analysis of entity management patterns and best practices...",
          *             "created_at": "2025-01-15T10:00:00.000Z",
          *             "updated_at": "2025-01-20T14:30:00.000Z"
@@ -12835,10 +12249,10 @@ export type components = {
              * @description Entity ID (ULID format)
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
-            pi: string;
+            id: string;
             type: string;
             label: string;
-            collection_pi: string | null;
+            collection_id: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -12887,15 +12301,15 @@ export type components = {
                 /**
                  * @description Query result entity with optional expansion data
                  * @example {
-                 *       "pi": "01KE4ZY69F9R40E88PK9S0TQRQ",
+                 *       "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
                  *       "type": "person",
                  *       "label": "Albert Einstein",
-                 *       "collection_pi": "01JCOLL_RESEARCH",
+                 *       "collection_id": "01JCOLL_RESEARCH",
                  *       "preview_data": {
                  *         "id": "01KE4ZY69F9R40E88PK9S0TQRQ",
                  *         "type": "person",
                  *         "label": "Albert Einstein",
-                 *         "collection_pi": "01JCOLL_RESEARCH",
+                 *         "collection_id": "01JCOLL_RESEARCH",
                  *         "description_preview": "German-born theoretical physicist who developed the theory of relativity...",
                  *         "created_at": "2025-01-15T10:00:00.000Z",
                  *         "updated_at": "2025-01-20T14:30:00.000Z"
@@ -12907,13 +12321,13 @@ export type components = {
                      * @description Entity ID (ULID format)
                      * @example 01KDETYWYWM0MJVKM8DK3AEXPY
                      */
-                    pi: string;
+                    id: string;
                     /** @example person */
                     type: string;
                     /** @example Albert Einstein */
                     label: string;
                     /** @example 01JCOLL_RESEARCH */
-                    collection_pi: string | null;
+                    collection_id: string | null;
                     preview_data?: components["schemas"]["EntityPreview"] & unknown;
                     full_entity?: components["schemas"]["EntityResponse"] & unknown;
                 };
@@ -12958,6 +12372,26 @@ export type components = {
              * @enum {string}
              */
             expand?: "none" | "preview" | "full";
+            /**
+             * @description Filter by indexed metadata properties during semantic search.
+             *
+             *     Only underscore-prefixed properties (`_year`, `_class`, etc.) are indexed as filterable metadata.
+             *
+             *     **Operators:** `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$exists`, `$and`, `$or`
+             *
+             *     **Example - Find letters from the 1800s:**
+             *     ```json
+             *     { "_year": { "$gte": 1800, "$lte": 1899 } }
+             *     ```
+             * @example {
+             *       "_year": {
+             *         "$gt": 1800
+             *       }
+             *     }
+             */
+            filter?: {
+                [key: string]: unknown;
+            };
         };
         MessageTooLargeDetails: {
             /** @enum {string} */
@@ -13121,7 +12555,7 @@ export type components = {
              * @description Entity ID (ULID format)
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
-            pi: string;
+            id: string;
             /**
              * @description Entity version number
              * @example 1
@@ -13154,7 +12588,7 @@ export type components = {
              * @description Entity ID (ULID format)
              * @example 01KDETYWYWM0MJVKM8DK3AEXPY
              */
-            pi: string;
+            id: string;
             /**
              * @description Entity version number
              * @example 1
@@ -13201,7 +12635,7 @@ export type components = {
                  * @description Entity ID (ULID format)
                  * @example 01KDETYWYWM0MJVKM8DK3AEXPY
                  */
-                pi: string;
+                id: string;
                 /**
                  * @description Entity version number
                  * @example 1

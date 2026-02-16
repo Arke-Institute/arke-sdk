@@ -6,6 +6,7 @@
 
 // Upload operations (primary folder/file upload functionality)
 export {
+  // Tree uploads
   uploadTree,
   computeCid,
   verifyCid,
@@ -21,6 +22,13 @@ export {
   type UploadOptions,
   type UploadResult,
   type CreatedEntity,
+  // Single entity uploads
+  uploadToEntity,
+  type UploadItem,
+  type UploadToEntityProgress,
+  type UploadToEntityOptions,
+  type UploadToEntityResult,
+  type UploadContentResult,
 } from './upload/index.js';
 
 // Legacy FolderOperations class (deprecated - use uploadTree instead)

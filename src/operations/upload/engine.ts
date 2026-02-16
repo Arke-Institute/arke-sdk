@@ -268,6 +268,7 @@ export async function uploadTree(
         label: target.createCollection.label,
         description: target.createCollection.description,
         roles: target.createCollection.roles,
+        use_roles_default: true,
         note,
       };
 
