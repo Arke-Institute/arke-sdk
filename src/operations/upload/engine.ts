@@ -611,6 +611,7 @@ export async function uploadTree(
                 expect_tip: tip,
                 relationships_add: relationshipsAdd,
                 note: note ? `${note} (backlink${isRetry ? ' retry' : ''})` : `Upload backlink${isRetry ? ' retry' : ''}`,
+                sync_index: false,
               },
             });
 
