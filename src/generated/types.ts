@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-02-16T23:01:40.798Z
+ * Generated: 2026-02-16T23:07:58.830Z
  */
 
 export type paths = {
@@ -9293,7 +9293,7 @@ export type components = {
              * @description Whether to merge with default roles (true) or use only provided roles (false). Public role with *:view is always ensured.
              * @default true
              */
-            use_roles_default: boolean | null;
+            use_roles_default?: boolean | null;
             /**
              * @description Role definitions. When use_roles_default is true (default), these merge with defaults. When false, these replace defaults entirely.
              * @example {
@@ -9832,7 +9832,7 @@ export type components = {
              * @description Wait for collection index update before returning. Use when checking for duplicates immediately after creation. Adds ~1-5ms latency per collection.
              * @default false
              */
-            sync_index: boolean | null;
+            sync_index?: boolean | null;
         };
         BatchCreateSuccess: {
             /** @enum {boolean} */
@@ -10014,7 +10014,7 @@ export type components = {
              * @description Wait for collection index update before returning. Use when checking index immediately after update.
              * @default false
              */
-            sync_index: boolean | null;
+            sync_index?: boolean | null;
         };
         EntityDeletedResponse: {
             /**
@@ -10063,7 +10063,7 @@ export type components = {
              * @description Wait for collection index removal before returning. Use when checking index immediately after deletion.
              * @default false
              */
-            sync_index: boolean | null;
+            sync_index?: boolean | null;
         };
         CascadeDeletedEntity: {
             /**
