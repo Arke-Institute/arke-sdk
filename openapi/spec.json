@@ -1122,9 +1122,9 @@
           },
           "use_roles_default": {
             "type": "boolean",
+            "nullable": true,
             "default": true,
-            "description": "Whether to merge with default roles (true) or use only provided roles (false). Public role with *:view is always ensured.",
-            "example": true
+            "description": "Whether to merge with default roles (true) or use only provided roles (false). Public role with *:view is always ensured."
           },
           "roles": {
             "type": "object",
@@ -2252,6 +2252,7 @@
           },
           "sync_index": {
             "type": "boolean",
+            "nullable": true,
             "default": false,
             "description": "Wait for collection index update before returning. Use when checking for duplicates immediately after creation. Adds ~1-5ms latency per collection."
           }
@@ -2698,6 +2699,7 @@
           },
           "sync_index": {
             "type": "boolean",
+            "nullable": true,
             "default": false,
             "description": "Wait for collection index update before returning. Use when checking index immediately after update."
           }
@@ -2770,6 +2772,7 @@
           },
           "sync_index": {
             "type": "boolean",
+            "nullable": true,
             "default": false,
             "description": "Wait for collection index removal before returning. Use when checking index immediately after deletion."
           }
@@ -14724,7 +14727,7 @@
           "Events"
         ],
         "summary": "List entity change events",
-        "description": "Returns a cursor-based list of entity change events for client synchronization.\n\n**Usage:**\n- Call without cursor to get newest events\n- Use returned `cursor` as `?cursor=` to get older events\n- Poll without cursor periodically to check for new events\n\n**Sync flow:**\n1. Initial: `GET /events` → get newest, save highest `id` as high-water mark\n2. Paginate: `GET /events?cursor=X` → get older events until `has_more=false`\n3. Poll: `GET /events` → if newest `id` > high-water mark, process new events\n\n**Event data:**\n- `id`: Auto-increment ID\n- `pi`: Entity ID that changed\n- `cid`: New manifest CID\n- `ts`: ISO timestamp\n\nEvents are ephemeral (30-day rolling window) - for full sync, use snapshots.\n\n---\n**Permission:** `events:list`  \n**Auth:** none",
+        "description": "Returns a cursor-based list of entity change events for client synchronization.\n\n**Usage:**\n- Call without cursor to get newest events\n- Use returned `cursor` as `?cursor=` to get older events\n- Poll without cursor periodically to check for new events\n\n**Sync flow:**\n1. Initial: `GET /events` → get newest, save highest `id` as high-water mark\n2. Paginate: `GET /events?cursor=X` → get older events until `has_more=false`\n3. Poll: `GET /events` → if newest `id` > high-water mark, process new events\n\n**Event data:**\n- `id`: Auto-increment ID\n- `entity_id`: Entity ID that changed\n- `cid`: New manifest CID\n- `ts`: ISO timestamp\n\nEvents are ephemeral (30-day rolling window) - for full sync, use snapshots.\n\n---\n**Permission:** `events:list`  \n**Auth:** none",
         "x-arke-action": "events:list",
         "x-arke-auth": "none",
         "x-arke-tier": "standard",
