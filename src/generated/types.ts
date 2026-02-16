@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-02-16T14:30:05.179Z
+ * Generated: 2026-02-16T21:35:43.532Z
  */
 
 export type paths = {
@@ -2025,6 +2025,7 @@ export type paths = {
             parameters: {
                 query?: {
                     type?: string;
+                    filter?: string;
                     limit?: number;
                     offset?: number | null;
                     expand?: "preview" | "full";
@@ -9062,10 +9063,10 @@ export type components = {
         };
         UserCollectionItem: {
             /**
-             * @description Collection persistent identifier
+             * @description Collection ID
              * @example 01JCOLLECTION123456789AB
              */
-            pi: string;
+            id: string;
             /**
              * @description Collection label/name
              * @example My Research Collection
@@ -11547,7 +11548,7 @@ export type components = {
              * @example {
              *       "extract": {
              *         "klados": {
-             *           "pi": "01KKLADOSA12345678901234",
+             *           "id": "01KKLADOSA12345678901234",
              *           "type": "klados"
              *         },
              *         "then": {
@@ -11556,7 +11557,7 @@ export type components = {
              *       },
              *       "summarize": {
              *         "klados": {
-             *           "pi": "01KKLADOSB12345678901234",
+             *           "id": "01KKLADOSB12345678901234",
              *           "type": "klados"
              *         },
              *         "then": {
@@ -11571,12 +11572,17 @@ export type components = {
                      * KladosRef
                      * @description Reference to the klados entity to invoke for this step
                      * @example {
-                     *       "pi": "01KEXAMPLE123456789012345",
+                     *       "id": "01KEXAMPLE123456789012345",
                      *       "type": "klados",
                      *       "label": "OCR Processor"
                      *     }
                      */
                     klados: {
+                        id: string;
+                        type?: string;
+                        label?: string;
+                        description?: string;
+                    } | {
                         pi: string;
                         type?: string;
                         label?: string;
@@ -11730,7 +11736,7 @@ export type components = {
              * @example {
              *       "extract": {
              *         "klados": {
-             *           "pi": "01KKLADOSA12345678901234",
+             *           "id": "01KKLADOSA12345678901234",
              *           "type": "klados"
              *         },
              *         "then": {
@@ -11739,7 +11745,7 @@ export type components = {
              *       },
              *       "summarize": {
              *         "klados": {
-             *           "pi": "01KKLADOSB12345678901234",
+             *           "id": "01KKLADOSB12345678901234",
              *           "type": "klados"
              *         },
              *         "then": {
@@ -11754,12 +11760,17 @@ export type components = {
                      * KladosRef
                      * @description Reference to the klados entity to invoke for this step
                      * @example {
-                     *       "pi": "01KEXAMPLE123456789012345",
+                     *       "id": "01KEXAMPLE123456789012345",
                      *       "type": "klados",
                      *       "label": "OCR Processor"
                      *     }
                      */
                     klados: {
+                        id: string;
+                        type?: string;
+                        label?: string;
+                        description?: string;
+                    } | {
                         pi: string;
                         type?: string;
                         label?: string;

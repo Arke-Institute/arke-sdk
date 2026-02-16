@@ -710,9 +710,9 @@
       "UserCollectionItem": {
         "type": "object",
         "properties": {
-          "pi": {
+          "id": {
             "type": "string",
-            "description": "Collection persistent identifier",
+            "description": "Collection ID",
             "example": "01JCOLLECTION123456789AB"
           },
           "label": {
@@ -732,7 +732,7 @@
           }
         },
         "required": [
-          "pi",
+          "id",
           "label",
           "predicate",
           "created_at"
@@ -5781,29 +5781,54 @@
               "type": "object",
               "properties": {
                 "klados": {
-                  "type": "object",
-                  "properties": {
-                    "pi": {
-                      "type": "string",
-                      "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                        },
+                        "type": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ]
                     },
-                    "type": {
-                      "type": "string"
-                    },
-                    "label": {
-                      "type": "string"
-                    },
-                    "description": {
-                      "type": "string"
+                    {
+                      "type": "object",
+                      "properties": {
+                        "pi": {
+                          "type": "string",
+                          "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                        },
+                        "type": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "pi"
+                      ]
                     }
-                  },
-                  "required": [
-                    "pi"
                   ],
                   "description": "Reference to the klados entity to invoke for this step",
                   "title": "KladosRef",
                   "example": {
-                    "pi": "01KEXAMPLE123456789012345",
+                    "id": "01KEXAMPLE123456789012345",
                     "type": "klados",
                     "label": "OCR Processor"
                   }
@@ -5950,7 +5975,7 @@
             "example": {
               "extract": {
                 "klados": {
-                  "pi": "01KKLADOSA12345678901234",
+                  "id": "01KKLADOSA12345678901234",
                   "type": "klados"
                 },
                 "then": {
@@ -5959,7 +5984,7 @@
               },
               "summarize": {
                 "klados": {
-                  "pi": "01KKLADOSB12345678901234",
+                  "id": "01KKLADOSB12345678901234",
                   "type": "klados"
                 },
                 "then": {
@@ -6223,29 +6248,54 @@
               "type": "object",
               "properties": {
                 "klados": {
-                  "type": "object",
-                  "properties": {
-                    "pi": {
-                      "type": "string",
-                      "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                        },
+                        "type": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ]
                     },
-                    "type": {
-                      "type": "string"
-                    },
-                    "label": {
-                      "type": "string"
-                    },
-                    "description": {
-                      "type": "string"
+                    {
+                      "type": "object",
+                      "properties": {
+                        "pi": {
+                          "type": "string",
+                          "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+                        },
+                        "type": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "pi"
+                      ]
                     }
-                  },
-                  "required": [
-                    "pi"
                   ],
                   "description": "Reference to the klados entity to invoke for this step",
                   "title": "KladosRef",
                   "example": {
-                    "pi": "01KEXAMPLE123456789012345",
+                    "id": "01KEXAMPLE123456789012345",
                     "type": "klados",
                     "label": "OCR Processor"
                   }
@@ -6392,7 +6442,7 @@
             "example": {
               "extract": {
                 "klados": {
-                  "pi": "01KKLADOSA12345678901234",
+                  "id": "01KKLADOSA12345678901234",
                   "type": "klados"
                 },
                 "then": {
@@ -6401,7 +6451,7 @@
               },
               "summarize": {
                 "klados": {
-                  "pi": "01KKLADOSB12345678901234",
+                  "id": "01KKLADOSB12345678901234",
                   "type": "klados"
                 },
                 "then": {
@@ -10270,6 +10320,16 @@
             },
             "required": false,
             "name": "type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "JSON-encoded filter for custom properties (underscore-prefixed). Supports direct equality {\"_year\": 1850} or operators {\"_year\": {\"$gte\": 1800}}. Operators: $eq, $ne, $gt, $gte, $lt, $lte.",
+              "example": "{\"_year\":{\"$gte\":1800,\"$lte\":1900}}"
+            },
+            "required": false,
+            "name": "filter",
             "in": "query"
           },
           {
