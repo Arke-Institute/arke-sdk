@@ -39,15 +39,10 @@ async function generate() {
 
   let output = astToString(ast);
 
-  // Post-process: Make nullable boolean properties with defaults truly optional
+  // Post-process: Make all nullable boolean properties truly optional
   // openapi-typescript generates `prop: boolean | null` but we want `prop?: boolean | null`
-  // for properties that have defaults and are not in the required array
-  const optionalNullableProps = ['sync_index', 'use_roles_default'];
-  for (const prop of optionalNullableProps) {
-    // Match the property definition and add ? if not already present
-    const pattern = new RegExp(`(\\s+)(${prop})(:)\\s*(boolean \\| null)`, 'g');
-    output = output.replace(pattern, '$1$2?$3 $4');
-  }
+  // This is a quirk of openapi-typescript - nullable booleans should be optional
+  output = output.replace(/(\s+)(\w+)(:)\s*(boolean \| null)/g, '$1$2?$3 $4');
 
   // Add header comment
   const header = `/**
