@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-02-16T23:50:23.346Z
+ * Generated: 2026-02-20T03:10:32.965Z
  */
 
 export type paths = {
@@ -1032,6 +1032,88 @@ export type paths = {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collections/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all collections for catalog/sitemap
+         * @description Returns a paginated list of all collection IDs and their last update times.
+         *
+         *     This endpoint is designed for sitemap generation and discovery services. It returns minimal data (just IDs and timestamps) for efficiency.
+         *
+         *     **Lazy Population:** The catalog is populated as collections are created or updated. Newly created collections may take a moment to appear.
+         *
+         *     **No Authentication Required:** This endpoint is public to allow crawlers and discovery services to access it.
+         *
+         *     ---
+         *     **Permission:** `catalog:list`
+         *     **Auth:** none
+         */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                    offset?: number | null;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Paginated list of collections */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                /**
+                                 * @description Collection ID (PI)
+                                 * @example 01JEXAMPLE...
+                                 */
+                                id: string;
+                                /**
+                                 * @description ISO timestamp of last update
+                                 * @example 2026-02-17T12:00:00Z
+                                 */
+                                updated_at: string;
+                            }[];
+                            pagination: {
+                                /** @description Total number of collections in catalog */
+                                total: number;
+                                /** @description Requested limit */
+                                limit: number;
+                                /** @description Current offset */
+                                offset: number;
+                                /** @description Whether more results are available */
+                                has_more: boolean;
+                            };
+                        };
+                    };
+                };
+                /** @description Collections catalog service unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2195,17 +2277,25 @@ export type paths = {
             cookie?: never;
         };
         /**
-         * Search entities by keyword
-         * @description Fast (~5ms) keyword search within entity labels in this collection.
+         * Search entities by keyword or similarity
+         * @description Search within a collection's entities using keyword matching or semantic similarity.
          *
-         *     Uses a per-collection SQLite index for instant substring matching. Complements semantic search for quick keyword lookups.
+         *     **Keyword Search (q parameter):**
+         *     - Fast (~5ms) using per-collection SQLite index
+         *     - Case-insensitive substring match on entity labels
+         *
+         *     **Semantic Similarity Search (similar_to parameter):**
+         *     - Finds entities semantically similar to the given entity ID
+         *     - Uses Pinecone vector similarity
+         *     - Returns results with similarity scores
+         *
+         *     One of `q` or `similar_to` must be provided.
          *
          *     **Query Parameters:**
-         *     - `q`: Search query (required, case-insensitive substring match)
+         *     - `q`: Search query (case-insensitive substring match)
+         *     - `similar_to`: Entity ID to find similar items for
          *     - `type`: Filter by entity type
          *     - `limit`: Maximum results (default: 100, max: 1000)
-         *
-         *     **Note:** This is a simple substring match, not semantic search. Use /query for AI-powered semantic search.
          *
          *     ---
          *     **Permission:** `collection:view`
@@ -2213,8 +2303,9 @@ export type paths = {
          */
         get: {
             parameters: {
-                query: {
-                    q: string;
+                query?: {
+                    q?: string;
+                    similar_to?: string;
                     type?: string;
                     limit?: number;
                 };
@@ -3931,7 +4022,7 @@ export type paths = {
          *     - Creates a new entity version on each upload
          *
          *     **Storage:**
-         *     Content is stored at `{entity_id}/{key}` in R2, enabling multiple versions per entity.
+         *     Content is stored at `{entity_id}/{cid}` in R2, enabling multiple versions per entity without overwriting.
          *
          *     ---
          *     **Permission:** `entity:update`
@@ -4621,6 +4712,76 @@ export type paths = {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/updates/queue/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get update queue status for entity
+         * @description Returns the status of the additive update queue for a specific entity.
+         *
+         *     **Use Cases:**
+         *     - Diagnose why additive updates may not have been applied
+         *     - Check for pending, processing, or failed updates
+         *     - Monitor queue processing progress
+         *
+         *     **Response includes:**
+         *     - Counts by status (pending, processing, failed)
+         *     - Detailed items with actor, relationships count, error messages, attempts
+         *
+         *
+         *     ---
+         *     **Permission:** `entity:view`
+         *     **Auth:** required
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Queue status retrieved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["QueueStatusResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -9700,13 +9861,22 @@ export type components = {
             /** @description Number of entities returned */
             count: number;
         };
+        CollectionEntitySearchResult: components["schemas"]["EntityIndexEntry"] & {
+            /**
+             * @description Similarity score (only present for semantic search via similar_to)
+             * @example 0.87
+             */
+            score?: number;
+        };
         CollectionEntitySearchResponse: {
             /** @description Collection ID */
             collection_id: string;
-            /** @description Original search query */
-            query: string;
+            /** @description Original search query (for keyword search) */
+            query?: string;
+            /** @description Source entity ID (for similarity search) */
+            similar_to?: string;
             /** @description Matching entities */
-            entities: components["schemas"]["EntityIndexEntry"][];
+            entities: components["schemas"]["CollectionEntitySearchResult"][];
             /** @description Number of entities returned */
             count: number;
         };
@@ -10605,6 +10775,85 @@ export type components = {
              * @example bafyrei...
              */
             expect_tip: string;
+        };
+        QueueItem: {
+            /**
+             * @description Queue item ID
+             * @example 1
+             */
+            id: number;
+            /**
+             * @description Actor who queued the update
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            actor_id: string;
+            /**
+             * @description Current status of the queue item
+             * @example pending
+             * @enum {string}
+             */
+            status: "pending" | "processing" | "failed" | "completed";
+            /**
+             * @description Number of relationships in this update
+             * @example 5
+             */
+            relationships_count: number;
+            /**
+             * @description Summary of relationships (predicate + peer)
+             * @example [
+             *       {
+             *         "predicate": "sent_to",
+             *         "peer": "01KDETYWYWM0MJVKM8DK3AEXPY"
+             *       }
+             *     ]
+             */
+            relationships_summary: {
+                predicate: string;
+                peer: string;
+            }[];
+            /**
+             * @description Top-level property keys being updated
+             * @example [
+             *       "extracted",
+             *       "metadata"
+             *     ]
+             */
+            properties_keys: string[];
+            /**
+             * @description Optional note for the update
+             * @example Extracted by kg-dedupe-resolver
+             */
+            note: string | null;
+            /**
+             * @description Error message if failed
+             * @example CAS conflict after 20 attempts
+             */
+            error: string | null;
+            /**
+             * @description Number of processing attempts
+             * @example 3
+             */
+            attempts: number;
+            /**
+             * @description ISO timestamp when queued
+             * @example 2024-01-15T10:30:00.000Z
+             */
+            queued_at: string;
+        };
+        QueueStatusResponse: {
+            /**
+             * @description Entity ID (ULID format)
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            entity_id: string;
+            /** @description Count of items by status */
+            counts: {
+                pending: number;
+                processing: number;
+                failed: number;
+            };
+            /** @description Detailed queue items (most recent first, max 100) */
+            items: components["schemas"]["QueueItem"][];
         };
         QueuedUpdateInfo: {
             /**
@@ -11621,6 +11870,20 @@ export type components = {
                             /** @description Target step name if condition matches */
                             target: string;
                         }[];
+                    } | {
+                        /** @description Target step name for bounded recursion */
+                        recurse: string;
+                        /**
+                         * @description Maximum recursion depth (default: 10)
+                         * @example 10
+                         */
+                        max_depth?: number;
+                        /** @description Conditional routing rules */
+                        route?: {
+                            where: components["schemas"]["WhereCondition"];
+                            /** @description Target step name if condition matches */
+                            target: string;
+                        }[];
                     };
                 };
             };
@@ -11803,6 +12066,20 @@ export type components = {
                     } | {
                         /** @description Target step name for N:1 fan-in */
                         gather: string;
+                        /** @description Conditional routing rules */
+                        route?: {
+                            where: components["schemas"]["WhereCondition"];
+                            /** @description Target step name if condition matches */
+                            target: string;
+                        }[];
+                    } | {
+                        /** @description Target step name for bounded recursion */
+                        recurse: string;
+                        /**
+                         * @description Maximum recursion depth (default: 10)
+                         * @example 10
+                         */
+                        max_depth?: number;
                         /** @description Conditional routing rules */
                         route?: {
                             where: components["schemas"]["WhereCondition"];
