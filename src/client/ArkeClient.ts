@@ -12,15 +12,15 @@ import { createRetryFetch } from './retry.js';
 export type ArkeApiClient = Client<paths>;
 
 /**
- * Check if a token is an API key (starts with 'ak_' or 'uk_')
+ * Check if a token is an API key (matches two-letter prefix + underscore, e.g. 'ak_', 'uk_', 'kk_')
  */
 export function isApiKey(token: string): boolean {
-  return token.startsWith('ak_') || token.startsWith('uk_');
+  return /^[a-z]{2}_/.test(token);
 }
 
 /**
  * Get the appropriate Authorization header value for a token
- * - API keys (ak_*, uk_*) use: ApiKey {token}
+ * - API keys (two-letter prefix + underscore, e.g. ak_*, uk_*, kk_*) use: ApiKey {token}
  * - JWT tokens use: Bearer {token}
  */
 export function getAuthorizationHeader(token: string): string {

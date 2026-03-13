@@ -6,7 +6,7 @@
  *
  * Source: Arke v1 API
  * Version: 1.0.0
- * Generated: 2026-02-20T03:10:32.965Z
+ * Generated: 2026-03-13T00:32:55.503Z
  */
 
 export type paths = {
@@ -239,6 +239,335 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/auth/register/challenge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request a proof-of-work challenge for agent registration
+         * @description Returns a PoW challenge that the agent must solve before registering.
+         *
+         *     The agent must find a counter value such that:
+         *     `SHA-256(nonce + public_key + counter)` has at least `difficulty` leading zero bits.
+         *
+         *     Challenges expire after 5 minutes.
+         *
+         *     ---
+         *     **Permission:** `auth:register-challenge`
+         *     **Auth:** none
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ChallengeRequest"];
+                };
+            };
+            responses: {
+                /** @description Challenge issued */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChallengeResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Too many challenge requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Internal server error"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/register/agent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register a new autonomous agent
+         * @description Completes agent registration by submitting a PoW solution and signed nonce.
+         *
+         *     Requires:
+         *     1. A valid PoW solution for an active challenge
+         *     2. An Ed25519 signature of the nonce proving private key ownership
+         *
+         *     On success, creates an agent entity and returns an API key (shown once).
+         *     Use the API key as: `Authorization: ApiKey <key>`
+         *
+         *     ---
+         *     **Permission:** `auth:register-agent`
+         *     **Auth:** none
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["RegisterAgentRequest"];
+                };
+            };
+            responses: {
+                /** @description Agent registered */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RegisterAgentResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Public key already registered */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Challenge expired or already used */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Internal server error"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/identity/key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set Ed25519 identity key
+         * @description Sets an Ed25519 public key on the authenticated entity, establishing a portable cryptographic identity.
+         *
+         *     **Two modes:**
+         *     - **Provide your own key:** Include `public_key` in the request body. You manage the keypair.
+         *     - **Server-generated:** Omit `public_key`. The server generates a keypair, stores the public key, and returns the private key **once**. Store it securely — it will never be shown again.
+         *
+         *     Returns 409 if a public key is already set. Use entity update for key rotation.
+         *
+         *     ---
+         *     **Permission:** `auth:set-identity-key`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SetIdentityKeyRequest"];
+                };
+            };
+            responses: {
+                /** @description Identity key set */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SetIdentityKeyResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Conflict - CAS validation failed (entity was modified) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Conflict: entity was modified",
+                         *       "details": {
+                         *         "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                         *         "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["CASErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Internal server error"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/alpha/invite": {
         parameters: {
             query?: never;
@@ -458,6 +787,125 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/admin/stats/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Network overview stats
+         * @description Returns aggregated entity counts, user stats, and request metrics. Requires X-Alpha-Secret header.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    network?: "main" | "test";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Overview stats */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OverviewStats"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Internal error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/stats/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Network activity over time
+         * @description Returns request rates, active users, entity activity, and hourly distribution for a given period. Requires X-Alpha-Secret header.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    period?: string;
+                    network?: "main" | "test";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Activity stats */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ActivityStats"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Internal error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/me": {
         parameters: {
             query?: never;
@@ -575,6 +1023,16 @@ export type paths = {
         /**
          * Create API key
          * @description Creates a new API key for the authenticated user. The full key is only returned once - store it securely.
+         *
+         *     ## Usage
+         *
+         *     Use the returned key with the `Authorization` header:
+         *
+         *     ```
+         *     Authorization: ApiKey uk_xxxxxxxxxxxxx
+         *     ```
+         *
+         *     **Important:** Use `ApiKey` prefix, NOT `Bearer`. User keys always start with `uk_`.
          *
          *     ---
          *     **Permission:** `user:credentials`
@@ -695,7 +1153,7 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
-    "/users/{id}/collections": {
+    "/users/my/collections": {
         parameters: {
             query?: never;
             header?: never;
@@ -703,30 +1161,31 @@ export type paths = {
             cookie?: never;
         };
         /**
-         * List collections user has access to
-         * @description Returns all collections where the user has a role relationship (owner, editor, viewer, etc.).
+         * List current user's collections
+         * @description Returns all collections where the authenticated user has been explicitly assigned a role.
          *
-         *     Queries GraphDB for collections with relationships pointing to this user where peer_type is 'user'.
-         *     Results include the role predicate so clients know what access the user has to each collection.
+         *     This endpoint queries the user's personal collections index (Durable Object) for fast lookups.
+         *     Only explicit role assignments are tracked - wildcard/public permissions are not included.
          *
-         *     Supports filtering by predicate (role name) and pagination.
+         *     A user can have multiple roles on the same collection (e.g., owner and editor).
+         *     Roles are aggregated per collection in the response.
+         *
+         *     Supports filtering by role name and pagination.
          *
          *     ---
          *     **Permission:** `user:view`
-         *     **Auth:** optional
+         *     **Auth:** required
          */
         get: {
             parameters: {
                 query?: {
-                    predicate?: string;
+                    role?: string;
+                    include_expired?: string;
                     limit?: string;
                     offset?: string;
                 };
                 header?: never;
-                path: {
-                    /** @description Entity ID (ULID) */
-                    id: string;
-                };
+                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
@@ -737,7 +1196,7 @@ export type paths = {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["UserCollectionsResponse"];
+                        "application/json": components["schemas"]["MyCollectionsResponse"];
                     };
                 };
                 /** @description Unauthorized - Missing or invalid authentication */
@@ -754,35 +1213,7 @@ export type paths = {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description GraphDB service unavailable */
+                /** @description User collections index service unavailable */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -2082,10 +2513,12 @@ export type paths = {
             cookie?: never;
         };
         /**
-         * List entities in a collection
-         * @description Returns entities belonging to this collection.
+         * List entities in a collection (paginated)
+         * @description Paginated listing of entities in this collection, ordered by creation date (newest first). Default page size is 50, maximum 200. Use `offset` to paginate through results.
          *
-         *     Supports pagination and optional type filtering. Results are ordered by creation date (newest first).
+         *     **This is not a search endpoint.** To search content within a collection, use `GET /collections/{id}/entities/search` with the `similar_to` parameter (semantic similarity via Pinecone).
+         *
+         *     Supports optional type and property filtering.
          *
          *     **Expansion Modes:**
          *
@@ -2183,10 +2616,14 @@ export type paths = {
             cookie?: never;
         };
         /**
-         * Lookup entities by label
-         * @description Fast (~5ms) lookup of entities by exact label and/or type within this collection.
+         * Lookup entities by exact label or type
+         * @description Fast (~5ms) exact-match lookup by label and/or type. This is a lightweight index lookup — it matches entity names exactly, not content.
          *
-         *     Uses a per-collection SQLite index for instant keyword queries. Complements semantic search for when you know the exact label.
+         *     **This is not a content search.** To search content within a collection, use `GET /collections/{id}/entities/search` with the `similar_to` parameter for semantic similarity search via Pinecone.
+         *
+         *     Use this when you know the exact entity label and want to resolve it quickly (e.g., checking if "Chapter 3" exists, listing all entities of type "person").
+         *
+         *     Uses a per-collection SQLite index for instant queries.
          *
          *     **Query Parameters:**
          *     - `label`: Exact label match (case-insensitive)
@@ -2277,23 +2714,26 @@ export type paths = {
             cookie?: never;
         };
         /**
-         * Search entities by keyword or similarity
-         * @description Search within a collection's entities using keyword matching or semantic similarity.
+         * Search within a collection (semantic or keyword)
+         * @description **The primary endpoint for searching content within a collection.** Use the `similar_to` parameter for semantic search — this is the recommended way to find content.
          *
-         *     **Keyword Search (q parameter):**
-         *     - Fast (~5ms) using per-collection SQLite index
-         *     - Case-insensitive substring match on entity labels
+         *     **Semantic Similarity Search (similar_to parameter) — Use this for content search:**
+         *     - Provide an entity ID and get back semantically similar entities within this collection
+         *     - Uses Pinecone vector similarity scoped to this collection
+         *     - Returns results ranked by similarity score
+         *     - Use cases: "find related items", "more like this", content discovery
          *
-         *     **Semantic Similarity Search (similar_to parameter):**
-         *     - Finds entities semantically similar to the given entity ID
-         *     - Uses Pinecone vector similarity
-         *     - Returns results with similarity scores
+         *     **Keyword Search (q parameter) — Label filtering only:**
+         *     - Fast (~5ms) case-insensitive substring match on entity **labels only** (not content)
+         *     - Uses per-collection SQLite index
+         *     - This is a lightweight filter, not a content search — it only matches against entity names
+         *     - Equivalent to the `/entities/lookup` endpoint but with substring matching instead of exact match
          *
          *     One of `q` or `similar_to` must be provided.
          *
          *     **Query Parameters:**
-         *     - `q`: Search query (case-insensitive substring match)
-         *     - `similar_to`: Entity ID to find similar items for
+         *     - `similar_to`: Entity ID to find semantically similar items for (recommended)
+         *     - `q`: Substring match on entity labels only (not content search)
          *     - `type`: Filter by entity type
          *     - `limit`: Maximum results (default: 100, max: 1000)
          *
@@ -4815,6 +5255,10 @@ export type paths = {
          *     - Multiple updates from the same actor are merged before applying (one version)
          *     - Updates from different actors create separate versions (preserves audit trail)
          *
+         *     **Permission Check:**
+         *     - Each target entity is checked for `entity:update` permission before queueing
+         *     - If any entity fails the permission check, the entire batch is rejected
+         *
          *     **Use Cases:**
          *     - Many workers adding relationships to a shared parent entity
          *     - High-volume indexing where multiple sources enrich the same entity
@@ -4882,6 +5326,20 @@ export type paths = {
                         /**
                          * @example {
                          *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
                          *     }
                          */
                         "application/json": components["schemas"]["ErrorResponse"];
@@ -5447,6 +5905,8 @@ export type paths = {
          * Invoke a klados
          * @description Invoke a klados to perform work on a target entity.
          *
+         *     **Important:** Kladoi perform a single atomic action. For multi-step file processing (e.g., PDF extraction, image analysis, document pipelines), use a **Rhiza workflow** instead (`POST /rhizai/{id}/invoke`). Rhiza orchestrates multiple kladoi into a complete pipeline.
+         *
          *     **Two-phase interaction:**
          *     1. `confirm: false` (default) - preview permissions that will be granted
          *     2. `confirm: true` - execute the klados
@@ -5489,6 +5949,143 @@ export type paths = {
                     };
                     content: {
                         "application/json": components["schemas"]["InvokeKladosConfirmedResponse"];
+                    };
+                };
+                /** @description Bad Request - Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Validation failed",
+                         *       "details": {
+                         *         "issues": [
+                         *           {
+                         *             "path": [
+                         *               "properties",
+                         *               "label"
+                         *             ],
+                         *             "message": "Required"
+                         *           }
+                         *         ]
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ValidationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized - Missing or invalid authentication */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Unauthorized: Missing or invalid authentication token"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden - Insufficient permissions */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Forbidden: You do not have permission to perform this action"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Not Found - Resource does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Entity not found"
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kladoi/{id}/invoke/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Batch invoke a klados
+         * @description Invoke a klados multiple times in parallel with different entities.
+         *
+         *     Uses scatter-utility under the hood for efficient parallel dispatch.
+         *     All invocations share the same target collection and job collection.
+         *
+         *     **Two-phase interaction:**
+         *     1. `confirm: false` (default) - preview permissions that will be granted
+         *     2. `confirm: true` - execute the batch
+         *
+         *     **Input merging:**
+         *     - Shared `input` at request level is merged with per-item `input`
+         *     - Per-item input wins on conflict
+         *
+         *     ---
+         *     **Permission:** `klados:invoke`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Entity ID (ULID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["BatchInvokeKladosRequest"];
+                };
+            };
+            responses: {
+                /** @description Batch invoke preview (confirm: false) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BatchInvokeKladosPreviewResponse"];
+                    };
+                };
+                /** @description Batch dispatching started (confirm: true) */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BatchInvokeKladosConfirmedResponse"];
                     };
                 };
                 /** @description Bad Request - Invalid input */
@@ -5919,7 +6516,17 @@ export type paths = {
         put?: never;
         /**
          * Create API key for klados
-         * @description Creates an API key for the klados. The full key is only returned once.
+         * @description Creates an API key for the klados. The full key is only returned once - store it securely.
+         *
+         *     ## Usage
+         *
+         *     Use the returned key with the `Authorization` header:
+         *
+         *     ```
+         *     Authorization: ApiKey ak_xxxxxxxxxxxxx
+         *     ```
+         *
+         *     **Important:** Use `ApiKey` prefix, NOT `Bearer`. Agent/klados keys always start with `ak_`.
          *
          *     ---
          *     **Permission:** `klados:manage`
@@ -6438,6 +7045,15 @@ export type paths = {
          * Invoke a rhiza workflow
          * @description Invoke a rhiza workflow to process a target entity.
          *
+         *     **Rhiza is the recommended approach for file and entity processing.** Rhiza workflows orchestrate multiple kladoi into a complete pipeline, handling step sequencing, error recovery, and intermediate state automatically.
+         *
+         *     **Common use cases:**
+         *     - **Knowledge graph extraction** (suggested) — extract entities and relationships from files into a structured KG. Search for "KG" rhiza workflows for PDF, image, and text pipelines in Basic, Full, and Recursive variants. **Important:** KG extraction operates on text content, not raw files. If your source entities are images (TIFF, JPEG, PNG), scanned PDFs, or other non-text files, you must first run an OCR or document-processing rhiza workflow to extract text before running a KG workflow. Look for "Multi" variants of KG workflows that combine file processing and KG extraction into a single pipeline, or run an OCR/extraction workflow first, then follow up with a KG workflow.
+         *     - PDF extraction and analysis
+         *     - Image processing and OCR
+         *     - Document ingestion pipelines (download → extract → enrich → index)
+         *     - Any multi-step entity transformation
+         *
          *     **Two-phase interaction:**
          *     1. `confirm: false` (default) - preview permissions for all kladoi
          *     2. `confirm: true` - execute the workflow
@@ -6557,191 +7173,6 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
-    "/rhizai/{id}/jobs/{job_id}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get workflow job status
-         * @description Returns the status of a workflow job.
-         *
-         *     Reads klados_log entries from the job collection to compute:
-         *     - Overall status (pending/running/done/error)
-         *     - Progress counters
-         *     - Current running kladoi
-         *     - Error summaries
-         *
-         *     ---
-         *     **Permission:** `rhiza:view`
-         *     **Auth:** optional
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                    job_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Workflow status */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["WorkflowStatusResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rhizai/{id}/jobs/{job_id}/resume": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Resume failed workflow
-         * @description Resume a workflow by re-invoking failed kladoi that have retryable errors.
-         *
-         *     Only retryable errors are resumed. Non-retryable errors are skipped.
-         *
-         *     ---
-         *     **Permission:** `rhiza:invoke`
-         *     **Auth:** required
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                    job_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["ResumeWorkflowRequest"];
-                };
-            };
-            responses: {
-                /** @description Resume result */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ResumeWorkflowResponse"];
-                    };
-                };
-                /** @description Bad Request - Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Validation failed",
-                         *       "details": {
-                         *         "issues": [
-                         *           {
-                         *             "path": [
-                         *               "properties",
-                         *               "label"
-                         *             ],
-                         *             "message": "Required"
-                         *           }
-                         *         ]
-                         *       }
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ValidationErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized - Missing or invalid authentication */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Unauthorized: Missing or invalid authentication token"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Forbidden - Insufficient permissions */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Forbidden: You do not have permission to perform this action"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not Found - Resource does not exist */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "error": "Entity not found"
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/events": {
         parameters: {
             query?: never;
@@ -6753,18 +7184,37 @@ export type paths = {
          * List entity change events
          * @description Returns a cursor-based list of entity change events for client synchronization.
          *
-         *     **Usage:**
-         *     - Call without cursor to get newest events
-         *     - Use returned `cursor` as `?cursor=` to get older events
-         *     - Poll without cursor periodically to check for new events
+         *     **Cursor options (mutually exclusive):**
+         *     - `since`: Forward pagination - events with id > since, ascending order (oldest first)
+         *     - `until`: Backward pagination - events with id < until, descending order (newest first)
+         *     - `cursor`: Deprecated alias for `until` (backwards compatibility)
+         *     - Neither: Returns newest events, descending order
+         *
+         *     **Examples:**
+         *
+         *     ```
+         *     # Poller catching up (forward from last processed)
+         *     GET /events?since=500&limit=100
+         *     → { events: [501, 502, ...], has_more: true, cursor: 600 }
+         *     # Next page: GET /events?since=600
+         *
+         *     # Browsing history (backward from a point)
+         *     GET /events?until=500&limit=100
+         *     → { events: [499, 498, ...], has_more: true, cursor: 400 }
+         *     # Next page: GET /events?until=400
+         *
+         *     # Latest events (default)
+         *     GET /events?limit=100
+         *     → { events: [1500, 1499, ...], has_more: true, cursor: 1401 }
+         *     ```
          *
          *     **Sync flow:**
-         *     1. Initial: `GET /events` → get newest, save highest `id` as high-water mark
-         *     2. Paginate: `GET /events?cursor=X` → get older events until `has_more=false`
-         *     3. Poll: `GET /events` → if newest `id` > high-water mark, process new events
+         *     1. Initial: `GET /events` → get newest events, save highest `id` as high-water mark
+         *     2. Poll: `GET /events?since=X` → forward from high-water mark to get new events
+         *     3. Backfill: `GET /events?until=X` → backward to get older events until `has_more=false`
          *
          *     **Event data:**
-         *     - `id`: Auto-increment ID
+         *     - `id`: Auto-increment ID (use as cursor)
          *     - `entity_id`: Entity ID that changed
          *     - `cid`: New manifest CID
          *     - `ts`: ISO timestamp
@@ -6778,7 +7228,14 @@ export type paths = {
         get: {
             parameters: {
                 query?: {
-                    /** @description Return events older than this id (from previous response cursor) */
+                    /** @description Return events with id > since, ascending order (oldest first). Use for forward polling from a known position. */
+                    since?: number;
+                    /** @description Return events with id < until, descending order (newest first). Use for browsing history backward. */
+                    until?: number;
+                    /**
+                     * @deprecated
+                     * @description Deprecated: alias for until. Return events older than this id (from previous response cursor)
+                     */
                     cursor?: number;
                     /** @description Maximum number of events to return (default: 100, max: 1000) */
                     limit?: number;
@@ -6824,6 +7281,8 @@ export type paths = {
          * @description Find shortest paths between source and target entity sets. Returns all paths up to the limit (default 100).
          *
          *     Use this when you know both endpoints and want to discover how they connect - for example, finding the chain of relationships between a person and a document.
+         *
+         *     > **Early Access Warning:** Graph endpoints depend on the Neo4j graph database which may not reflect all current network state. Results should be treated as best-effort during this period.
          *
          *     **Entity Expansion (default: preview):**
          *     - Omit `expand` or use `?expand=preview` - Lightweight previews for all path entities
@@ -6914,6 +7373,8 @@ export type paths = {
          *
          *     **When to use this vs POST /query:** This endpoint returns exhaustive, unranked results - all reachable entities up to the limit. Use `POST /query` when you want relevance-ranked results combining semantic similarity with graph structure. Use this endpoint when you need comprehensive graph exploration from known entity IDs.
          *
+         *     > **Early Access Warning:** Graph endpoints depend on the Neo4j graph database which may not reflect all current network state. Results should be treated as best-effort during this period.
+         *
          *     **Target Expansion (default: preview):**
          *     - Omit `expand` or use `?expand=preview` - Lightweight target previews
          *     - `?expand=full` - Complete target manifests
@@ -6994,6 +7455,8 @@ export type paths = {
          * Get entity from graph
          * @description Get entity details with all relationships from the graph database. Unlike the entity manifest, this includes both outgoing and incoming relationships - showing not just what this entity links to, but also what links to it.
          *
+         *     > **Early Access Warning:** Graph endpoints depend on the Neo4j graph database which may not reflect all current network state. Results should be treated as best-effort during this period.
+         *
          *     **Peer Expansion (default: preview):**
          *     - Omit `expand` or use `?expand=preview` - Lightweight peer previews
          *     - `?expand=full` - Complete peer manifests
@@ -7065,6 +7528,8 @@ export type paths = {
         /**
          * Execute Argo query
          * @description Execute an Argo DSL query for path-based graph traversal with relevance ranking.
+         *
+         *     > **Early Access Warning:** Queries involving graph traversal (hops) depend on the Neo4j graph database which may not reflect all current network state. Semantic-only queries (no hops) are stable. Discovery-mode queries may return results from legacy or test collections — see `POST /search/discover` warning for details.
          *
          *     ## When to Use This Endpoint
          *
@@ -7215,6 +7680,8 @@ export type paths = {
          * @description Find collections that are semantically similar to a given collection.
          *
          *     Uses the collection's weighted centroid vector (combination of description and entity embeddings) to find related collections.
+         *
+         *     > **Early Access Warning:** The network currently contains legacy and test collections that may appear in results. Similarity is based purely on vector proximity with no quality filtering — results may include incomplete or outdated collections.
          *
          *     **Entity Expansion:**
          *
@@ -7369,6 +7836,8 @@ export type paths = {
          *     1. First finds collections similar to the entity's collection
          *     2. Then searches within each collection for similar items
          *     3. Aggregates and ranks results with diversity weighting
+         *
+         *     > **Early Access Warning:** Results may include entities from legacy or test collections. No quality filtering is applied — some returned entities may be in outdated formats or contain incomplete data.
          *
          *     **Entity Expansion:**
          *
@@ -7541,6 +8010,8 @@ export type paths = {
          *
          *     Use this endpoint to discover collections about a topic. Results are ranked by semantic similarity to your query.
          *
+         *     > **Early Access Warning:** The network currently contains legacy and test collections. Results are based purely on semantic similarity with no quality filtering — you may encounter outdated or incomplete collections.
+         *
          *     **Entity Expansion:**
          *
          *     Use `expand` in the request body to fetch entity data inline with search results:
@@ -7709,7 +8180,7 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
-    "/search/agents": {
+    "/search/tools": {
         parameters: {
             query?: never;
             header?: never;
@@ -7719,20 +8190,30 @@ export type paths = {
         get?: never;
         put?: never;
         /**
-         * Search agents by text
-         * @description Search for agents using semantic text search.
+         * Search tools (Rhiza workflows and Klados actions) by text
+         * @description Search for Rhiza workflows and Klados actions using semantic text search.
          *
-         *     **Official Agents (Default):** By default, this endpoint searches only the official Arke agents collection (`01KFF0H1KSR4SHHDQ7T2HXQEK6`). These agents are pre-approved, actively maintained, and tested for security and reliability.
+         *     **Choosing the right tool type:**
+         *     - **Rhiza (workflows)**: Use for file processing, multi-step pipelines, and any task requiring coordinated actions (e.g., PDF extraction, image analysis, document processing). Rhiza orchestrates multiple kladoi into a complete pipeline.
+         *     - **Klados (actions)**: Individual atomic operations. Kladoi perform a single action and cannot chain steps on their own. If your task requires multiple steps (e.g., download → extract → summarize), use a Rhiza workflow instead.
          *
-         *     **All Agents:** Set `scope: "all"` to search network-wide. This is not recommended as results may include duplicates, outdated agents, or unapproved implementations.
+         *     **Suggested starting point:** Knowledge graph (KG) extraction workflows are the most developed tools on the network. Search for "KG" to find rhiza workflows that extract entities and relationships from PDFs, images, text, and other file types into a structured knowledge graph. Available in Basic, Full, and Recursive variants depending on depth needed. **Important:** KG extraction operates on text content — raw image files (TIFF, JPEG, PNG) and scanned PDFs must be OCR-processed first to extract text before a KG workflow can meaningfully operate on them. Look for "Multi" variants that combine file processing and KG extraction into one pipeline, or run an OCR/extraction workflow before the KG workflow.
          *
-         *     Results are ranked by semantic similarity to your query based on agent descriptions and capabilities.
+         *     **Tip:** To browse the full tool catalog without a search query, use `GET /search/tools/list`.
+         *
+         *     Use the `type` parameter to filter by tool type, or search both with `type: "all"` (default).
+         *
+         *     **Official Tools (Default):** By default, this endpoint searches only the official Arke tools collection. These tools are pre-approved, actively maintained, and tested for security and reliability.
+         *
+         *     **All Tools:** Set `scope: "all"` to search network-wide. This is not recommended as results may include duplicates, outdated tools, or unapproved implementations.
+         *
+         *     Results are ranked by semantic similarity to your query based on tool descriptions and capabilities.
          *
          *     **Entity Expansion:**
          *
-         *     By default, agent search returns **full entity manifests** (including `endpoint`, `input_schema`, `actions_required`, etc.) to make discovery results immediately useful.
+         *     By default, tool search returns **full entity manifests** (including schemas, inputs, outputs, etc.) to make discovery results immediately useful.
          *
-         *     - **`expand: "full"` (default)**: Complete agent manifests with all properties
+         *     - **`expand: "full"` (default)**: Complete tool manifests with all properties
          *     - **`expand: "preview"`**: Lightweight previews (id, type, label, description_preview, timestamps)
          *     - **`expand: "none"`**: Search metadata only (fastest)
          *
@@ -7814,11 +8295,17 @@ export type paths = {
                          */
                         expand?: "preview" | "full" | "none";
                         /**
-                         * @description Search scope. "official" (default) searches only the pre-approved Arke agents collection. "all" searches all agents network-wide (not recommended - may include duplicates, outdated, or unapproved agents).
+                         * @description Search scope. "official" (default) searches only the pre-approved Arke tools collection. "all" searches all tools network-wide (not recommended - may include duplicates, outdated, or unapproved tools).
                          * @default official
                          * @enum {string}
                          */
                         scope?: "official" | "all";
+                        /**
+                         * @description Filter by tool type. "rhiza" for workflows only, "klados" for actions only, "all" for both.
+                         * @default all
+                         * @enum {string}
+                         */
+                        type?: "rhiza" | "klados" | "all";
                     };
                 };
             };
@@ -7833,6 +8320,8 @@ export type paths = {
                             results: {
                                 id: string;
                                 label: string;
+                                /** @enum {string} */
+                                type: "rhiza" | "klados";
                                 score: number;
                                 collection_id: string | null;
                                 status?: string;
@@ -7892,6 +8381,94 @@ export type paths = {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/search/tools/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all official tools (no search query needed)
+         * @description Returns a lightweight catalog of all official Rhiza workflows and Klados actions. Unlike `POST /search/tools`, this endpoint does not require a search query — it lists the full tool catalog.
+         *
+         *     **Use this endpoint to:**
+         *     - Browse all available tools without knowing what to search for
+         *     - Get an overview of the tool ecosystem
+         *     - Filter by type (rhiza/klados) to see only workflows or actions
+         *
+         *     **Tool Types:**
+         *     - **Rhiza (workflows)**: Multi-step pipelines for file processing, document analysis, etc. Use rhiza for any task requiring coordinated actions.
+         *     - **Klados (actions)**: Single atomic operations. Use kladoi as building blocks within rhiza workflows, not for multi-step tasks.
+         *
+         *     **Suggested starting point:** Knowledge graph (KG) extraction workflows are the most developed tools available. Look for rhiza workflows with "KG" in the name — they extract entities and relationships from PDFs, images, text, and other files into a structured knowledge graph. **Important:** KG workflows require text content to work from — raw image files (TIFF, JPEG, PNG) and scanned PDFs must be OCR-processed first. Use "Multi" variants that combine file processing + KG extraction, or run an OCR/extraction workflow before the KG workflow.
+         *
+         *     ---
+         *     **Permission:** `search:query`
+         *     **Auth:** required
+         */
+        get: {
+            parameters: {
+                query?: {
+                    type?: "rhiza" | "klados" | "all";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Tool catalog listing */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            tools: {
+                                id: string;
+                                label: string | null;
+                                type: string;
+                                description: string | null;
+                                created_at: string;
+                                updated_at: string;
+                            }[];
+                            metadata: {
+                                total: number;
+                                collection_id: string;
+                                /** @enum {string} */
+                                type_filter: "rhiza" | "klados" | "all";
+                            };
+                        };
+                    };
+                };
+                /** @description Service Unavailable - External service not available */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        /**
+                         * @example {
+                         *       "error": "Service unavailable",
+                         *       "details": {
+                         *         "service": "pinecone"
+                         *       }
+                         *     }
+                         */
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -8111,6 +8688,8 @@ export type paths = {
          *     3. Aggregate and rank results across all collections
          *
          *     Great for exploration and AI agents navigating the network.
+         *
+         *     > **Early Access Warning:** This endpoint is functional but results may be unpredictable. The network currently contains legacy collections, test data, and entities in outdated formats. Results are based purely on semantic similarity with no quality filtering — you may encounter incomplete, malformed, or test entities. Result quality will improve as the network matures and content curation is added.
          *
          *     **Entity Expansion:**
          *
@@ -8909,6 +9488,62 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit feedback
+         * @description Submit feedback about the system. Available to all authenticated users and agents.
+         *
+         *     **Categories:**
+         *     - `bug` - Report a bug or issue
+         *     - `feature` - Suggest a new feature
+         *     - `general` - General feedback
+         *     - `other` - Anything else
+         *
+         *     **Metadata:**
+         *     Include optional context like entity IDs, actions performed, or other relevant data.
+         *
+         *     ---
+         *     **Permission:** `feedback:create`
+         *     **Auth:** required
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SubmitFeedbackRequest"];
+                };
+            };
+            responses: {
+                /** @description Feedback submitted successfully */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FeedbackResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 };
 export type webhooks = Record<string, never>;
 export type components = {
@@ -9033,6 +9668,94 @@ export type components = {
             key_expires_at: string;
         };
         WhoamiResponse: components["schemas"]["WhoamiUserResponse"] | components["schemas"]["WhoamiAgentResponse"];
+        ChallengeResponse: {
+            /**
+             * @description Random hex nonce to include in proof-of-work hash
+             * @example a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2
+             */
+            nonce: string;
+            /**
+             * @description Number of leading zero bits required in SHA-256(nonce + publicKey + solution)
+             * @example 22
+             */
+            difficulty: number;
+            /**
+             * Format: date-time
+             * @description Challenge expiry (ISO 8601). Must submit solution before this time.
+             * @example 2026-03-04T12:05:00.000Z
+             */
+            expires_at: string;
+        };
+        ValidationErrorResponse: {
+            /** @example Validation failed */
+            error: string;
+            details?: {
+                issues: {
+                    path: (string | number)[];
+                    message: string;
+                }[];
+            };
+        };
+        ChallengeRequest: {
+            /**
+             * @description Base64-encoded Ed25519 public key
+             * @example f8x2K4p7mN3vQ1jR5sT8wB0yD6hL9kA3cF2gH7iJ4E=
+             */
+            public_key: string;
+        };
+        RegisterAgentResponse: {
+            /**
+             * @description The new agent entity ID
+             * @example 01KDETYWYWM0MJVKM8DK3AEXPY
+             */
+            entity_id: string;
+            /**
+             * @description API key for authentication. Use as: Authorization: ApiKey <key>. Shown once — store securely.
+             * @example ak_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2
+             */
+            api_key: string;
+            /** @description Base64-encoded Ed25519 public key stored in the agent entity */
+            public_key: string;
+        };
+        RegisterAgentRequest: {
+            /**
+             * @description Base64-encoded Ed25519 public key (same as in challenge request)
+             * @example f8x2K4p7mN3vQ1jR5sT8wB0yD6hL9kA3cF2gH7iJ4E=
+             */
+            public_key: string;
+            /** @description Nonce from the challenge response */
+            nonce: string;
+            /**
+             * @description Counter value where SHA-256(nonce + publicKey + solution) has sufficient leading zero bits
+             * @example 48291037
+             */
+            solution: number;
+            /** @description Base64-encoded Ed25519 signature of the nonce string, proving private key ownership */
+            signature: string;
+        };
+        SetIdentityKeyResponse: {
+            /** @description Base64-encoded Ed25519 public key stored in the entity */
+            public_key: string;
+            /** @description Base64-encoded Ed25519 private key. Only returned when the server generated the keypair. Store securely — this is shown once and never stored by Arke. */
+            private_key?: string;
+        };
+        CASErrorResponse: {
+            /** @enum {string} */
+            error: "Conflict: entity was modified";
+            details: {
+                /** @description Expected tip CID */
+                expected: string;
+                /** @description Actual current tip CID */
+                actual: string;
+            };
+        };
+        SetIdentityKeyRequest: {
+            /**
+             * @description Base64-encoded Ed25519 public key. If omitted, a keypair is generated server-side and the private key is returned once.
+             * @example f8x2K4p7mN3vQ1jR5sT8wB0yD6hL9kA3cF2gH7iJ4E=
+             */
+            public_key?: string;
+        };
         AlphaInvite: {
             /**
              * Format: uuid
@@ -9076,6 +9799,72 @@ export type components = {
             invites: components["schemas"]["AlphaInvite"][];
             /** @example 5 */
             count: number;
+        };
+        OverviewStats: {
+            entities: {
+                total_main: number;
+                total_test: number;
+            };
+            users: {
+                total: number;
+                active_today: number;
+                active_week: number;
+            };
+            agents: {
+                total: number;
+                active_today: number;
+                active_week: number;
+            };
+            /**
+             * @description Entity creation counts by type (from api_events)
+             * @example {
+             *       "user": 42,
+             *       "collection": 15,
+             *       "file": 230
+             *     }
+             */
+            entity_types: {
+                [key: string]: number;
+            };
+            requests: {
+                today: number;
+                avg_latency_ms: number;
+            };
+            cached_at?: string;
+        };
+        ActivityStats: {
+            period_days: number;
+            /** @enum {string} */
+            network: "main" | "test";
+            requests: {
+                total: number;
+                by_method: {
+                    [key: string]: number;
+                };
+                top_routes: {
+                    route: string;
+                    method: string;
+                    count: number;
+                    avg_latency_ms: number;
+                }[];
+                avg_latency_ms: number;
+            };
+            active_users: {
+                user_id: string;
+                request_count: number;
+                actor_type: string;
+            }[];
+            entity_activity: {
+                entity_type: string;
+                creates: number;
+                updates: number;
+                views: number;
+            }[];
+            hourly: {
+                hour: string;
+                count: number;
+            }[];
+            cached_at?: string;
         };
         EntityResponse: {
             /**
@@ -9222,36 +10011,34 @@ export type components = {
             /** @description List of API keys */
             keys: components["schemas"]["ApiKeyInfo"][];
         };
-        UserCollectionItem: {
+        MyCollectionItem: {
             /**
              * @description Collection ID
              * @example 01JCOLLECTION123456789AB
              */
-            id: string;
+            collection_id: string;
             /**
-             * @description Collection label/name
+             * @description All roles the user has in this collection
+             * @example [
+             *       "owner",
+             *       "editor"
+             *     ]
+             */
+            roles: string[];
+            /**
+             * @description Collection label/name (cached at assignment time)
              * @example My Research Collection
              */
-            label: string;
+            label: string | null;
             /**
-             * @description Role predicate indicating user's relationship to collection
-             * @example owner
-             */
-            predicate: string;
-            /**
-             * @description When the collection was created
+             * @description When the user was first granted access
              * @example 2026-01-12T00:00:00.000Z
              */
-            created_at: string;
+            granted_at: string;
         };
-        UserCollectionsResponse: {
-            /**
-             * @description User persistent identifier
-             * @example 01JUSER123456789ABCDEFGH
-             */
-            user_id: string;
-            /** @description Collections the user has access to */
-            collections: components["schemas"]["UserCollectionItem"][];
+        MyCollectionsResponse: {
+            /** @description Collections the user has explicit role assignments in */
+            collections: components["schemas"]["MyCollectionItem"][];
             /** @description Pagination metadata */
             pagination: {
                 /** @description Current offset */
@@ -9262,6 +10049,8 @@ export type components = {
                 count: number;
                 /** @description Whether more results exist */
                 has_more: boolean;
+                /** @description Total number of collections */
+                total: number;
             };
         };
         /**
@@ -9377,16 +10166,6 @@ export type components = {
             results: components["schemas"]["SearchResultItem"][];
             metadata: components["schemas"]["SearchMetadata"];
         };
-        ValidationErrorResponse: {
-            /** @example Validation failed */
-            error: string;
-            details?: {
-                issues: {
-                    path: (string | number)[];
-                    message: string;
-                }[];
-            };
-        };
         CrossCollectionSearchRequest: {
             /**
              * @description Search query text for semantic matching
@@ -9488,16 +10267,6 @@ export type components = {
              * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
              */
             prev_cid: string;
-        };
-        CASErrorResponse: {
-            /** @enum {string} */
-            error: "Conflict: entity was modified";
-            details: {
-                /** @description Expected tip CID */
-                expected: string;
-                /** @description Actual current tip CID */
-                actual: string;
-            };
         };
         UpdateCollectionRequest: {
             /**
@@ -11029,9 +11798,15 @@ export type components = {
             /**
              * Format: uri
              * @description Arweave gateway URL for the attestation
-             * @example https://arweave.net/abc123xyz...
+             * @example https://turbo-gateway.com/abc123xyz...
              */
             arweave_url?: string;
+            /**
+             * Format: uri
+             * @description Arweave L1 gateway URL (backup, may have propagation delay)
+             * @example https://arweave.net/abc123xyz...
+             */
+            arweave_net_url?: string;
         };
         VersionListResponse: {
             /**
@@ -11614,6 +12389,74 @@ export type components = {
                 };
             };
         };
+        BatchInvokeKladosPreviewResponse: {
+            /** @enum {string} */
+            status: "pending_confirmation";
+            message: string;
+            grants: components["schemas"]["InvokeKladosGrant"][];
+            target: {
+                id: string;
+                label: string;
+            };
+            /** Format: date-time */
+            expires_at: string;
+            /** @description Number of invocations that will be dispatched */
+            invocation_count: number;
+            /** @description True if all grants exist or user can create them */
+            can_proceed: boolean;
+            /** @description True if klados needs permission grants */
+            grants_needed: boolean;
+        };
+        BatchInvokeKladosConfirmedResponse: {
+            /** @enum {string} */
+            status: "dispatching";
+            /** @description The job collection where klados writes logs */
+            job_collection: string;
+            /** @description Klados that was invoked */
+            klados_id: string;
+            /** @description Dispatch ID for tracking batch progress */
+            dispatch_id: string;
+            /** @description Total number of invocations dispatched */
+            total: number;
+            grants: components["schemas"]["InvokeKladosGrantResult"][];
+            /**
+             * @description Content Identifier (CID) - content-addressed hash
+             * @example bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy
+             */
+            target_cid: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        BatchInvocationItem: {
+            /** @description Entity to process */
+            target_entity: string;
+            /** @description Per-item input override (merged with shared input) */
+            input?: {
+                [key: string]: unknown;
+            };
+        };
+        BatchInvokeKladosRequest: {
+            /** @description Array of invocations to execute (1-10,000 items) */
+            invocations: components["schemas"]["BatchInvocationItem"][];
+            /** @description Collection for permission grant. Klados receives temporal permissions on this collection. */
+            target_collection: string;
+            /** @description Shared input data merged into each invocation (per-item input wins on conflict) */
+            input?: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description Permission duration in seconds (60-86400, default: 3600)
+             * @default 3600
+             * @example 3600
+             */
+            expires_in: number;
+            /**
+             * @description false = preview grants, true = execute batch
+             * @default false
+             * @example false
+             */
+            confirm: boolean;
+        };
         VerifyKladosTokenResponse: {
             /**
              * @description Token to deploy at your endpoint
@@ -12157,7 +13000,7 @@ export type components = {
             target_entities?: string[];
             /** @description Collection for permission grant. All kladoi in workflow receive temporal permissions on this collection. */
             target_collection: string;
-            /** @description Input data for the workflow */
+            /** @description Optional input data forwarded to every klados in the workflow via request.input. Supports three-level priority merging: (1) flow-level step defaults (lowest), (2) global keys here (middle), (3) per-step overrides via a "steps" key (highest). Example: { "custom_instructions": "global override", "steps": { "describe": { "style": "brief" } } } — global keys apply to all steps, while steps.describe only applies to the "describe" step, overriding both global and flow defaults. */
             input?: {
                 [key: string]: unknown;
             };
@@ -12173,76 +13016,6 @@ export type components = {
              * @example false
              */
             confirm: boolean;
-        };
-        ProgressCounters: {
-            /** @description Total log entries */
-            total: number;
-            /** @description Pending entries */
-            pending: number;
-            /** @description Running entries */
-            running: number;
-            /** @description Completed entries */
-            done: number;
-            /** @description Failed entries */
-            error: number;
-        };
-        ErrorSummary: {
-            /** @description Klados that failed */
-            klados_id: string;
-            /** @description Job ID */
-            job_id: string;
-            /** @description Error code */
-            code: string;
-            /** @description Error message */
-            message: string;
-            /** @description Whether error is retryable */
-            retryable: boolean;
-        };
-        WorkflowStatusResponse: {
-            /** @description Job ID */
-            job_id: string;
-            /** @description Rhiza ID */
-            rhiza_id: string;
-            /**
-             * @description Overall workflow status
-             * @enum {string}
-             */
-            status: "pending" | "running" | "done" | "error";
-            progress: components["schemas"]["ProgressCounters"];
-            /** @description Currently running kladoi */
-            current_kladoi?: string[];
-            /** @description Error summaries */
-            errors?: components["schemas"]["ErrorSummary"][];
-            /**
-             * Format: date-time
-             * @description When workflow started
-             */
-            started_at: string;
-            /**
-             * Format: date-time
-             * @description When workflow completed
-             */
-            completed_at?: string;
-        };
-        ResumedJob: {
-            /** @description Original job ID that was resumed */
-            original_job_id: string;
-            /** @description Klados that was re-invoked */
-            klados_id: string;
-            /** @description New job ID */
-            new_job_id: string;
-        };
-        ResumeWorkflowResponse: {
-            /** @description Number of jobs resumed */
-            resumed: number;
-            /** @description Number of jobs skipped (non-retryable) */
-            skipped: number;
-            /** @description Details of resumed jobs */
-            jobs: components["schemas"]["ResumedJob"][];
-        };
-        ResumeWorkflowRequest: {
-            /** @description Only resume jobs with these error codes (all retryable if not specified) */
-            error_codes?: string[];
         };
         Event: {
             /**
@@ -12267,15 +13040,15 @@ export type components = {
             ts: string;
         };
         EventsListResponse: {
-            /** @description List of events (newest first) */
+            /** @description List of events. Order: ascending (oldest first) when using since, descending (newest first) otherwise. */
             events: components["schemas"]["Event"][];
             /**
-             * @description Whether there are more (older) events available
+             * @description Whether there are more events available in the current direction
              * @example true
              */
             has_more: boolean;
             /**
-             * @description Cursor for the next page (oldest id in batch, pass as ?cursor= for older events)
+             * @description Cursor for the next page. Use as ?since= for forward pagination, or ?until= for backward pagination.
              * @example 12340
              */
             cursor: number;
@@ -12861,9 +13634,15 @@ export type components = {
             /**
              * Format: uri
              * @description Arweave gateway URL for direct access
-             * @example https://arweave.net/abc123xyz...
+             * @example https://turbo-gateway.com/abc123xyz...
              */
             arweave_url: string;
+            /**
+             * Format: uri
+             * @description Arweave L1 gateway URL (backup, may have propagation delay)
+             * @example https://arweave.net/abc123xyz...
+             */
+            arweave_net_url: string;
             /**
              * @description Unix timestamp (milliseconds) of the operation
              * @example 1704455200000
@@ -12911,9 +13690,15 @@ export type components = {
             /**
              * Format: uri
              * @description Arweave gateway URL for direct access
-             * @example https://arweave.net/Rxv_BpobNBUr0x5DstsAEUVxCO12hKxv7cnHnGLYp2c
+             * @example https://turbo-gateway.com/Rxv_BpobNBUr0x5DstsAEUVxCO12hKxv7cnHnGLYp2c
              */
             arweave_url: string;
+            /**
+             * Format: uri
+             * @description Arweave L1 gateway URL (backup, may have propagation delay)
+             * @example https://arweave.net/Rxv_BpobNBUr0x5DstsAEUVxCO12hKxv7cnHnGLYp2c
+             */
+            arweave_net_url: string;
         };
         VerifyAttestationResponse: {
             arweave_tx: string;
@@ -12960,6 +13745,41 @@ export type components = {
                  * @example collection
                  */
                 type: string;
+            };
+        };
+        FeedbackResponse: {
+            /**
+             * @description Auto-generated feedback ID
+             * @example 42
+             */
+            id: number;
+            /**
+             * @description ISO timestamp when feedback was created
+             * @example 2026-03-02T12:00:00Z
+             */
+            created_at: string;
+        };
+        SubmitFeedbackRequest: {
+            /**
+             * @description Category of feedback
+             * @example general
+             * @enum {string}
+             */
+            category: "bug" | "feature" | "general" | "other";
+            /**
+             * @description Feedback content
+             * @example The search results could be more relevant.
+             */
+            content: string;
+            /**
+             * @description Optional metadata for additional context (JSON object)
+             * @example {
+             *       "entity_id": "01KDETYWYWM0MJVKM8DK3AEXPY",
+             *       "action": "search"
+             *     }
+             */
+            metadata?: {
+                [key: string]: unknown;
             };
         };
     };

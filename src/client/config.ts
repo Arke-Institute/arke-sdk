@@ -16,8 +16,7 @@ export interface ArkeClientConfig {
   /**
    * Authentication token - accepts either:
    * - JWT token from Supabase auth (sent as Bearer)
-   * - Agent API key with 'ak_' prefix (sent as ApiKey)
-   * - User API key with 'uk_' prefix (sent as ApiKey)
+   * - API key with two-letter prefix + underscore (e.g. 'ak_', 'uk_', 'kk_') (sent as ApiKey)
    *
    * The correct Authorization header format is auto-detected from the token prefix.
    */

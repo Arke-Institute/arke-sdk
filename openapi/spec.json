@@ -345,6 +345,212 @@
           }
         ]
       },
+      "ChallengeResponse": {
+        "type": "object",
+        "properties": {
+          "nonce": {
+            "type": "string",
+            "description": "Random hex nonce to include in proof-of-work hash",
+            "example": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+          },
+          "difficulty": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Number of leading zero bits required in SHA-256(nonce + publicKey + solution)",
+            "example": 22
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Challenge expiry (ISO 8601). Must submit solution before this time.",
+            "example": "2026-03-04T12:05:00.000Z"
+          }
+        },
+        "required": [
+          "nonce",
+          "difficulty",
+          "expires_at"
+        ]
+      },
+      "ValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Validation failed"
+          },
+          "details": {
+            "type": "object",
+            "properties": {
+              "issues": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ]
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "message"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "issues"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "ChallengeRequest": {
+        "type": "object",
+        "properties": {
+          "public_key": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Base64-encoded Ed25519 public key",
+            "example": "f8x2K4p7mN3vQ1jR5sT8wB0yD6hL9kA3cF2gH7iJ4E="
+          }
+        },
+        "required": [
+          "public_key"
+        ]
+      },
+      "RegisterAgentResponse": {
+        "type": "object",
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "The new agent entity ID",
+            "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+          },
+          "api_key": {
+            "type": "string",
+            "description": "API key for authentication. Use as: Authorization: ApiKey <key>. Shown once — store securely.",
+            "example": "ak_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+          },
+          "public_key": {
+            "type": "string",
+            "description": "Base64-encoded Ed25519 public key stored in the agent entity"
+          }
+        },
+        "required": [
+          "entity_id",
+          "api_key",
+          "public_key"
+        ]
+      },
+      "RegisterAgentRequest": {
+        "type": "object",
+        "properties": {
+          "public_key": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Base64-encoded Ed25519 public key (same as in challenge request)",
+            "example": "f8x2K4p7mN3vQ1jR5sT8wB0yD6hL9kA3cF2gH7iJ4E="
+          },
+          "nonce": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Nonce from the challenge response"
+          },
+          "solution": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Counter value where SHA-256(nonce + publicKey + solution) has sufficient leading zero bits",
+            "example": 48291037
+          },
+          "signature": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Base64-encoded Ed25519 signature of the nonce string, proving private key ownership"
+          }
+        },
+        "required": [
+          "public_key",
+          "nonce",
+          "solution",
+          "signature"
+        ]
+      },
+      "SetIdentityKeyResponse": {
+        "type": "object",
+        "properties": {
+          "public_key": {
+            "type": "string",
+            "description": "Base64-encoded Ed25519 public key stored in the entity"
+          },
+          "private_key": {
+            "type": "string",
+            "description": "Base64-encoded Ed25519 private key. Only returned when the server generated the keypair. Store securely — this is shown once and never stored by Arke."
+          }
+        },
+        "required": [
+          "public_key"
+        ]
+      },
+      "CASErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Conflict: entity was modified"
+            ]
+          },
+          "details": {
+            "type": "object",
+            "properties": {
+              "expected": {
+                "type": "string",
+                "description": "Expected tip CID"
+              },
+              "actual": {
+                "type": "string",
+                "description": "Actual current tip CID"
+              }
+            },
+            "required": [
+              "expected",
+              "actual"
+            ]
+          }
+        },
+        "required": [
+          "error",
+          "details"
+        ]
+      },
+      "SetIdentityKeyRequest": {
+        "type": "object",
+        "properties": {
+          "public_key": {
+            "type": "string",
+            "description": "Base64-encoded Ed25519 public key. If omitted, a keypair is generated server-side and the private key is returned once.",
+            "example": "f8x2K4p7mN3vQ1jR5sT8wB0yD6hL9kA3cF2gH7iJ4E="
+          }
+        }
+      },
       "AlphaInvite": {
         "type": "object",
         "properties": {
@@ -438,6 +644,242 @@
         "required": [
           "invites",
           "count"
+        ]
+      },
+      "OverviewStats": {
+        "type": "object",
+        "properties": {
+          "entities": {
+            "type": "object",
+            "properties": {
+              "total_main": {
+                "type": "integer"
+              },
+              "total_test": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "total_main",
+              "total_test"
+            ]
+          },
+          "users": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "active_today": {
+                "type": "integer"
+              },
+              "active_week": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "total",
+              "active_today",
+              "active_week"
+            ]
+          },
+          "agents": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "active_today": {
+                "type": "integer"
+              },
+              "active_week": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "total",
+              "active_today",
+              "active_week"
+            ]
+          },
+          "entity_types": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Entity creation counts by type (from api_events)",
+            "example": {
+              "user": 42,
+              "collection": 15,
+              "file": 230
+            }
+          },
+          "requests": {
+            "type": "object",
+            "properties": {
+              "today": {
+                "type": "integer"
+              },
+              "avg_latency_ms": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "today",
+              "avg_latency_ms"
+            ]
+          },
+          "cached_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "entities",
+          "users",
+          "agents",
+          "entity_types",
+          "requests"
+        ]
+      },
+      "ActivityStats": {
+        "type": "object",
+        "properties": {
+          "period_days": {
+            "type": "integer"
+          },
+          "network": {
+            "type": "string",
+            "enum": [
+              "main",
+              "test"
+            ]
+          },
+          "requests": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "by_method": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "integer"
+                }
+              },
+              "top_routes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "route": {
+                      "type": "string"
+                    },
+                    "method": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "avg_latency_ms": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "route",
+                    "method",
+                    "count",
+                    "avg_latency_ms"
+                  ]
+                }
+              },
+              "avg_latency_ms": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "total",
+              "by_method",
+              "top_routes",
+              "avg_latency_ms"
+            ]
+          },
+          "active_users": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "user_id": {
+                  "type": "string"
+                },
+                "request_count": {
+                  "type": "integer"
+                },
+                "actor_type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "user_id",
+                "request_count",
+                "actor_type"
+              ]
+            }
+          },
+          "entity_activity": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "entity_type": {
+                  "type": "string"
+                },
+                "creates": {
+                  "type": "integer"
+                },
+                "updates": {
+                  "type": "integer"
+                },
+                "views": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "entity_type",
+                "creates",
+                "updates",
+                "views"
+              ]
+            }
+          },
+          "hourly": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "hour": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "hour",
+                "count"
+              ]
+            }
+          },
+          "cached_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "period_days",
+          "network",
+          "requests",
+          "active_users",
+          "entity_activity",
+          "hourly"
         ]
       },
       "EntityResponse": {
@@ -707,51 +1149,53 @@
           "keys"
         ]
       },
-      "UserCollectionItem": {
+      "MyCollectionItem": {
         "type": "object",
         "properties": {
-          "id": {
+          "collection_id": {
             "type": "string",
             "description": "Collection ID",
             "example": "01JCOLLECTION123456789AB"
           },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "All roles the user has in this collection",
+            "example": [
+              "owner",
+              "editor"
+            ]
+          },
           "label": {
             "type": "string",
-            "description": "Collection label/name",
+            "nullable": true,
+            "description": "Collection label/name (cached at assignment time)",
             "example": "My Research Collection"
           },
-          "predicate": {
+          "granted_at": {
             "type": "string",
-            "description": "Role predicate indicating user's relationship to collection",
-            "example": "owner"
-          },
-          "created_at": {
-            "type": "string",
-            "description": "When the collection was created",
+            "description": "When the user was first granted access",
             "example": "2026-01-12T00:00:00.000Z"
           }
         },
         "required": [
-          "id",
+          "collection_id",
+          "roles",
           "label",
-          "predicate",
-          "created_at"
+          "granted_at"
         ]
       },
-      "UserCollectionsResponse": {
+      "MyCollectionsResponse": {
         "type": "object",
         "properties": {
-          "user_id": {
-            "type": "string",
-            "description": "User persistent identifier",
-            "example": "01JUSER123456789ABCDEFGH"
-          },
           "collections": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/UserCollectionItem"
+              "$ref": "#/components/schemas/MyCollectionItem"
             },
-            "description": "Collections the user has access to"
+            "description": "Collections the user has explicit role assignments in"
           },
           "pagination": {
             "type": "object",
@@ -771,19 +1215,23 @@
               "has_more": {
                 "type": "boolean",
                 "description": "Whether more results exist"
+              },
+              "total": {
+                "type": "number",
+                "description": "Total number of collections"
               }
             },
             "required": [
               "offset",
               "limit",
               "count",
-              "has_more"
+              "has_more",
+              "total"
             ],
             "description": "Pagination metadata"
           }
         },
         "required": [
-          "user_id",
           "collections",
           "pagination"
         ]
@@ -967,54 +1415,6 @@
         "required": [
           "results",
           "metadata"
-        ]
-      },
-      "ValidationErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "example": "Validation failed"
-          },
-          "details": {
-            "type": "object",
-            "properties": {
-              "issues": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "path": {
-                      "type": "array",
-                      "items": {
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "number"
-                          }
-                        ]
-                      }
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "path",
-                    "message"
-                  ]
-                }
-              }
-            },
-            "required": [
-              "issues"
-            ]
-          }
-        },
-        "required": [
-          "error"
         ]
       },
       "CrossCollectionSearchRequest": {
@@ -1212,38 +1612,6 @@
               "prev_cid"
             ]
           }
-        ]
-      },
-      "CASErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "enum": [
-              "Conflict: entity was modified"
-            ]
-          },
-          "details": {
-            "type": "object",
-            "properties": {
-              "expected": {
-                "type": "string",
-                "description": "Expected tip CID"
-              },
-              "actual": {
-                "type": "string",
-                "description": "Actual current tip CID"
-              }
-            },
-            "required": [
-              "expected",
-              "actual"
-            ]
-          }
-        },
-        "required": [
-          "error",
-          "details"
         ]
       },
       "UpdateCollectionRequest": {
@@ -4307,6 +4675,12 @@
             "type": "string",
             "format": "uri",
             "description": "Arweave gateway URL for the attestation",
+            "example": "https://turbo-gateway.com/abc123xyz..."
+          },
+          "arweave_net_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Arweave L1 gateway URL (backup, may have propagation delay)",
             "example": "https://arweave.net/abc123xyz..."
           }
         },
@@ -5545,6 +5919,187 @@
           }
         },
         "required": [
+          "target_collection"
+        ]
+      },
+      "BatchInvokeKladosPreviewResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending_confirmation"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvokeKladosGrant"
+            }
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "label"
+            ]
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "invocation_count": {
+            "type": "integer",
+            "description": "Number of invocations that will be dispatched"
+          },
+          "can_proceed": {
+            "type": "boolean",
+            "description": "True if all grants exist or user can create them"
+          },
+          "grants_needed": {
+            "type": "boolean",
+            "description": "True if klados needs permission grants"
+          }
+        },
+        "required": [
+          "status",
+          "message",
+          "grants",
+          "target",
+          "expires_at",
+          "invocation_count",
+          "can_proceed",
+          "grants_needed"
+        ]
+      },
+      "BatchInvokeKladosConfirmedResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "dispatching"
+            ]
+          },
+          "job_collection": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "The job collection where klados writes logs"
+          },
+          "klados_id": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Klados that was invoked"
+          },
+          "dispatch_id": {
+            "type": "string",
+            "description": "Dispatch ID for tracking batch progress"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of invocations dispatched"
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvokeKladosGrantResult"
+            }
+          },
+          "target_cid": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Content Identifier (CID) - content-addressed hash",
+            "example": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "status",
+          "job_collection",
+          "klados_id",
+          "dispatch_id",
+          "total",
+          "grants",
+          "target_cid",
+          "expires_at"
+        ]
+      },
+      "BatchInvocationItem": {
+        "type": "object",
+        "properties": {
+          "target_entity": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Entity to process"
+          },
+          "input": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Per-item input override (merged with shared input)"
+          }
+        },
+        "required": [
+          "target_entity"
+        ]
+      },
+      "BatchInvokeKladosRequest": {
+        "type": "object",
+        "properties": {
+          "invocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BatchInvocationItem"
+            },
+            "minItems": 1,
+            "maxItems": 10000,
+            "description": "Array of invocations to execute (1-10,000 items)"
+          },
+          "target_collection": {
+            "type": "string",
+            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+            "description": "Collection for permission grant. Klados receives temporal permissions on this collection."
+          },
+          "input": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Shared input data merged into each invocation (per-item input wins on conflict)"
+          },
+          "expires_in": {
+            "type": "integer",
+            "minimum": 60,
+            "maximum": 86400,
+            "default": 3600,
+            "description": "Permission duration in seconds (60-86400, default: 3600)",
+            "example": 3600
+          },
+          "confirm": {
+            "type": "boolean",
+            "default": false,
+            "description": "false = preview grants, true = execute batch",
+            "example": false
+          }
+        },
+        "required": [
+          "invocations",
           "target_collection"
         ]
       },
@@ -6940,7 +7495,7 @@
             "additionalProperties": {
               "nullable": true
             },
-            "description": "Input data for the workflow"
+            "description": "Optional input data forwarded to every klados in the workflow via request.input. Supports three-level priority merging: (1) flow-level step defaults (lowest), (2) global keys here (middle), (3) per-step overrides via a \"steps\" key (highest). Example: { \"custom_instructions\": \"global override\", \"steps\": { \"describe\": { \"style\": \"brief\" } } } — global keys apply to all steps, while steps.describe only applies to the \"describe\" step, overriding both global and flow defaults."
           },
           "expires_in": {
             "type": "integer",
@@ -6960,197 +7515,6 @@
         "required": [
           "target_collection"
         ]
-      },
-      "ProgressCounters": {
-        "type": "object",
-        "properties": {
-          "total": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Total log entries"
-          },
-          "pending": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Pending entries"
-          },
-          "running": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Running entries"
-          },
-          "done": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Completed entries"
-          },
-          "error": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Failed entries"
-          }
-        },
-        "required": [
-          "total",
-          "pending",
-          "running",
-          "done",
-          "error"
-        ]
-      },
-      "ErrorSummary": {
-        "type": "object",
-        "properties": {
-          "klados_id": {
-            "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Klados that failed"
-          },
-          "job_id": {
-            "type": "string",
-            "description": "Job ID"
-          },
-          "code": {
-            "type": "string",
-            "description": "Error code"
-          },
-          "message": {
-            "type": "string",
-            "description": "Error message"
-          },
-          "retryable": {
-            "type": "boolean",
-            "description": "Whether error is retryable"
-          }
-        },
-        "required": [
-          "klados_id",
-          "job_id",
-          "code",
-          "message",
-          "retryable"
-        ]
-      },
-      "WorkflowStatusResponse": {
-        "type": "object",
-        "properties": {
-          "job_id": {
-            "type": "string",
-            "description": "Job ID"
-          },
-          "rhiza_id": {
-            "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Rhiza ID"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "running",
-              "done",
-              "error"
-            ],
-            "description": "Overall workflow status"
-          },
-          "progress": {
-            "$ref": "#/components/schemas/ProgressCounters"
-          },
-          "current_kladoi": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$"
-            },
-            "description": "Currently running kladoi"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ErrorSummary"
-            },
-            "description": "Error summaries"
-          },
-          "started_at": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When workflow started"
-          },
-          "completed_at": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When workflow completed"
-          }
-        },
-        "required": [
-          "job_id",
-          "rhiza_id",
-          "status",
-          "progress",
-          "started_at"
-        ]
-      },
-      "ResumedJob": {
-        "type": "object",
-        "properties": {
-          "original_job_id": {
-            "type": "string",
-            "description": "Original job ID that was resumed"
-          },
-          "klados_id": {
-            "type": "string",
-            "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-            "description": "Klados that was re-invoked"
-          },
-          "new_job_id": {
-            "type": "string",
-            "description": "New job ID"
-          }
-        },
-        "required": [
-          "original_job_id",
-          "klados_id",
-          "new_job_id"
-        ]
-      },
-      "ResumeWorkflowResponse": {
-        "type": "object",
-        "properties": {
-          "resumed": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Number of jobs resumed"
-          },
-          "skipped": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Number of jobs skipped (non-retryable)"
-          },
-          "jobs": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ResumedJob"
-            },
-            "description": "Details of resumed jobs"
-          }
-        },
-        "required": [
-          "resumed",
-          "skipped",
-          "jobs"
-        ]
-      },
-      "ResumeWorkflowRequest": {
-        "type": "object",
-        "properties": {
-          "error_codes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Only resume jobs with these error codes (all retryable if not specified)"
-          }
-        }
       },
       "Event": {
         "type": "object",
@@ -7193,16 +7557,16 @@
             "items": {
               "$ref": "#/components/schemas/Event"
             },
-            "description": "List of events (newest first)"
+            "description": "List of events. Order: ascending (oldest first) when using since, descending (newest first) otherwise."
           },
           "has_more": {
             "type": "boolean",
-            "description": "Whether there are more (older) events available",
+            "description": "Whether there are more events available in the current direction",
             "example": true
           },
           "cursor": {
             "type": "integer",
-            "description": "Cursor for the next page (oldest id in batch, pass as ?cursor= for older events)",
+            "description": "Cursor for the next page. Use as ?since= for forward pagination, or ?until= for backward pagination.",
             "example": 12340
           }
         },
@@ -8504,6 +8868,12 @@
             "type": "string",
             "format": "uri",
             "description": "Arweave gateway URL for direct access",
+            "example": "https://turbo-gateway.com/abc123xyz..."
+          },
+          "arweave_net_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Arweave L1 gateway URL (backup, may have propagation delay)",
             "example": "https://arweave.net/abc123xyz..."
           },
           "ts": {
@@ -8518,6 +8888,7 @@
           "cid",
           "arweave_tx",
           "arweave_url",
+          "arweave_net_url",
           "ts"
         ]
       },
@@ -8581,13 +8952,20 @@
             "type": "string",
             "format": "uri",
             "description": "Arweave gateway URL for direct access",
+            "example": "https://turbo-gateway.com/Rxv_BpobNBUr0x5DstsAEUVxCO12hKxv7cnHnGLYp2c"
+          },
+          "arweave_net_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Arweave L1 gateway URL (backup, may have propagation delay)",
             "example": "https://arweave.net/Rxv_BpobNBUr0x5DstsAEUVxCO12hKxv7cnHnGLYp2c"
           }
         },
         "required": [
           "seq",
           "tx",
-          "arweave_url"
+          "arweave_url",
+          "arweave_net_url"
         ]
       },
       "VerifyAttestationResponse": {
@@ -8680,6 +9058,63 @@
           "attestation",
           "cid_valid",
           "manifest_preview"
+        ]
+      },
+      "FeedbackResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Auto-generated feedback ID",
+            "example": 42
+          },
+          "created_at": {
+            "type": "string",
+            "description": "ISO timestamp when feedback was created",
+            "example": "2026-03-02T12:00:00Z"
+          }
+        },
+        "required": [
+          "id",
+          "created_at"
+        ]
+      },
+      "SubmitFeedbackRequest": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "bug",
+              "feature",
+              "general",
+              "other"
+            ],
+            "description": "Category of feedback",
+            "example": "general"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000,
+            "description": "Feedback content",
+            "example": "The search results could be more relevant."
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Optional metadata for additional context (JSON object)",
+            "example": {
+              "entity_id": "01KDETYWYWM0MJVKM8DK3AEXPY",
+              "action": "search"
+            }
+          }
+        },
+        "required": [
+          "category",
+          "content"
         ]
       }
     }
@@ -8827,6 +9262,263 @@
                 },
                 "example": {
                   "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Internal server error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register/challenge": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Request a proof-of-work challenge for agent registration",
+        "description": "Returns a PoW challenge that the agent must solve before registering.\n\nThe agent must find a counter value such that:\n`SHA-256(nonce + public_key + counter)` has at least `difficulty` leading zero bits.\n\nChallenges expire after 5 minutes.\n\n---\n**Permission:** `auth:register-challenge`  \n**Auth:** none",
+        "x-arke-action": "auth:register-challenge",
+        "x-arke-auth": "none",
+        "x-arke-tier": "standard",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChallengeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Challenge issued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many challenge requests"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Internal server error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register/agent": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Register a new autonomous agent",
+        "description": "Completes agent registration by submitting a PoW solution and signed nonce.\n\nRequires:\n1. A valid PoW solution for an active challenge\n2. An Ed25519 signature of the nonce proving private key ownership\n\nOn success, creates an agent entity and returns an API key (shown once).\nUse the API key as: `Authorization: ApiKey <key>`\n\n---\n**Permission:** `auth:register-agent`  \n**Auth:** none",
+        "x-arke-action": "auth:register-agent",
+        "x-arke-auth": "none",
+        "x-arke-tier": "standard",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterAgentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Agent registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterAgentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Public key already registered"
+          },
+          "410": {
+            "description": "Challenge expired or already used"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Internal server error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/identity/key": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Set Ed25519 identity key",
+        "description": "Sets an Ed25519 public key on the authenticated entity, establishing a portable cryptographic identity.\n\n**Two modes:**\n- **Provide your own key:** Include `public_key` in the request body. You manage the keypair.\n- **Server-generated:** Omit `public_key`. The server generates a keypair, stores the public key, and returns the private key **once**. Store it securely — it will never be shown again.\n\nReturns 409 if a public key is already set. Use entity update for key rotation.\n\n---\n**Permission:** `auth:set-identity-key`  \n**Auth:** required",
+        "x-arke-action": "auth:set-identity-key",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetIdentityKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Identity key set",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetIdentityKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - CAS validation failed (entity was modified)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CASErrorResponse"
+                },
+                "example": {
+                  "error": "Conflict: entity was modified",
+                  "details": {
+                    "expected": "bafyreibug443cnd4endcwinwttw3c3dzmcl2ikht64xzn5qg56bix3usfy",
+                    "actual": "bafyreinewabc123456789defghijklmnopqrstuvwxyz"
+                  }
                 }
               }
             }
@@ -9030,6 +9722,132 @@
         }
       }
     },
+    "/admin/stats/overview": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Network overview stats",
+        "description": "Returns aggregated entity counts, user stats, and request metrics. Requires X-Alpha-Secret header.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "main",
+                "test"
+              ],
+              "default": "main",
+              "description": "Network to query stats for"
+            },
+            "required": false,
+            "name": "network",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Overview stats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewStats"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/stats/activity": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Network activity over time",
+        "description": "Returns request rates, active users, entity activity, and hourly distribution for a given period. Requires X-Alpha-Secret header.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+d$",
+              "default": "7d",
+              "description": "Period in days, e.g., \"7d\", \"30d\"",
+              "example": "7d"
+            },
+            "required": false,
+            "name": "period",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "main",
+                "test"
+              ],
+              "default": "main",
+              "description": "Network to query stats for"
+            },
+            "required": false,
+            "name": "network",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activity stats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityStats"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/me": {
       "get": {
         "tags": [
@@ -9085,7 +9903,7 @@
           "API Keys"
         ],
         "summary": "Create API key",
-        "description": "Creates a new API key for the authenticated user. The full key is only returned once - store it securely.\n\n---\n**Permission:** `user:credentials`  \n**Auth:** required",
+        "description": "Creates a new API key for the authenticated user. The full key is only returned once - store it securely.\n\n## Usage\n\nUse the returned key with the `Authorization` header:\n\n```\nAuthorization: ApiKey uk_xxxxxxxxxxxxx\n```\n\n**Important:** Use `ApiKey` prefix, NOT `Bearer`. User keys always start with `uk_`.\n\n---\n**Permission:** `user:credentials`  \n**Auth:** required",
         "x-arke-action": "user:credentials",
         "x-arke-auth": "required",
         "x-arke-tier": "standard",
@@ -9243,37 +10061,43 @@
         }
       }
     },
-    "/users/{id}/collections": {
+    "/users/my/collections": {
       "get": {
         "tags": [
           "Users"
         ],
-        "summary": "List collections user has access to",
-        "description": "Returns all collections where the user has a role relationship (owner, editor, viewer, etc.).\n\nQueries GraphDB for collections with relationships pointing to this user where peer_type is 'user'.\nResults include the role predicate so clients know what access the user has to each collection.\n\nSupports filtering by predicate (role name) and pagination.\n\n---\n**Permission:** `user:view`  \n**Auth:** optional",
+        "summary": "List current user's collections",
+        "description": "Returns all collections where the authenticated user has been explicitly assigned a role.\n\nThis endpoint queries the user's personal collections index (Durable Object) for fast lookups.\nOnly explicit role assignments are tracked - wildcard/public permissions are not included.\n\nA user can have multiple roles on the same collection (e.g., owner and editor).\nRoles are aggregated per collection in the response.\n\nSupports filtering by role name and pagination.\n\n---\n**Permission:** `user:view`  \n**Auth:** required",
         "x-arke-action": "user:view",
-        "x-arke-auth": "optional",
+        "x-arke-auth": "required",
         "x-arke-tier": "external",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-              "description": "Entity ID (ULID format)",
-              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+              "description": "Filter by role names (comma-separated, e.g., owner,editor)",
+              "example": "owner,editor"
             },
-            "required": true,
-            "description": "Entity ID (ULID)",
-            "name": "id",
-            "in": "path"
+            "required": false,
+            "name": "role",
+            "in": "query"
           },
           {
             "schema": {
               "type": "string",
-              "description": "Filter by role predicate (e.g., owner, editor)",
-              "example": "owner"
+              "description": "Include expired memberships (default: false)",
+              "example": "false"
             },
             "required": false,
-            "name": "predicate",
+            "name": "include_expired",
             "in": "query"
           },
           {
@@ -9303,7 +10127,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserCollectionsResponse"
+                  "$ref": "#/components/schemas/MyCollectionsResponse"
                 }
               }
             }
@@ -9321,34 +10145,8 @@
               }
             }
           },
-          "403": {
-            "description": "Forbidden - Insufficient permissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Forbidden: You do not have permission to perform this action"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Entity not found"
-                }
-              }
-            }
-          },
           "503": {
-            "description": "GraphDB service unavailable"
+            "description": "User collections index service unavailable"
           }
         }
       }
@@ -10656,8 +11454,8 @@
         "tags": [
           "Collections"
         ],
-        "summary": "List entities in a collection",
-        "description": "Returns entities belonging to this collection.\n\nSupports pagination and optional type filtering. Results are ordered by creation date (newest first).\n\n**Expansion Modes:**\n\nBy default, returns lightweight summaries (pi, type, label, timestamps).\n\nUse the `expand` parameter to hydrate entity data from storage:\n\n- **`?expand=preview`**: Adds `preview` field with fresh lightweight data (label, truncated description/text, timestamps). ~5-10KB per entity.\n\n- **`?expand=full`**: Adds `entity` field with complete manifest (all properties, relationships, version history). ~20-50KB per entity.\n\n**Performance Note:** Expansion requires fetching each entity from storage. Limited to 100 entities per request. Use smaller `limit` values when expanding.\n\n---\n**Permission:** `collection:view`  \n**Auth:** optional",
+        "summary": "List entities in a collection (paginated)",
+        "description": "Paginated listing of entities in this collection, ordered by creation date (newest first). Default page size is 50, maximum 200. Use `offset` to paginate through results.\n\n**This is not a search endpoint.** To search content within a collection, use `GET /collections/{id}/entities/search` with the `similar_to` parameter (semantic similarity via Pinecone).\n\nSupports optional type and property filtering.\n\n**Expansion Modes:**\n\nBy default, returns lightweight summaries (pi, type, label, timestamps).\n\nUse the `expand` parameter to hydrate entity data from storage:\n\n- **`?expand=preview`**: Adds `preview` field with fresh lightweight data (label, truncated description/text, timestamps). ~5-10KB per entity.\n\n- **`?expand=full`**: Adds `entity` field with complete manifest (all properties, relationships, version history). ~20-50KB per entity.\n\n**Performance Note:** Expansion requires fetching each entity from storage. Limited to 100 entities per request. Use smaller `limit` values when expanding.\n\n---\n**Permission:** `collection:view`  \n**Auth:** optional",
         "x-arke-action": "collection:view",
         "x-arke-auth": "optional",
         "x-arke-tier": "external",
@@ -10698,10 +11496,10 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 10000,
-              "default": 1000,
-              "description": "Maximum number of entities to return",
-              "example": 100
+              "maximum": 200,
+              "default": 50,
+              "description": "Maximum number of entities to return (1-200, default: 50). Use pagination (offset) to retrieve more.",
+              "example": 50
             },
             "required": false,
             "name": "limit",
@@ -10783,8 +11581,8 @@
         "tags": [
           "Collections"
         ],
-        "summary": "Lookup entities by label",
-        "description": "Fast (~5ms) lookup of entities by exact label and/or type within this collection.\n\nUses a per-collection SQLite index for instant keyword queries. Complements semantic search for when you know the exact label.\n\n**Query Parameters:**\n- `label`: Exact label match (case-insensitive)\n- `type`: Filter by entity type\n- `limit`: Maximum results (default: 100, max: 1000)\n\nAt least one of `label` or `type` should be provided for meaningful results.\n\n---\n**Permission:** `collection:view`  \n**Auth:** optional",
+        "summary": "Lookup entities by exact label or type",
+        "description": "Fast (~5ms) exact-match lookup by label and/or type. This is a lightweight index lookup — it matches entity names exactly, not content.\n\n**This is not a content search.** To search content within a collection, use `GET /collections/{id}/entities/search` with the `similar_to` parameter for semantic similarity search via Pinecone.\n\nUse this when you know the exact entity label and want to resolve it quickly (e.g., checking if \"Chapter 3\" exists, listing all entities of type \"person\").\n\nUses a per-collection SQLite index for instant queries.\n\n**Query Parameters:**\n- `label`: Exact label match (case-insensitive)\n- `type`: Filter by entity type\n- `limit`: Maximum results (default: 100, max: 1000)\n\nAt least one of `label` or `type` should be provided for meaningful results.\n\n---\n**Permission:** `collection:view`  \n**Auth:** optional",
         "x-arke-action": "collection:view",
         "x-arke-auth": "optional",
         "x-arke-tier": "standard",
@@ -10883,8 +11681,8 @@
         "tags": [
           "Collections"
         ],
-        "summary": "Search entities by keyword or similarity",
-        "description": "Search within a collection's entities using keyword matching or semantic similarity.\n\n**Keyword Search (q parameter):**\n- Fast (~5ms) using per-collection SQLite index\n- Case-insensitive substring match on entity labels\n\n**Semantic Similarity Search (similar_to parameter):**\n- Finds entities semantically similar to the given entity ID\n- Uses Pinecone vector similarity\n- Returns results with similarity scores\n\nOne of `q` or `similar_to` must be provided.\n\n**Query Parameters:**\n- `q`: Search query (case-insensitive substring match)\n- `similar_to`: Entity ID to find similar items for\n- `type`: Filter by entity type\n- `limit`: Maximum results (default: 100, max: 1000)\n\n---\n**Permission:** `collection:view`  \n**Auth:** optional",
+        "summary": "Search within a collection (semantic or keyword)",
+        "description": "**The primary endpoint for searching content within a collection.** Use the `similar_to` parameter for semantic search — this is the recommended way to find content.\n\n**Semantic Similarity Search (similar_to parameter) — Use this for content search:**\n- Provide an entity ID and get back semantically similar entities within this collection\n- Uses Pinecone vector similarity scoped to this collection\n- Returns results ranked by similarity score\n- Use cases: \"find related items\", \"more like this\", content discovery\n\n**Keyword Search (q parameter) — Label filtering only:**\n- Fast (~5ms) case-insensitive substring match on entity **labels only** (not content)\n- Uses per-collection SQLite index\n- This is a lightweight filter, not a content search — it only matches against entity names\n- Equivalent to the `/entities/lookup` endpoint but with substring matching instead of exact match\n\nOne of `q` or `similar_to` must be provided.\n\n**Query Parameters:**\n- `similar_to`: Entity ID to find semantically similar items for (recommended)\n- `q`: Substring match on entity labels only (not content search)\n- `type`: Filter by entity type\n- `limit`: Maximum results (default: 100, max: 1000)\n\n---\n**Permission:** `collection:view`  \n**Auth:** optional",
         "x-arke-action": "collection:view",
         "x-arke-auth": "optional",
         "x-arke-tier": "standard",
@@ -13286,7 +14084,7 @@
           "Batch"
         ],
         "summary": "Queue additive updates (fire-and-forget)",
-        "description": "Queues additive updates for multiple entities. Returns 202 Accepted immediately.\n\n**Fire-and-Forget Semantics:**\n- Updates are queued and processed asynchronously\n- CAS conflicts are handled internally with exponential backoff retry\n- Client does not need to retry on conflicts\n\n**Additive-Only Operations:**\n- `properties`: Deep merged with existing properties\n- `relationships_add`: Upsert semantics (add new or merge properties)\n- `properties_remove` and `relationships_remove` are **NOT supported** - use `PUT /entities/:id` for removals\n\n**Per-Actor Versioning:**\n- Multiple updates from the same actor are merged before applying (one version)\n- Updates from different actors create separate versions (preserves audit trail)\n\n**Use Cases:**\n- Many workers adding relationships to a shared parent entity\n- High-volume indexing where multiple sources enrich the same entity\n- Any scenario where ordering doesn't matter and CAS conflicts are expected\n\n**Max batch size:** 100 updates per request.\n\n---\n**Permission:** `entity:update`  \n**Auth:** required",
+        "description": "Queues additive updates for multiple entities. Returns 202 Accepted immediately.\n\n**Fire-and-Forget Semantics:**\n- Updates are queued and processed asynchronously\n- CAS conflicts are handled internally with exponential backoff retry\n- Client does not need to retry on conflicts\n\n**Additive-Only Operations:**\n- `properties`: Deep merged with existing properties\n- `relationships_add`: Upsert semantics (add new or merge properties)\n- `properties_remove` and `relationships_remove` are **NOT supported** - use `PUT /entities/:id` for removals\n\n**Per-Actor Versioning:**\n- Multiple updates from the same actor are merged before applying (one version)\n- Updates from different actors create separate versions (preserves audit trail)\n\n**Permission Check:**\n- Each target entity is checked for `entity:update` permission before queueing\n- If any entity fails the permission check, the entire batch is rejected\n\n**Use Cases:**\n- Many workers adding relationships to a shared parent entity\n- High-volume indexing where multiple sources enrich the same entity\n- Any scenario where ordering doesn't matter and CAS conflicts are expected\n\n**Max batch size:** 100 updates per request.\n\n---\n**Permission:** `entity:update`  \n**Auth:** required",
         "x-arke-action": "entity:update",
         "x-arke-auth": "required",
         "x-arke-tier": "standard",
@@ -13351,6 +14149,19 @@
                 },
                 "example": {
                   "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
                 }
               }
             }
@@ -13866,7 +14677,7 @@
           "Kladoi"
         ],
         "summary": "Invoke a klados",
-        "description": "Invoke a klados to perform work on a target entity.\n\n**Two-phase interaction:**\n1. `confirm: false` (default) - preview permissions that will be granted\n2. `confirm: true` - execute the klados\n\nThe klados receives temporal (time-limited) permissions on the target collection.\n\n---\n**Permission:** `klados:invoke`  \n**Auth:** required",
+        "description": "Invoke a klados to perform work on a target entity.\n\n**Important:** Kladoi perform a single atomic action. For multi-step file processing (e.g., PDF extraction, image analysis, document pipelines), use a **Rhiza workflow** instead (`POST /rhizai/{id}/invoke`). Rhiza orchestrates multiple kladoi into a complete pipeline.\n\n**Two-phase interaction:**\n1. `confirm: false` (default) - preview permissions that will be granted\n2. `confirm: true` - execute the klados\n\nThe klados receives temporal (time-limited) permissions on the target collection.\n\n---\n**Permission:** `klados:invoke`  \n**Auth:** required",
         "x-arke-action": "klados:invoke",
         "x-arke-auth": "required",
         "x-arke-tier": "standard",
@@ -13918,6 +14729,134 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InvokeKladosConfirmedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "properties",
+                          "label"
+                        ],
+                        "message": "Required"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Unauthorized: Missing or invalid authentication token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Forbidden: You do not have permission to perform this action"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kladoi/{id}/invoke/batch": {
+      "post": {
+        "tags": [
+          "Kladoi"
+        ],
+        "summary": "Batch invoke a klados",
+        "description": "Invoke a klados multiple times in parallel with different entities.\n\nUses scatter-utility under the hood for efficient parallel dispatch.\nAll invocations share the same target collection and job collection.\n\n**Two-phase interaction:**\n1. `confirm: false` (default) - preview permissions that will be granted\n2. `confirm: true` - execute the batch\n\n**Input merging:**\n- Shared `input` at request level is merged with per-item `input`\n- Per-item input wins on conflict\n\n---\n**Permission:** `klados:invoke`  \n**Auth:** required",
+        "x-arke-action": "klados:invoke",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
+              "description": "Entity ID (ULID format)",
+              "example": "01KDETYWYWM0MJVKM8DK3AEXPY"
+            },
+            "required": true,
+            "description": "Entity ID (ULID)",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchInvokeKladosRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batch invoke preview (confirm: false)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchInvokeKladosPreviewResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Batch dispatching started (confirm: true)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchInvokeKladosConfirmedResponse"
                 }
               }
             }
@@ -14250,7 +15189,7 @@
           "Kladoi"
         ],
         "summary": "Create API key for klados",
-        "description": "Creates an API key for the klados. The full key is only returned once.\n\n---\n**Permission:** `klados:manage`  \n**Auth:** required",
+        "description": "Creates an API key for the klados. The full key is only returned once - store it securely.\n\n## Usage\n\nUse the returned key with the `Authorization` header:\n\n```\nAuthorization: ApiKey ak_xxxxxxxxxxxxx\n```\n\n**Important:** Use `ApiKey` prefix, NOT `Bearer`. Agent/klados keys always start with `ak_`.\n\n---\n**Permission:** `klados:manage`  \n**Auth:** required",
         "x-arke-action": "klados:manage",
         "x-arke-auth": "required",
         "x-arke-tier": "standard",
@@ -14842,7 +15781,7 @@
           "Rhizai"
         ],
         "summary": "Invoke a rhiza workflow",
-        "description": "Invoke a rhiza workflow to process a target entity.\n\n**Two-phase interaction:**\n1. `confirm: false` (default) - preview permissions for all kladoi\n2. `confirm: true` - execute the workflow\n\nAll kladoi in the workflow receive temporal (time-limited) permissions.\n\n---\n**Permission:** `rhiza:invoke`  \n**Auth:** required",
+        "description": "Invoke a rhiza workflow to process a target entity.\n\n**Rhiza is the recommended approach for file and entity processing.** Rhiza workflows orchestrate multiple kladoi into a complete pipeline, handling step sequencing, error recovery, and intermediate state automatically.\n\n**Common use cases:**\n- **Knowledge graph extraction** (suggested) — extract entities and relationships from files into a structured KG. Search for \"KG\" rhiza workflows for PDF, image, and text pipelines in Basic, Full, and Recursive variants. **Important:** KG extraction operates on text content, not raw files. If your source entities are images (TIFF, JPEG, PNG), scanned PDFs, or other non-text files, you must first run an OCR or document-processing rhiza workflow to extract text before running a KG workflow. Look for \"Multi\" variants of KG workflows that combine file processing and KG extraction into a single pipeline, or run an OCR/extraction workflow first, then follow up with a KG workflow.\n- PDF extraction and analysis\n- Image processing and OCR\n- Document ingestion pipelines (download → extract → enrich → index)\n- Any multi-step entity transformation\n\n**Two-phase interaction:**\n1. `confirm: false` (default) - preview permissions for all kladoi\n2. `confirm: true` - execute the workflow\n\nAll kladoi in the workflow receive temporal (time-limited) permissions.\n\n---\n**Permission:** `rhiza:invoke`  \n**Auth:** required",
         "x-arke-action": "rhiza:invoke",
         "x-arke-auth": "required",
         "x-arke-tier": "standard",
@@ -14964,200 +15903,13 @@
         }
       }
     },
-    "/rhizai/{id}/jobs/{job_id}/status": {
-      "get": {
-        "tags": [
-          "Rhizai"
-        ],
-        "summary": "Get workflow job status",
-        "description": "Returns the status of a workflow job.\n\nReads klados_log entries from the job collection to compute:\n- Overall status (pending/running/done/error)\n- Progress counters\n- Current running kladoi\n- Error summaries\n\n---\n**Permission:** `rhiza:view`  \n**Auth:** optional",
-        "x-arke-action": "rhiza:view",
-        "x-arke-auth": "optional",
-        "x-arke-tier": "standard",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-              "description": "Rhiza entity ID"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Job ID returned from rhiza invocation",
-              "example": "job_01KFXPQ3ABCDEFGHIJKLMN"
-            },
-            "required": true,
-            "name": "job_id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Workflow status",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkflowStatusResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Entity not found"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/rhizai/{id}/jobs/{job_id}/resume": {
-      "post": {
-        "tags": [
-          "Rhizai"
-        ],
-        "summary": "Resume failed workflow",
-        "description": "Resume a workflow by re-invoking failed kladoi that have retryable errors.\n\nOnly retryable errors are resumed. Non-retryable errors are skipped.\n\n---\n**Permission:** `rhiza:invoke`  \n**Auth:** required",
-        "x-arke-action": "rhiza:invoke",
-        "x-arke-auth": "required",
-        "x-arke-tier": "standard",
-        "security": [
-          {
-            "bearerAuth": []
-          },
-          {
-            "apiKeyAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^(?:II[0-9A-HJKMNP-TV-Z]{24}|[FC][0-9A-HJKMNP-TV-Z]{25}|[0-9A-HJKMNP-TV-Z]{26})$",
-              "description": "Rhiza entity ID"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Job ID returned from rhiza invocation",
-              "example": "job_01KFXPQ3ABCDEFGHIJKLMN"
-            },
-            "required": true,
-            "name": "job_id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResumeWorkflowRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Resume result",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResumeWorkflowResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request - Invalid input",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorResponse"
-                },
-                "example": {
-                  "error": "Validation failed",
-                  "details": {
-                    "issues": [
-                      {
-                        "path": [
-                          "properties",
-                          "label"
-                        ],
-                        "message": "Required"
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized - Missing or invalid authentication",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Unauthorized: Missing or invalid authentication token"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - Insufficient permissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Forbidden: You do not have permission to perform this action"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found - Resource does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "error": "Entity not found"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/events": {
       "get": {
         "tags": [
           "Events"
         ],
         "summary": "List entity change events",
-        "description": "Returns a cursor-based list of entity change events for client synchronization.\n\n**Usage:**\n- Call without cursor to get newest events\n- Use returned `cursor` as `?cursor=` to get older events\n- Poll without cursor periodically to check for new events\n\n**Sync flow:**\n1. Initial: `GET /events` → get newest, save highest `id` as high-water mark\n2. Paginate: `GET /events?cursor=X` → get older events until `has_more=false`\n3. Poll: `GET /events` → if newest `id` > high-water mark, process new events\n\n**Event data:**\n- `id`: Auto-increment ID\n- `entity_id`: Entity ID that changed\n- `cid`: New manifest CID\n- `ts`: ISO timestamp\n\nEvents are ephemeral (30-day rolling window) - for full sync, use snapshots.\n\n---\n**Permission:** `events:list`  \n**Auth:** none",
+        "description": "Returns a cursor-based list of entity change events for client synchronization.\n\n**Cursor options (mutually exclusive):**\n- `since`: Forward pagination - events with id > since, ascending order (oldest first)\n- `until`: Backward pagination - events with id < until, descending order (newest first)\n- `cursor`: Deprecated alias for `until` (backwards compatibility)\n- Neither: Returns newest events, descending order\n\n**Examples:**\n\n```\n# Poller catching up (forward from last processed)\nGET /events?since=500&limit=100\n→ { events: [501, 502, ...], has_more: true, cursor: 600 }\n# Next page: GET /events?since=600\n\n# Browsing history (backward from a point)\nGET /events?until=500&limit=100\n→ { events: [499, 498, ...], has_more: true, cursor: 400 }\n# Next page: GET /events?until=400\n\n# Latest events (default)\nGET /events?limit=100\n→ { events: [1500, 1499, ...], has_more: true, cursor: 1401 }\n```\n\n**Sync flow:**\n1. Initial: `GET /events` → get newest events, save highest `id` as high-water mark\n2. Poll: `GET /events?since=X` → forward from high-water mark to get new events\n3. Backfill: `GET /events?until=X` → backward to get older events until `has_more=false`\n\n**Event data:**\n- `id`: Auto-increment ID (use as cursor)\n- `entity_id`: Entity ID that changed\n- `cid`: New manifest CID\n- `ts`: ISO timestamp\n\nEvents are ephemeral (30-day rolling window) - for full sync, use snapshots.\n\n---\n**Permission:** `events:list`  \n**Auth:** none",
         "x-arke-action": "events:list",
         "x-arke-auth": "none",
         "x-arke-tier": "standard",
@@ -15166,12 +15918,35 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
+              "example": 500
+            },
+            "required": false,
+            "description": "Return events with id > since, ascending order (oldest first). Use for forward polling from a known position.",
+            "name": "since",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "example": 500
+            },
+            "required": false,
+            "description": "Return events with id < until, descending order (newest first). Use for browsing history backward.",
+            "name": "until",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
               "example": 12345
             },
             "required": false,
-            "description": "Return events older than this id (from previous response cursor)",
+            "description": "Deprecated: alias for until. Return events older than this id (from previous response cursor)",
             "name": "cursor",
-            "in": "query"
+            "in": "query",
+            "deprecated": true
           },
           {
             "schema": {
@@ -15220,7 +15995,7 @@
           "Graph"
         ],
         "summary": "Find paths between entities",
-        "description": "Find shortest paths between source and target entity sets. Returns all paths up to the limit (default 100).\n\nUse this when you know both endpoints and want to discover how they connect - for example, finding the chain of relationships between a person and a document.\n\n**Entity Expansion (default: preview):**\n- Omit `expand` or use `?expand=preview` - Lightweight previews for all path entities\n- `?expand=full` - Complete entity manifests (use with caution)\n- `?expand=none` - Disable expansion (graph metadata only)\n\n**Performance Warning:** 100 paths can reference 400-800 unique entities, adding 5-10s latency with expansion.\n\n**Recommendations:**\n- Use `limit: 10-20` when using expansion\n- Prefer preview over full\n- Use `expand=none` for large result sets, then fetch specific entities separately\n\n---\n**Permission:** `graph:query`  \n**Auth:** required",
+        "description": "Find shortest paths between source and target entity sets. Returns all paths up to the limit (default 100).\n\nUse this when you know both endpoints and want to discover how they connect - for example, finding the chain of relationships between a person and a document.\n\n> **Early Access Warning:** Graph endpoints depend on the Neo4j graph database which may not reflect all current network state. Results should be treated as best-effort during this period.\n\n**Entity Expansion (default: preview):**\n- Omit `expand` or use `?expand=preview` - Lightweight previews for all path entities\n- `?expand=full` - Complete entity manifests (use with caution)\n- `?expand=none` - Disable expansion (graph metadata only)\n\n**Performance Warning:** 100 paths can reference 400-800 unique entities, adding 5-10s latency with expansion.\n\n**Recommendations:**\n- Use `limit: 10-20` when using expansion\n- Prefer preview over full\n- Use `expand=none` for large result sets, then fetch specific entities separately\n\n---\n**Permission:** `graph:query`  \n**Auth:** required",
         "x-arke-action": "graph:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -15302,7 +16077,7 @@
           "Graph"
         ],
         "summary": "Find reachable entities (exhaustive)",
-        "description": "Find all entities of a specific type reachable from source entities within N hops. Returns up to 100 results by default.\n\n**When to use this vs POST /query:** This endpoint returns exhaustive, unranked results - all reachable entities up to the limit. Use `POST /query` when you want relevance-ranked results combining semantic similarity with graph structure. Use this endpoint when you need comprehensive graph exploration from known entity IDs.\n\n**Target Expansion (default: preview):**\n- Omit `expand` or use `?expand=preview` - Lightweight target previews\n- `?expand=full` - Complete target manifests\n- `?expand=none` - Disable expansion (graph metadata only)\n\n**Performance:** With 100 targets, expansion adds ~1s.\n\n---\n**Permission:** `graph:query`  \n**Auth:** required",
+        "description": "Find all entities of a specific type reachable from source entities within N hops. Returns up to 100 results by default.\n\n**When to use this vs POST /query:** This endpoint returns exhaustive, unranked results - all reachable entities up to the limit. Use `POST /query` when you want relevance-ranked results combining semantic similarity with graph structure. Use this endpoint when you need comprehensive graph exploration from known entity IDs.\n\n> **Early Access Warning:** Graph endpoints depend on the Neo4j graph database which may not reflect all current network state. Results should be treated as best-effort during this period.\n\n**Target Expansion (default: preview):**\n- Omit `expand` or use `?expand=preview` - Lightweight target previews\n- `?expand=full` - Complete target manifests\n- `?expand=none` - Disable expansion (graph metadata only)\n\n**Performance:** With 100 targets, expansion adds ~1s.\n\n---\n**Permission:** `graph:query`  \n**Auth:** required",
         "x-arke-action": "graph:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -15384,7 +16159,7 @@
           "Graph"
         ],
         "summary": "Get entity from graph",
-        "description": "Get entity details with all relationships from the graph database. Unlike the entity manifest, this includes both outgoing and incoming relationships - showing not just what this entity links to, but also what links to it.\n\n**Peer Expansion (default: preview):**\n- Omit `expand` or use `?expand=preview` - Lightweight peer previews\n- `?expand=full` - Complete peer manifests\n- `?expand=none` - Disable expansion (graph metadata only)\n\n**Performance:** With 50 peers, expansion adds ~500ms.\n\n---\n**Permission:** `graph:query`  \n**Auth:** required",
+        "description": "Get entity details with all relationships from the graph database. Unlike the entity manifest, this includes both outgoing and incoming relationships - showing not just what this entity links to, but also what links to it.\n\n> **Early Access Warning:** Graph endpoints depend on the Neo4j graph database which may not reflect all current network state. Results should be treated as best-effort during this period.\n\n**Peer Expansion (default: preview):**\n- Omit `expand` or use `?expand=preview` - Lightweight peer previews\n- `?expand=full` - Complete peer manifests\n- `?expand=none` - Disable expansion (graph metadata only)\n\n**Performance:** With 50 peers, expansion adds ~500ms.\n\n---\n**Permission:** `graph:query`  \n**Auth:** required",
         "x-arke-action": "graph:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -15458,7 +16233,7 @@
           "Query"
         ],
         "summary": "Execute Argo query",
-        "description": "Execute an Argo DSL query for path-based graph traversal with relevance ranking.\n\n## When to Use This Endpoint\n\n| Endpoint | Use Case |\n|----------|----------|\n| `POST /query` | Semantic search + graph traversal with **relevance-ranked** results (default k=25) |\n| `POST /graph/reachable` | **Exhaustive** graph exploration from known entities (default limit=100) |\n| `POST /graph/paths` | Find all shortest paths between two entity sets |\n\nThis endpoint combines semantic similarity scores with path length to rank results. For exhaustive graph traversal without ranking, use the `/graph/*` endpoints directly.\n\n## Query Syntax\n\n```\n[SCOPE_PREFIX] ENTRY_POINT [ENTRY_FILTER] [-[RELATION]{DEPTH}-> TARGET_FILTER]...\n```\n\n## Scope Prefixes\n\nControl where semantic search looks for entry points. Default is discovery mode.\n\n| Prefix | Description | Example |\n|--------|-------------|---------|\n| (none) | **Discovery mode** (default) - find relevant collections, then search within each | `\"medical notes\"` |\n| `@:collections` | Search for collections themselves | `@:collections \"columbia archives\"` |\n| `@:collection(id)` | Search within a specific collection | `@:collection(01JCOLL123) \"meeting\"` |\n| `@:discover` | Explicit discovery mode | `@:discover \"research papers\"` |\n| `@:public` | Search public domain only | `@:public \"orphaned data\"` |\n\n**Note:** Graph traversal (hops) is always cross-collection regardless of scope.\n\n### Entry Points\n\n| Syntax | Description | Example |\n|--------|-------------|---------|\n| `\"text\"` | Semantic search | `\"george washington\"` |\n| `@id` | Exact entity ID | `@01KE4ZY69F9R40E88PK9S0TQRQ` |\n| `type:X` | All entities of type | `type:person` |\n| `type:X ~ \"text\"` | Semantic search within type | `type:person ~ \"physician\"` |\n\n### Edges (Hops)\n\n| Syntax | Direction |\n|--------|-----------|\n| `-[*]->` | Outgoing |\n| `<-[*]-` | Incoming |\n| `<-[*]->` | Both |\n| `-[*]{,4}->` | Variable depth (1-4) |\n\n### Examples\n\n```\n\"george washington\"                           # Discovery mode (default)\n@:collections \"columbia university\"           # Find collections\n@:collection(01JCOLL123) \"faculty meeting\"    # Within specific collection\n@:discover \"alice\" -[*]{,2}-> type:person     # Discover, then traverse\n@01KE4ZY... -[*]{,2}-> type:person            # From exact entity\n```\n\n## Entity Expansion\n\nControl how much entity data is included in results via the `expand` parameter.\n\n| Value | Description | Use Case |\n|-------|-------------|----------|\n| (omitted) | **Preview** (default) - lightweight preview data | Best balance of detail and payload size |\n| `preview` | Same as omitted - lightweight preview data | Explicit preview mode |\n| `full` | Complete entity manifest | When you need all properties, relationships, versions |\n| `none` | No expansion - Pinecone metadata only | Fastest response, smallest payload |\n\n**Preview mode** includes: label, truncated description/text (200 chars), created_at, updated_at.\n\n**Full mode** includes: all properties, relationships, version info, CID.\n\nBoth result entities and path step entities are expanded.\n\n\n---\n**Permission:** `query:execute`  \n**Auth:** required",
+        "description": "Execute an Argo DSL query for path-based graph traversal with relevance ranking.\n\n> **Early Access Warning:** Queries involving graph traversal (hops) depend on the Neo4j graph database which may not reflect all current network state. Semantic-only queries (no hops) are stable. Discovery-mode queries may return results from legacy or test collections — see `POST /search/discover` warning for details.\n\n## When to Use This Endpoint\n\n| Endpoint | Use Case |\n|----------|----------|\n| `POST /query` | Semantic search + graph traversal with **relevance-ranked** results (default k=25) |\n| `POST /graph/reachable` | **Exhaustive** graph exploration from known entities (default limit=100) |\n| `POST /graph/paths` | Find all shortest paths between two entity sets |\n\nThis endpoint combines semantic similarity scores with path length to rank results. For exhaustive graph traversal without ranking, use the `/graph/*` endpoints directly.\n\n## Query Syntax\n\n```\n[SCOPE_PREFIX] ENTRY_POINT [ENTRY_FILTER] [-[RELATION]{DEPTH}-> TARGET_FILTER]...\n```\n\n## Scope Prefixes\n\nControl where semantic search looks for entry points. Default is discovery mode.\n\n| Prefix | Description | Example |\n|--------|-------------|---------|\n| (none) | **Discovery mode** (default) - find relevant collections, then search within each | `\"medical notes\"` |\n| `@:collections` | Search for collections themselves | `@:collections \"columbia archives\"` |\n| `@:collection(id)` | Search within a specific collection | `@:collection(01JCOLL123) \"meeting\"` |\n| `@:discover` | Explicit discovery mode | `@:discover \"research papers\"` |\n| `@:public` | Search public domain only | `@:public \"orphaned data\"` |\n\n**Note:** Graph traversal (hops) is always cross-collection regardless of scope.\n\n### Entry Points\n\n| Syntax | Description | Example |\n|--------|-------------|---------|\n| `\"text\"` | Semantic search | `\"george washington\"` |\n| `@id` | Exact entity ID | `@01KE4ZY69F9R40E88PK9S0TQRQ` |\n| `type:X` | All entities of type | `type:person` |\n| `type:X ~ \"text\"` | Semantic search within type | `type:person ~ \"physician\"` |\n\n### Edges (Hops)\n\n| Syntax | Direction |\n|--------|-----------|\n| `-[*]->` | Outgoing |\n| `<-[*]-` | Incoming |\n| `<-[*]->` | Both |\n| `-[*]{,4}->` | Variable depth (1-4) |\n\n### Examples\n\n```\n\"george washington\"                           # Discovery mode (default)\n@:collections \"columbia university\"           # Find collections\n@:collection(01JCOLL123) \"faculty meeting\"    # Within specific collection\n@:discover \"alice\" -[*]{,2}-> type:person     # Discover, then traverse\n@01KE4ZY... -[*]{,2}-> type:person            # From exact entity\n```\n\n## Entity Expansion\n\nControl how much entity data is included in results via the `expand` parameter.\n\n| Value | Description | Use Case |\n|-------|-------------|----------|\n| (omitted) | **Preview** (default) - lightweight preview data | Best balance of detail and payload size |\n| `preview` | Same as omitted - lightweight preview data | Explicit preview mode |\n| `full` | Complete entity manifest | When you need all properties, relationships, versions |\n| `none` | No expansion - Pinecone metadata only | Fastest response, smallest payload |\n\n**Preview mode** includes: label, truncated description/text (200 chars), created_at, updated_at.\n\n**Full mode** includes: all properties, relationships, version info, CID.\n\nBoth result entities and path step entities are expanded.\n\n\n---\n**Permission:** `query:execute`  \n**Auth:** required",
         "x-arke-action": "query:execute",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -15523,7 +16298,7 @@
           "Search"
         ],
         "summary": "Find similar collections",
-        "description": "Find collections that are semantically similar to a given collection.\n\nUses the collection's weighted centroid vector (combination of description and entity embeddings) to find related collections.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:similar`  \n**Auth:** required",
+        "description": "Find collections that are semantically similar to a given collection.\n\nUses the collection's weighted centroid vector (combination of description and entity embeddings) to find related collections.\n\n> **Early Access Warning:** The network currently contains legacy and test collections that may appear in results. Similarity is based purely on vector proximity with no quality filtering — results may include incomplete or outdated collections.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:similar`  \n**Auth:** required",
         "x-arke-action": "search:similar",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -15731,7 +16506,7 @@
           "Search"
         ],
         "summary": "Find similar items across collections",
-        "description": "Find entities that are semantically similar to a given entity, searching across multiple collections.\n\nThis performs a two-tier search:\n1. First finds collections similar to the entity's collection\n2. Then searches within each collection for similar items\n3. Aggregates and ranks results with diversity weighting\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:similar`  \n**Auth:** required",
+        "description": "Find entities that are semantically similar to a given entity, searching across multiple collections.\n\nThis performs a two-tier search:\n1. First finds collections similar to the entity's collection\n2. Then searches within each collection for similar items\n3. Aggregates and ranks results with diversity weighting\n\n> **Early Access Warning:** Results may include entities from legacy or test collections. No quality filtering is applied — some returned entities may be in outdated formats or contain incomplete data.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:similar`  \n**Auth:** required",
         "x-arke-action": "search:similar",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -15977,7 +16752,7 @@
           "Search"
         ],
         "summary": "Search collections by text",
-        "description": "Search for collections using semantic text search.\n\nUse this endpoint to discover collections about a topic. Results are ranked by semantic similarity to your query.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
+        "description": "Search for collections using semantic text search.\n\nUse this endpoint to discover collections about a topic. Results are ranked by semantic similarity to your query.\n\n> **Early Access Warning:** The network currently contains legacy and test collections. Results are based purely on semantic similarity with no quality filtering — you may encounter outdated or incomplete collections.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
         "x-arke-action": "search:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -16181,13 +16956,13 @@
         }
       }
     },
-    "/search/agents": {
+    "/search/tools": {
       "post": {
         "tags": [
           "Search"
         ],
-        "summary": "Search agents by text",
-        "description": "Search for agents using semantic text search.\n\n**Official Agents (Default):** By default, this endpoint searches only the official Arke agents collection (`01KFF0H1KSR4SHHDQ7T2HXQEK6`). These agents are pre-approved, actively maintained, and tested for security and reliability.\n\n**All Agents:** Set `scope: \"all\"` to search network-wide. This is not recommended as results may include duplicates, outdated agents, or unapproved implementations.\n\nResults are ranked by semantic similarity to your query based on agent descriptions and capabilities.\n\n**Entity Expansion:**\n\nBy default, agent search returns **full entity manifests** (including `endpoint`, `input_schema`, `actions_required`, etc.) to make discovery results immediately useful.\n\n- **`expand: \"full\"` (default)**: Complete agent manifests with all properties\n- **`expand: \"preview\"`**: Lightweight previews (id, type, label, description_preview, timestamps)\n- **`expand: \"none\"`**: Search metadata only (fastest)\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
+        "summary": "Search tools (Rhiza workflows and Klados actions) by text",
+        "description": "Search for Rhiza workflows and Klados actions using semantic text search.\n\n**Choosing the right tool type:**\n- **Rhiza (workflows)**: Use for file processing, multi-step pipelines, and any task requiring coordinated actions (e.g., PDF extraction, image analysis, document processing). Rhiza orchestrates multiple kladoi into a complete pipeline.\n- **Klados (actions)**: Individual atomic operations. Kladoi perform a single action and cannot chain steps on their own. If your task requires multiple steps (e.g., download → extract → summarize), use a Rhiza workflow instead.\n\n**Suggested starting point:** Knowledge graph (KG) extraction workflows are the most developed tools on the network. Search for \"KG\" to find rhiza workflows that extract entities and relationships from PDFs, images, text, and other file types into a structured knowledge graph. Available in Basic, Full, and Recursive variants depending on depth needed. **Important:** KG extraction operates on text content — raw image files (TIFF, JPEG, PNG) and scanned PDFs must be OCR-processed first to extract text before a KG workflow can meaningfully operate on them. Look for \"Multi\" variants that combine file processing and KG extraction into one pipeline, or run an OCR/extraction workflow before the KG workflow.\n\n**Tip:** To browse the full tool catalog without a search query, use `GET /search/tools/list`.\n\nUse the `type` parameter to filter by tool type, or search both with `type: \"all\"` (default).\n\n**Official Tools (Default):** By default, this endpoint searches only the official Arke tools collection. These tools are pre-approved, actively maintained, and tested for security and reliability.\n\n**All Tools:** Set `scope: \"all\"` to search network-wide. This is not recommended as results may include duplicates, outdated tools, or unapproved implementations.\n\nResults are ranked by semantic similarity to your query based on tool descriptions and capabilities.\n\n**Entity Expansion:**\n\nBy default, tool search returns **full entity manifests** (including schemas, inputs, outputs, etc.) to make discovery results immediately useful.\n\n- **`expand: \"full\"` (default)**: Complete tool manifests with all properties\n- **`expand: \"preview\"`**: Lightweight previews (id, type, label, description_preview, timestamps)\n- **`expand: \"none\"`**: Search metadata only (fastest)\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
         "x-arke-action": "search:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -16248,7 +17023,17 @@
                       "all"
                     ],
                     "default": "official",
-                    "description": "Search scope. \"official\" (default) searches only the pre-approved Arke agents collection. \"all\" searches all agents network-wide (not recommended - may include duplicates, outdated, or unapproved agents)."
+                    "description": "Search scope. \"official\" (default) searches only the pre-approved Arke tools collection. \"all\" searches all tools network-wide (not recommended - may include duplicates, outdated, or unapproved tools)."
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "rhiza",
+                      "klados",
+                      "all"
+                    ],
+                    "default": "all",
+                    "description": "Filter by tool type. \"rhiza\" for workflows only, \"klados\" for actions only, \"all\" for both."
                   }
                 },
                 "required": [
@@ -16277,6 +17062,13 @@
                           "label": {
                             "type": "string"
                           },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "rhiza",
+                              "klados"
+                            ]
+                          },
                           "score": {
                             "type": "number"
                           },
@@ -16301,11 +17093,11 @@
                               {
                                 "description": "Lightweight entity preview (included by default)",
                                 "example": {
-                                  "id": "01KAGENT123456789ABCDEFGHI",
-                                  "type": "agent",
-                                  "label": "Document Analyzer Agent",
+                                  "id": "01KRHIZA123456789ABCDEFGHI",
+                                  "type": "rhiza",
+                                  "label": "Document Analysis Workflow",
                                   "collection_id": "01JCOLLECTION123456789AB",
-                                  "description_preview": "An AI agent that analyzes documents and extracts key insights...",
+                                  "description_preview": "A workflow that orchestrates document analysis and extraction...",
                                   "created_at": "2026-01-01T00:00:00.000Z",
                                   "updated_at": "2026-01-15T16:00:00.000Z"
                                 }
@@ -16326,6 +17118,7 @@
                         "required": [
                           "id",
                           "label",
+                          "type",
                           "score",
                           "collection_id"
                         ]
@@ -16375,6 +17168,137 @@
                       }
                     ]
                   }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable - External service not available",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Service unavailable",
+                  "details": {
+                    "service": "pinecone"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/tools/list": {
+      "get": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "List all official tools (no search query needed)",
+        "description": "Returns a lightweight catalog of all official Rhiza workflows and Klados actions. Unlike `POST /search/tools`, this endpoint does not require a search query — it lists the full tool catalog.\n\n**Use this endpoint to:**\n- Browse all available tools without knowing what to search for\n- Get an overview of the tool ecosystem\n- Filter by type (rhiza/klados) to see only workflows or actions\n\n**Tool Types:**\n- **Rhiza (workflows)**: Multi-step pipelines for file processing, document analysis, etc. Use rhiza for any task requiring coordinated actions.\n- **Klados (actions)**: Single atomic operations. Use kladoi as building blocks within rhiza workflows, not for multi-step tasks.\n\n**Suggested starting point:** Knowledge graph (KG) extraction workflows are the most developed tools available. Look for rhiza workflows with \"KG\" in the name — they extract entities and relationships from PDFs, images, text, and other files into a structured knowledge graph. **Important:** KG workflows require text content to work from — raw image files (TIFF, JPEG, PNG) and scanned PDFs must be OCR-processed first. Use \"Multi\" variants that combine file processing + KG extraction, or run an OCR/extraction workflow before the KG workflow.\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
+        "x-arke-action": "search:query",
+        "x-arke-auth": "required",
+        "x-arke-tier": "external",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "rhiza",
+                "klados",
+                "all"
+              ],
+              "default": "all",
+              "description": "Filter by tool type"
+            },
+            "required": false,
+            "name": "type",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tool catalog listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "created_at": {
+                            "type": "string"
+                          },
+                          "updated_at": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "label",
+                          "type",
+                          "description",
+                          "created_at",
+                          "updated_at"
+                        ]
+                      }
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "collection_id": {
+                          "type": "string"
+                        },
+                        "type_filter": {
+                          "type": "string",
+                          "enum": [
+                            "rhiza",
+                            "klados",
+                            "all"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "collection_id",
+                        "type_filter"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "tools",
+                    "metadata"
+                  ]
                 }
               }
             }
@@ -16648,7 +17572,7 @@
           "Search"
         ],
         "summary": "Discover entities across all collections",
-        "description": "Two-step discovery search: first finds relevant collections, then searches within them.\n\nUse this endpoint when you don't know which collections to search. The system will:\n1. Find collections semantically related to your query\n2. Search within each collection in parallel\n3. Aggregate and rank results across all collections\n\nGreat for exploration and AI agents navigating the network.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
+        "description": "Two-step discovery search: first finds relevant collections, then searches within them.\n\nUse this endpoint when you don't know which collections to search. The system will:\n1. Find collections semantically related to your query\n2. Search within each collection in parallel\n3. Aggregate and rank results across all collections\n\nGreat for exploration and AI agents navigating the network.\n\n> **Early Access Warning:** This endpoint is functional but results may be unpredictable. The network currently contains legacy collections, test data, and entities in outdated formats. Results are based purely on semantic similarity with no quality filtering — you may encounter incomplete, malformed, or test entities. Result quality will improve as the network matures and content curation is added.\n\n**Entity Expansion:**\n\nUse `expand` in the request body to fetch entity data inline with search results:\n\n- **`expand: \"preview\"` (default)**: Adds `entity_preview` with fresh lightweight data (id, type, label, timestamps)\n- **`expand: \"full\"`**: Adds `entity` with complete manifest including all properties and relationships\n- **`expand: \"none\"`**: Returns search metadata only (fastest, lowest bandwidth)\n\nPreview mode is recommended for most use cases. Full expansion can result in large payloads.\nGracefully handles deleted or inaccessible entities (returns results without expansion data).\n\n---\n**Permission:** `search:query`  \n**Auth:** required",
         "x-arke-action": "search:query",
         "x-arke-auth": "required",
         "x-arke-tier": "external",
@@ -17377,6 +18301,47 @@
                 },
                 "example": {
                   "error": "Entity not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/feedback": {
+      "post": {
+        "tags": [
+          "Feedback"
+        ],
+        "summary": "Submit feedback",
+        "description": "Submit feedback about the system. Available to all authenticated users and agents.\n\n**Categories:**\n- `bug` - Report a bug or issue\n- `feature` - Suggest a new feature\n- `general` - General feedback\n- `other` - Anything else\n\n**Metadata:**\nInclude optional context like entity IDs, actions performed, or other relevant data.\n\n---\n**Permission:** `feedback:create`  \n**Auth:** required",
+        "x-arke-action": "feedback:create",
+        "x-arke-auth": "required",
+        "x-arke-tier": "standard",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitFeedbackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Feedback submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResponse"
                 }
               }
             }
